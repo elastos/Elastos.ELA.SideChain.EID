@@ -1,4 +1,4 @@
-## Elastos.ELA.SideChain.ETH
+## Elastos.ELA.SideChain.EID
 
 Elastos Sidechain implementation based on Go Ethereum.
 
@@ -24,12 +24,12 @@ make all
 
 ## Executables
 
-The Elastos.ELA.SideChain.ETH project comes with several wrappers/executables found in the `cmd`
+The Elastos.ELA.SideChain.EID project comes with several wrappers/executables found in the `cmd`
 directory.
 
 | Command    | Description |
 |:----------:|-------------|
-| **`geth`** | Our main ELA-Ethereum CLI client. It is the entry point into the ELA-Ethereum  network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the Ethereum network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `geth --help` and the [CLI Wiki page](https://github.com/elastos/Elastos.ELA.SideChain.ETH/wiki/Command-Line-Options) for command line options. |
+| **`geth`** | Our main EID CLI client. It is the entry point into the EID  network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the Ethereum network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `geth --help` and the [CLI Wiki page](https://github.com/elastos/Elastos.ELA.SideChain.ETH/wiki/Command-Line-Options) for command line options. |
 | `abigen` | Source code generator to convert Ethereum contract definitions into easy to use, compile-time type-safe Go packages. It operates on plain [Ethereum contract ABIs](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI) with expanded functionality if the contract bytecode is also available. However it also accepts Solidity source files, making development much more streamlined. Please see our [Native DApps](https://github.com/elastos/Elastos.ELA.SideChain.ETH/wiki/Native-DApps:-Go-bindings-to-Ethereum-contracts) wiki page for details. |
 | `bootnode` | Stripped down version of our Ethereum client implementation that only takes part in the network node discovery protocol, but does not run any of the higher level application protocols. It can be used as a lightweight bootstrap node to aid in finding peers in private networks. |
 | `evm` | Developer utility version of the EVM (Ethereum Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode. Its purpose is to allow isolated, fine-grained debugging of EVM opcodes (e.g. `evm --code 60ff60ff --debug`). |
@@ -100,18 +100,11 @@ accounts available between them.*
 
 ### Full node on the Rinkeby test network
 
-The above test network is a cross-client one based on the ethash proof-of-work consensus
-algorithm. As such, it has certain extra overhead and is more susceptible to reorganization
-attacks due to the network's low difficulty/security. Go Ethereum also supports connecting
-to a proof-of-authority based test network called [*Rinkeby*](https://www.rinkeby.io)
-(operated by members of the community). This network is lighter, more secure, but is only
-supported by Elastos.ELA.SideChain.ETH.
-
 ```shell
 $ geth --rinkeby console
 ```
 
-### How to topup ELA to ETH
+### How to topup ELA to EID
 * use compile [ELA-Client](https://github.com/elastos/Elastos.ELA.Client)
 * create topup transaction: `./ela-cli wallet -t create --deposit eth_address(ETH address) --amount recharge_value(amount ela units) --fee recharge_fee(fee ela units)`
 * sign transaction: `./ela-cli wallet -t sign --file to_be_signed.txn -p yourpassword(your keystore password)`
@@ -320,9 +313,9 @@ transactions are accepted at (`--gasprice`).
 Thank you for considering to help out with the source code! We welcome contributions
 from anyone on the internet, and are grateful for even the smallest of fixes!
 
-If you'd like to contribute to Elastos.ELA.SideChain.ETH, please fork, fix, commit and send a pull request
+If you'd like to contribute to Elastos.ELA.SideChain.EID, please fork, fix, commit and send a pull request
 for the maintainers to review and merge into the main code base. If you wish to submit
-more complex changes though, please check up with the core devs first on [our gitter channel](https://gitter.im/elastos/Elastos.ELA.SideChain.ETH)
+more complex changes though, please check up with the core devs first on [our gitter channel](https://gitter.im/elastos/Elastos.ELA.SideChain.EID)
 to ensure those changes are in line with the general philosophy of the project and/or get
 some early feedback which can make both your efforts much lighter as well as our review
 and merge procedures quick and simple.
@@ -343,10 +336,10 @@ testing procedures.
 
 ## License
 
-The Elastos.ELA.SideChain.ETH library (i.e. all code outside of the `cmd` directory) is licensed under the
+The Elastos.ELA.SideChain.EID library (i.e. all code outside of the `cmd` directory) is licensed under the
 [GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.en.html),
 also included in our repository in the `COPYING.LESSER` file.
 
-The Elastos.ELA.SideChain.ETH binaries (i.e. all code inside of the `cmd` directory) is licensed under the
+The Elastos.ELA.SideChain.EID binaries (i.e. all code inside of the `cmd` directory) is licensed under the
 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html), also
 included in our repository in the `COPYING` file.
