@@ -113,6 +113,11 @@ func IsNexturnBlock(block interface{}) bool {
 	}
 
 	payloadData := tx.Payload.(* payload.NextTurnDPOSInfo)
+
+	if IsOnlyCRConsensus {
+		payloadData.DPOSPublicKeys = make([][]byte, 0)
+	}
+
 	nextTurnDposInfo.WorkingHeight = payloadData.WorkingHeight
 	nextTurnDposInfo.CRPublicKeys = payloadData.CRPublicKeys
 	nextTurnDposInfo.DPOSPublicKeys = payloadData.DPOSPublicKeys
@@ -125,6 +130,9 @@ func InitNextTurnDposInfo() {
 	if err != nil {
 		log.Error("GetNextArbiters error", "err", err.Error())
 		return
+	}
+	if IsOnlyCRConsensus {
+		normalArbiters = make([][]byte, 0)
 	}
 
 	nextTurnDposInfo = &payload.NextTurnDPOSInfo{
