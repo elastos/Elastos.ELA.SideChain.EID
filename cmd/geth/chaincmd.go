@@ -1,18 +1,18 @@
-// Copyright 2015 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of Elastos.ELA.SideChain.ETH.
+// Copyright 2015 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ETH is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ETH is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ETH. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -26,17 +26,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/console"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/state"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/event"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/trie"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/console"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/trie"
 	"gopkg.in/urfave/cli.v1"
 )
 

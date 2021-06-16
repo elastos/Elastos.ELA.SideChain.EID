@@ -11,11 +11,11 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain/service"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm/did"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/ethdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 type EntryPrefix byte

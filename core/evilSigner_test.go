@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/consensus/clique"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/blocksigner"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/clique"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/blocksigner"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 )
 
 // testerAccountPool is a pool to maintain currently active tester accounts,

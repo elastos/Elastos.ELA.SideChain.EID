@@ -11,11 +11,11 @@ import (
 	elacom "github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/utils/http"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm/did"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/ethdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/internal/didapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/didapi"
 )
 
 // payload of DID transaction

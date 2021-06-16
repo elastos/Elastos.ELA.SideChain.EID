@@ -1,18 +1,18 @@
-// Copyright 2017 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of Elastos.ELA.SideChain.ETH.
+// Copyright 2017 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ETH is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ETH is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ETH. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -28,13 +28,13 @@ import (
 	cli "gopkg.in/urfave/cli.v1"
 	"path/filepath"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/dashboard"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/params"
-	whisper "github.com/elastos/Elastos.ELA.SideChain.ETH/whisper/whisperv6"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dashboard"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 	"github.com/naoina/toml"
 )
 

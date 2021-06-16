@@ -13,10 +13,10 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm/did"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm/did/base64url"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/base64url"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 

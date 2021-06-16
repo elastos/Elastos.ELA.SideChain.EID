@@ -1,48 +1,48 @@
-// Copyright 2016 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of the Elastos.ELA.SideChain.ETH library.
+// Copyright 2016 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ETH library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ETH library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ETH library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package les implements the Light Ethereum Subprotocol.
 package les
 
 import (
 	"fmt"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/accounts/abi/bind"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/mclock"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/consensus"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/consensus/pbft"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/bloombits"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth/filters"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth/gasprice"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/event"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/internal/ethapi"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/light"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/p2p"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/p2p/enode"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi/bind"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/pbft"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/bloombits"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/filters"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/gasprice"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/ethapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/light"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 type LightEthereum struct {

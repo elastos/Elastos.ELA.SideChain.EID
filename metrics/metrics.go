@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // Enabled is checked by the constructor functions for all of the
