@@ -1,18 +1,18 @@
-// Copyright 2018 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of Elastos.ELA.SideChain.ETH.
+// Copyright 2018 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ETH is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ETH is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ETH. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -24,10 +24,10 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
 )
 
-// Tests the Elastos.ELA.SideChain.ETH to Aleth chainspec conversion for the Stureby testnet.
+// Tests the Elastos.ELA.SideChain.EID to Aleth chainspec conversion for the Stureby testnet.
 func TestAlethSturebyConverter(t *testing.T) {
 	blob, err := ioutil.ReadFile("testdata/stureby_geth.json")
 	if err != nil {
@@ -66,7 +66,7 @@ func TestAlethSturebyConverter(t *testing.T) {
 	}
 }
 
-// Tests the Elastos.ELA.SideChain.ETH to Parity chainspec conversion for the Stureby testnet.
+// Tests the Elastos.ELA.SideChain.EID to Parity chainspec conversion for the Stureby testnet.
 func TestParitySturebyConverter(t *testing.T) {
 	blob, err := ioutil.ReadFile("testdata/stureby_geth.json")
 	if err != nil {

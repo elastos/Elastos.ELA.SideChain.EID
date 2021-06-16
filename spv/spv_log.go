@@ -1,7 +1,7 @@
 package spv
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"io"
 	"os"
 	"path/filepath"

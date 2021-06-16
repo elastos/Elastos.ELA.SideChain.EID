@@ -1,18 +1,18 @@
-// Copyright 2019 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of Elastos.ELA.SideChain.ETH.
+// Copyright 2019 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ETH is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ETH is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ETH. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/internal/debug"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/p2p/enode"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/debug"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -34,7 +34,7 @@ var (
 	gitDate   string
 	app       = &cli.App{
 		Name:        filepath.Base(os.Args[0]),
-		Usage:       "Elastos.ELA.SideChain.ETH devp2p tool",
+		Usage:       "Elastos.ELA.SideChain.EID devp2p tool",
 		Version:     params.VersionWithCommit(gitCommit, gitDate),
 		Writer:      os.Stdout,
 		HideVersion: true,

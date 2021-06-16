@@ -6,8 +6,8 @@
 package pbft
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/consensus"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/dpos"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
 	daccount "github.com/elastos/Elastos.ELA/dpos/account"
 )
 

@@ -3,7 +3,7 @@ package did
 import (
 	"bytes"
 	"errors"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm/did/base64url"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/base64url"
 	"github.com/elastos/Elastos.ELA.SideChain/vm"
 	"github.com/elastos/Elastos.ELA.SideChain/vm/interfaces"
 	"strings"

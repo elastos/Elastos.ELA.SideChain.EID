@@ -1,18 +1,18 @@
-// Copyright 2015 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of the Elastos.ELA.SideChain.ETH library.
+// Copyright 2015 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ETH library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ETH library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ETH library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 package tests
 
@@ -24,18 +24,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/math"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/state"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/vm"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/ethdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"golang.org/x/crypto/sha3"
 )
 

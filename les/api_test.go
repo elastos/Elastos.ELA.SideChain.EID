@@ -1,18 +1,18 @@
-// Copyright 2019 The Elastos.ELA.SideChain.ETH Authors
-// This file is part of the Elastos.ELA.SideChain.ETH library.
+// Copyright 2019 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ETH library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ETH library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ETH library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 package les
 
@@ -28,18 +28,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/consensus/ethash"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/les/flowcontrol"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/p2p/enode"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/p2p/simulations"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/p2p/simulations/adapters"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/ethash"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/les/flowcontrol"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/simulations"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/simulations/adapters"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/mattn/go-colorable"
 )
 

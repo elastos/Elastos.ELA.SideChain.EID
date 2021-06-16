@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/common/math"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 )
 
 var _ = (*btHeaderMarshaling)(nil)

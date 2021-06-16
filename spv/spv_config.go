@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
-	"github.com/elastos/Elastos.ELA.SideChain.ETH/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/common/config"
 	"io/ioutil"
