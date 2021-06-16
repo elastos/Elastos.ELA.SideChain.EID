@@ -78,6 +78,8 @@ const (
 
 	// Fixed height of ela chain height with LitterEnd encode
 	ExtraElaHeight = 8
+
+	IsOnlyCRConsensus = true
 )
 
 //type MinedBlockEvent struct{}
