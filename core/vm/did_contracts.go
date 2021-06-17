@@ -279,7 +279,12 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 
 			buf := new(bytes.Buffer)
 			p.Serialize(buf, did.DIDVersion)
-			needFee := getIDTxFee(payloadInfo.ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
+			//if it is normal did  lenth is 0
+			ID := payloadInfo.ID
+			if isRegisterDID {
+				ID = ""
+			}
+			needFee := getIDTxFee(ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
 
 			toETHfee := uint64(needFee * float64(did.FeeRate))
 			gas := toETHfee / evm.GasPrice.Uint64()
