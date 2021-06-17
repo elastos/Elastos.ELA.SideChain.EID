@@ -304,7 +304,15 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 			return nil, 0, false, vmerr
 		}
 	}
-	st.refundGas()
+	log.Info("refundGas", "OldDIDMigrateHeight", evm.ChainConfig().OldDIDMigrateHeight, "senderAddr", senderAddr, "OldDIDMigrateAddr", evm.ChainConfig().OldDIDMigrateAddr)
+	if evm.ChainConfig().OldDIDMigrateHeight != nil &&
+		evm.Context.BlockNumber.Cmp(evm.ChainConfig().OldDIDMigrateHeight) <= 0 {
+		if senderAddr == evm.ChainConfig().OldDIDMigrateAddr && !contractCreation {
+			st.refundMigrateGas()
+		}
+	} else {
+		st.refundGas()
+	}
 	if contractCreation && blackcontract.String() == evm.ChainConfig().BlackContractAddr {
 		st.state.AddBalance(st.msg.From(), new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
 	} else {
@@ -326,6 +334,19 @@ func (st *StateTransition) refundGas() {
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(st.gas), st.gasPrice)
 	st.state.AddBalance(st.msg.From(), remaining)
 
+	// Also return remaining gas to the block gas counter so it is
+	// available for the next transaction.
+	st.gp.AddGas(st.gas)
+}
+
+func (st *StateTransition) refundMigrateGas() {
+	refund := st.gasUsed()
+	st.gas += refund
+
+	// Return ETH for remaining gas, exchanged at the original rate.
+	remaining := new(big.Int).Mul(new(big.Int).SetUint64(st.gas), st.gasPrice)
+	st.state.AddBalance(st.msg.From(), remaining)
+	log.Info("[refundMigrateGas] ", "refund", refund, "remaining", remaining.Uint64(), "from", st.msg.From())
 	// Also return remaining gas to the block gas counter so it is
 	// available for the next transaction.
 	st.gp.AddGas(st.gas)
