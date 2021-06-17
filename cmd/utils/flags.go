@@ -801,7 +801,7 @@ var (
 	OldDIDMigrateHeightFlag = cli.Uint64Flag{
 		Name:  "olddidmigrateheight",
 		Usage: "before this height OldDIDMigrateAddrFlag can migate old did",
-		Value: 0,
+		Value: 34560,//48 hours
 	}
 
 	OldDIDMigrateAddrFlag = cli.StringFlag{
