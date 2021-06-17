@@ -1274,7 +1274,7 @@ func checkDIDTransaction(didpayload []byte, db *state.StateDB) error {
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
 
-	gas := did_contract.RequiredGas(evm, []byte(didpayload))
+	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
 	if gas == math.MaxUint64 {
 		return errors.New("RequiredGas is 0")
 	}
