@@ -150,8 +150,6 @@ func TestUnlockFlag(t *testing.T) {
 	geth.Expect(`
 error: failed to load password hash
 create dpos account error: open wallet failed pbftKeystore: keystore.dat password
-error: failed to load password hash
-Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 `)
 	geth.ExpectExit()
 

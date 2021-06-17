@@ -155,6 +155,7 @@ func (tt *TestCmd) ExpectRegexp(regex string) (*regexp.Regexp, []string) {
 	tt.withKillTimeout(func() { matches = re.FindReaderSubmatchIndex(rtee) })
 	output := rtee.buf.Bytes()
 	if matches == nil {
+
 		tt.Fatalf("Output did not match:\n---------------- (stdout text)\n%s\n---------------- (regular expression)\n%s",
 			output, regex)
 		return re, nil
