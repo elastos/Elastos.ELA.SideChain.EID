@@ -1402,9 +1402,9 @@ func getSizeFactor(payLoadSize int) float64 {
 	if payLoadSize <= 1024 {
 		factor = 1
 	} else if payLoadSize <= 32*1024 {
-		factor = math.Log10(float64(payLoadSize/1024))/2 + 1
+		factor = math.Log10(float64(payLoadSize)/1024)/2 + 1
 	} else {
-		factor = math.Pow(float64(payLoadSize/1024), 0.9)*math.Log10(float64(payLoadSize/1024)) - 33.4
+		factor = math.Pow(float64(payLoadSize)/1024, 0.9)*math.Log10(float64(payLoadSize)/1024) - 33.4
 	}
 	return factor
 }
