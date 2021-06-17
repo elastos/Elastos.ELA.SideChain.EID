@@ -73,7 +73,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		PreConnectOffset: 5,
+		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
 			Producers: []string{
 				"02089d7e878171240ce0e3633d3ddc8b1128bc221f6b5f0d1551caa717c7493062",
@@ -140,7 +140,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		PreConnectOffset: 5,
+		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
 			Producers: []string{
 				"03e435ccd6073813917c2d841a0815d21301ec3286bc1412bb5b099178c68a10b6",
@@ -207,7 +207,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		PreConnectOffset: 5,
+		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
 			Producers: []string{
 				"0306e3deefee78e0e25f88e98f1f3290ccea98f08dd3a890616755f1a066c4b9b8",
@@ -272,7 +272,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		PreConnectOffset: 5,
+		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
 			Producers: []string{
 				"0342eeb0d664e2507d732382c66d0eedbd0a0f989179fd33d71679aa607d5d3b57",
