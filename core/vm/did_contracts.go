@@ -25,7 +25,7 @@ import (
 // requires a deterministic gas count based on the input size of the Run method of the
 // contract.
 type PrecompiledContractDID interface {
-	RequiredGas(evm *EVM, input []byte) uint64              // RequiredPrice calculates the contract gas use
+	RequiredGas(evm *EVM, input []byte) (uint64, error)     // RequiredPrice calculates the contract gas use
 	Run(evm *EVM, input []byte, gas uint64) ([]byte, error) // Run runs the precompiled contract
 }
 
@@ -36,7 +36,11 @@ var PrecompileContractsDID = map[common.Address]PrecompiledContractDID{
 
 // RunPrecompiledContract runs and evaluates the output of a precompiled contract.
 func RunPrecompiledContractDID(evm *EVM, p PrecompiledContractDID, input []byte, contract *Contract) (ret []byte, err error) {
-	gas := p.RequiredGas(evm, input)
+	gas, error := p.RequiredGas(evm, input)
+	if error != nil {
+		return nil, error
+	}
+	log.Error("run did contract", "left gas", contract.Gas)
 	if contract.UseGas(gas) {
 		return p.Run(evm, input, contract.Gas)
 	}
@@ -46,23 +50,19 @@ func RunPrecompiledContractDID(evm *EVM, p PrecompiledContractDID, input []byte,
 
 type operationDID struct{}
 
-func (j *operationDID) RequiredGas(evm *EVM, input []byte) uint64 {
-	return params.DIDBaseGasCost
-}
-
-func checkPublicKey(publicKey            *did.DIDPublicKeyInfo )error{
-	if  publicKey.ID == ""{
+func checkPublicKey(publicKey *did.DIDPublicKeyInfo) error {
+	if publicKey.ID == "" {
 		return errors.New("check Doc PublicKey ID is empty")
 	}
-	if  publicKey.PublicKeyBase58 == ""{
-		return  errors.New("check Doc PublicKey PublicKeyBase58 is empty")
+	if publicKey.PublicKeyBase58 == "" {
+		return errors.New("check Doc PublicKey PublicKeyBase58 is empty")
 	}
 	return nil
 }
 
-func checkKeyReference(didWithPrefix string, authen  , authorization     []interface{},
-publicKey []did.DIDPublicKeyInfo)(error){
-	var  keyExist bool
+func checkKeyReference(didWithPrefix string, authen, authorization []interface{},
+	publicKey []did.DIDPublicKeyInfo) error {
+	var keyExist bool
 	for _, auth := range authen {
 		switch auth.(type) {
 		case string:
@@ -70,7 +70,7 @@ publicKey []did.DIDPublicKeyInfo)(error){
 			keyExist = false
 			//if it is not mine
 			controller, _ := did.GetController(keyString)
-			if controller != "" && controller !=  didWithPrefix {
+			if controller != "" && controller != didWithPrefix {
 				continue
 			}
 			for i := 0; i < len(publicKey); i++ {
@@ -81,7 +81,7 @@ publicKey []did.DIDPublicKeyInfo)(error){
 
 			}
 			if !keyExist {
-				return  errors.New("checkKeyReference authen key is not exit in public key array")
+				return errors.New("checkKeyReference authen key is not exit in public key array")
 			}
 		}
 	}
@@ -91,7 +91,7 @@ publicKey []did.DIDPublicKeyInfo)(error){
 			keyString := author.(string)
 			keyExist = false
 			controller, _ := did.GetController(keyString)
-			if controller != "" && controller !=  didWithPrefix {
+			if controller != "" && controller != didWithPrefix {
 				continue
 			}
 			for i := 0; i < len(publicKey); i++ {
@@ -102,14 +102,14 @@ publicKey []did.DIDPublicKeyInfo)(error){
 
 			}
 			if !keyExist {
-				return  errors.New("checkKeyReference authorization key is not exit in public key array")
+				return errors.New("checkKeyReference authorization key is not exit in public key array")
 			}
 		}
 	}
 	return nil
 }
 
-func checkAuthen(didWithPrefix string, authen       []interface{}, publicKey []did.DIDPublicKeyInfo)(error){
+func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DIDPublicKeyInfo) error {
 	//auth should not be empty
 	if len(authen) == 0 {
 		return errors.New("did doc Authentication is nil")
@@ -123,11 +123,11 @@ func checkAuthen(didWithPrefix string, authen       []interface{}, publicKey []d
 			keyString := auth.(string)
 			for i := 0; i < len(publicKey); i++ {
 				//if this is not my public key ignore.
-				if publicKey[i].Controller != "" && publicKey[i].Controller !=  didWithPrefix {
+				if publicKey[i].Controller != "" && publicKey[i].Controller != didWithPrefix {
 					continue
 				}
 				if verificationMethodEqual(publicKey[i].ID, keyString) {
-					if did.IsPublickDIDMatched(publicKey[i].PublicKeyBase58, didAddress){
+					if did.IsPublickDIDMatched(publicKey[i].PublicKeyBase58, didAddress) {
 						masterPubKeyVerifyOk = true
 					}
 				}
@@ -140,39 +140,39 @@ func checkAuthen(didWithPrefix string, authen       []interface{}, publicKey []d
 			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
 			err = json.Unmarshal(data, didPublicKeyInfo)
 			if err != nil {
-				return  errors.New("checkAuthen Unmarshal DIDPublicKeyInfo error")
+				return errors.New("checkAuthen Unmarshal DIDPublicKeyInfo error")
 			}
-			if err := checkPublicKey(didPublicKeyInfo); err != nil{
-				return  err
+			if err := checkPublicKey(didPublicKeyInfo); err != nil {
+				return err
 			}
 			for i := 0; i < len(publicKey); i++ {
 				//if this is not my public key ignore.
-				if publicKey[i].Controller != "" && publicKey[i].Controller !=  didWithPrefix {
+				if publicKey[i].Controller != "" && publicKey[i].Controller != didWithPrefix {
 					continue
 				}
 				if verificationMethodEqual(publicKey[i].ID, didPublicKeyInfo.ID) {
-					if did.IsPublickDIDMatched(publicKey[i].PublicKeyBase58, didAddress){
+					if did.IsPublickDIDMatched(publicKey[i].PublicKeyBase58, didAddress) {
 						masterPubKeyVerifyOk = true
 					}
 				}
 			}
 		}
 	}
-	if !masterPubKeyVerifyOk{
-		return  errors.New("authen at least have one master public key")
+	if !masterPubKeyVerifyOk {
+		return errors.New("authen at least have one master public key")
 
 	}
-	return   nil
+	return nil
 }
 
-func isPublicKeyIDUnique(p *did.DIDPayload)bool{
+func isPublicKeyIDUnique(p *did.DIDPayload) bool {
 	// New empty IDSet
 	IDSet := make(map[string]bool)
 	for i := 0; i < len(p.DIDDoc.PublicKey); i++ {
 		//get uri fregment
-		_,uriFregment := did.GetController(p.DIDDoc.PublicKey[i].ID)
+		_, uriFregment := did.GetController(p.DIDDoc.PublicKey[i].ID)
 		//
-		if _,ok := IDSet[uriFregment]; ok{
+		if _, ok := IDSet[uriFregment]; ok {
 			return false
 		}
 		IDSet[uriFregment] = true
@@ -191,9 +191,9 @@ func isPublicKeyIDUnique(p *did.DIDPayload)bool{
 				return false
 			}
 			//get uri fregment
-			_,uriFregment := did.GetController(didPublicKeyInfo.ID)
+			_, uriFregment := did.GetController(didPublicKeyInfo.ID)
 			//
-			if _,ok := IDSet[uriFregment]; ok{
+			if _, ok := IDSet[uriFregment]; ok {
 				return false
 			}
 			IDSet[uriFregment] = true
@@ -204,7 +204,7 @@ func isPublicKeyIDUnique(p *did.DIDPayload)bool{
 	return true
 }
 
-func  checkPayloadSyntax(p *did.DIDPayload) error {
+func checkPayloadSyntax(p *did.DIDPayload) error {
 	// check proof
 	if p.Proof.VerificationMethod == "" {
 		return errors.New("proof Creator is nil")
@@ -220,7 +220,7 @@ func  checkPayloadSyntax(p *did.DIDPayload) error {
 		if err := checkAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
 			return err
 		}
-		if err := checkKeyReference(doc.ID, doc.Authentication, doc.Authorization, doc.PublicKey);err != nil{
+		if err := checkKeyReference(doc.ID, doc.Authentication, doc.Authorization, doc.PublicKey); err != nil {
 			return err
 		}
 		if p.DIDDoc.Expires == "" {
@@ -228,7 +228,7 @@ func  checkPayloadSyntax(p *did.DIDPayload) error {
 		}
 
 		for _, pkInfo := range p.DIDDoc.PublicKey {
-			if err := checkPublicKey(&pkInfo); err != nil{
+			if err := checkPublicKey(&pkInfo); err != nil {
 				return err
 			}
 		}
@@ -251,6 +251,44 @@ func  checkPayloadSyntax(p *did.DIDPayload) error {
 	return nil
 }
 
+func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
+	data := getData(input, 32, uint64(len(input))-32)
+	p := new(did.DIDPayload)
+	if err := json.Unmarshal(data, p); err != nil {
+		return params.DIDBaseGasCost, err
+	}
+
+	switch p.Header.Operation {
+	case did.Create_DID_Operation, did.Update_DID_Operation:
+		payloadBase64, _ := base64url.DecodeString(p.Payload)
+		payloadInfo := new(did.DIDDoc)
+		if err := json.Unmarshal(payloadBase64, payloadInfo); err != nil {
+			return params.DIDBaseGasCost, err
+		}
+		p.DIDDoc = payloadInfo
+
+		isRegisterDID := isDID(p.DIDDoc)
+
+		configHeight := evm.chainConfig.OldDIDMigrateHeight
+		configAddr := evm.chainConfig.OldDIDMigrateAddr
+		senderAddr := evm.Context.Origin.String()
+		if configHeight == nil ||
+			evm.Context.BlockNumber.Cmp(configHeight) > 0 ||
+			senderAddr != configAddr ||
+			!isRegisterDID {
+
+			buf := new(bytes.Buffer)
+			p.Serialize(buf, did.DIDVersion)
+			needFee := getIDTxFee(payloadInfo.ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
+
+			toETHfee := uint64(needFee * float64(did.FeeRate))
+			gas := toETHfee / evm.GasPrice.Uint64()
+			log.Info("#### did RequiredGas getIDTxFee ", "needFee sela", needFee, "need gas", gas)
+			return gas, nil
+		}
+	}
+	return params.DIDBaseGasCost, nil
+}
 
 func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	//block height from context BlockNumber. config height address from config
@@ -351,7 +389,7 @@ func isDID(didDoc *did.DIDDoc) bool {
 	idString := did.GetDIDFromUri(didDoc.ID)
 
 	for _, pkInfo := range didDoc.PublicKey {
-		if pkInfo.Controller != "" && pkInfo.Controller !=  didDoc.ID {
+		if pkInfo.Controller != "" && pkInfo.Controller != didDoc.ID {
 			continue
 		}
 		publicKey := base58.Decode(pkInfo.PublicKeyBase58)
@@ -362,26 +400,26 @@ func isDID(didDoc *did.DIDDoc) bool {
 	return false
 }
 
-type resolveDID struct {}
+type resolveDID struct{}
 
-func (j *resolveDID) RequiredGas(evm *EVM, input []byte) uint64 {
-	return params.ResolveDIDCost
+func (j *resolveDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
+	return params.ResolveDIDCost, nil
 }
 
 func (j *resolveDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	var didDocState didapi.DidDocState = didapi.NonExist
-	data := getData(input, 32, uint64(len(input) - 32))
+	data := getData(input, 32, uint64(len(input)-32))
 	params := make(map[string]interface{})
 
 	err := json.Unmarshal(data, &params)
 	if err != nil {
-		return false32Byte, errors.New( "resolveDID input is error" + string(data))
+		return false32Byte, errors.New("resolveDID input is error" + string(data))
 	}
 
 	//remove DID_ELASTOS_PREFIX
 	idParam, ok := params["did"].(string)
 	if !ok {
-		return false32Byte, errors.New( "did is null")
+		return false32Byte, errors.New("did is null")
 	}
 	id := idParam
 	if rawdb.IsURIHasPrefix(idParam) {
