@@ -807,7 +807,7 @@ var (
 	OldDIDMigrateAddrFlag = cli.StringFlag{
 		Name:  "olddidmigrateaddr",
 		Usage: "configue old did migrate address",
-		Value: "0xC445f9487bF570fF508eA9Ac320b59730e81e503",
+		Value: "0xFEca85Ac94C1c9ef6e1293fc1F94486305420D7f",
 	}
 )
 
