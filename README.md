@@ -124,7 +124,7 @@ contract = new web3.eth.Contract([{"constant":false,"inputs":[{"name":"_addr","t
 contract.options.address = deploy_contract_address;
 // set account contract keystore info
 acc = web3.eth.accounts.decrypt(keystore_content, ketstore_password);   
-// call receivePayload function，params：(ELA main chain address，amount(In ela up to convert wei 10000000000)，fee)
+// call receivePayload function，params：(EID main chain address，amount(In ela up to convert wei 10000000000)，fee)
 cdata  = contract.methods.receivePayload(ELA_address, withdraw_amount, fee).encodeABI();
 // gas minimum is 3000000，gasPrice is any value
 tx = {data: cdata, to: contract.options.address, from: acc.address, gas: "3000000", gasPrice: "20000000000"};
@@ -136,8 +136,8 @@ acc.signTransaction(tx).then((res)=>{
    console.log(stx.rawTransaction);
    web3.eth.sendSignedTransaction(stx.rawTransaction).then(console)});
 ```
-*Note: ELA testnet server Deploy Contract Address: `0x491bC043672B9286fA02FA7e0d6A3E5A0384A31A`
-ELA mainnet server Deploy Contract Address: `0xC445f9487bF570fF508eA9Ac320b59730e81e503`*
+*Note: EID testnet server Deploy Contract Address: `0x491bC043672B9286fA02FA7e0d6A3E5A0384A31A`
+EID mainnet server Deploy Contract Address: `0x6F60FdED6303e73A83ef99c53963407f415e80b9`*
 
 ### Configuration
 

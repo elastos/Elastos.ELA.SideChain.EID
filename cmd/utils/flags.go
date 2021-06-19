@@ -765,7 +765,7 @@ var (
 	BlackContractAddr = cli.StringFlag{
 		Name:  "black.contract.address",
 		Usage: "configue Black Contract address",
-		Value: "0xC445f9487bF570fF508eA9Ac320b59730e81e503",
+		Value: "0x6F60FdED6303e73A83ef99c53963407f415e80b9",
 	}
 	PassBalance = cli.Int64Flag{
 		Name:  "pass.balance",
