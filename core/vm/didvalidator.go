@@ -1308,25 +1308,30 @@ func GetMultisignMN(mulstiSign string) (int, int, error) {
 //Payload
 //ID  Expires  Controller Operation Payload interface
 func getIDTxFee(customID, expires, operation string, controller interface{}, payloadLen int) float64 {
-	//A id lenght lengthRate
-	A := getCustomizedDIDLenFactor(customID)
-	//B Valid period lifeRate
-	B := getValidPeriodFactor(expires, time.Now())
-	//C operation create or update OperationRate
-	C := getOperationFactor(operation)
-	//M controller sign number multisigRate
-	M := getControllerFactor(controller)
-	//E doc size sizeRate
-	E := getSizeFactor(payloadLen)
-	//F factor got from cr proposal
-	F := didParam.CustomIDFeeRate
+	//lengthRate id lenght lengthRate
+	lengthRate := getCustomizedDIDLenFactor(customID)
+	//lifeRate Valid period lifeRate
+	lifeRate := getValidPeriodFactor(expires, time.Now())
+	//OperationRate operation create or update OperationRate
+	OperationRate := getOperationFactor(operation)
+	//multisigRate controller sign number multisigRate
+	multisigRate := getControllerFactor(controller)
+	//sizeRate doc size sizeRate
+	sizeRate := getSizeFactor(payloadLen)
+	//CustomIDFeeRate factor got from cr proposal
+	CustomIDFeeRate := didParam.CustomIDFeeRate
 	if spv.SpvService != nil {
 		feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
 		if feeRate != 0 {
-			F = feeRate
+			CustomIDFeeRate = feeRate
 		}
 	}
-	fee := (A*B*C*E + M) * float64(F)
+	//log.Info("#### Info getIDTxFee", "lengthRate", lengthRate, "lifeRate", lifeRate,
+	//	"OperationRate", OperationRate, "multisigRate", multisigRate, "sizeRate", sizeRate,
+	//	"CustomIDFeeRate", CustomIDFeeRate)
+	fmt.Printf("#### Printf getIDTxFee lengthRate %.16f lifeRate%.16f OperationRate %.16f multisigRate%.16f sizeRate%.16f CustomIDFeeRate %.16f",
+		lengthRate,  lifeRate, OperationRate,multisigRate,  sizeRate, float64(CustomIDFeeRate))
+	fee := (lengthRate*lifeRate*OperationRate*sizeRate + multisigRate) * float64(CustomIDFeeRate)
 	return fee
 }
 
