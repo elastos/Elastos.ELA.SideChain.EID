@@ -1326,9 +1326,6 @@ func getIDTxFee(customID, expires, operation string, controller interface{}, pay
 			CustomIDFeeRate = feeRate
 		}
 	}
-	//log.Info("#### Info getIDTxFee", "lengthRate", lengthRate, "lifeRate", lifeRate,
-	//	"OperationRate", OperationRate, "multisigRate", multisigRate, "sizeRate", sizeRate,
-	//	"CustomIDFeeRate", CustomIDFeeRate)
 	fmt.Printf("#### Printf getIDTxFee lengthRate %.16f lifeRate%.16f OperationRate %.16f multisigRate%.16f sizeRate%.16f CustomIDFeeRate %.16f",
 		lengthRate,  lifeRate, OperationRate,multisigRate,  sizeRate, float64(CustomIDFeeRate))
 	fee := (lengthRate*lifeRate*OperationRate*sizeRate + multisigRate) * float64(CustomIDFeeRate)

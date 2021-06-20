@@ -286,8 +286,6 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 			}
 			needFee := getIDTxFee(ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
 
-			//toETHfee := uint64(needFee * float64(did.FeeRate))
-			//gas := toETHfee / evm.GasPrice.Uint64()
 			log.Info("#### did RequiredGas getIDTxFee ",  "needFee", uint64(needFee))
 			return uint64(needFee), nil
 		}
