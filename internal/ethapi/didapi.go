@@ -108,6 +108,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 
 	if len(txsData) == 0 {
 		rpcPayloadDid.Status = didapi.CredentialNonExist
+		rpcPayloadDid.ID = idParam
 	} else if len(txsData) == 1 {
 		rpcPayloadDid.Status = didapi.CredentialValid
 	} else if len(txsData) == 2 {
@@ -154,9 +155,9 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	id := idParam
 	if rawdb.IsURIHasPrefix(idParam) {
 		id = did.GetDIDFromUri(id)
-	}else{
+	} else {
 		//add prefix
-		idParam = did.DID_ELASTOS_PREFIX+ idParam
+		idParam = did.DID_ELASTOS_PREFIX + idParam
 	}
 
 	//check is valid address
