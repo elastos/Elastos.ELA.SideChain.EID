@@ -1573,28 +1573,31 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.NetworkId = 23
 		}
 		cfg.Genesis = core.DefaultTestnetGenesisBlock()
-		cfg.BlackContractAddr = "0x491bC043672B9286fA02FA7e0d6A3E5A0384A31A"
+		cfg.BlackContractAddr = "0x762a042b8B9f9f0d3179e992d965c11785219599"
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "testnet", "geth")
 		}
+		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 24
 		}
 		cfg.Genesis = core.DefaultRinkebyGenesisBlock()
-		cfg.BlackContractAddr = "0x491bC043672B9286fA02FA7e0d6A3E5A0384A31A"
+		cfg.BlackContractAddr = "0x762a042b8B9f9f0d3179e992d965c11785219599"
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "rinkeby", "geth")
 		}
+		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
 	case ctx.GlobalBool(GoerliFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 25
 		}
 		cfg.Genesis = core.DefaultGoerliGenesisBlock()
-		cfg.BlackContractAddr = "0x491bC043672B9286fA02FA7e0d6A3E5A0384A31A"
+		cfg.BlackContractAddr = "0x762a042b8B9f9f0d3179e992d965c11785219599"
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "goerli", "geth")
 		}
+		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
@@ -1621,6 +1624,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(MinerGasPriceFlag.Name) && !ctx.GlobalIsSet(MinerLegacyGasPriceFlag.Name) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
+		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
 	}
 }
 
