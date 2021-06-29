@@ -284,7 +284,7 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 			if isRegisterDID {
 				ID = ""
 			}
-			needFee := getIDTxFee(ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
+			needFee := getIDTxFee(evm, ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
 
 			log.Info("#### did RequiredGas getIDTxFee ",  "needFee", uint64(needFee))
 			return uint64(needFee), nil
