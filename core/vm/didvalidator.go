@@ -138,18 +138,18 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 
 func checkRegisterDIDTxFee(operation *did.DIDPayload, txFee uint64) error {
 	//2. calculate the  fee that one cutomized did txls should paid
-	payload := operation.DIDDoc
-	buf := new(bytes.Buffer)
-	operation.Serialize(buf, did.DIDVersion)
-
-	needFee := getIDTxFee(payload.ID, payload.Expires, operation.Header.Operation, nil, buf.Len())
-	log.Debug("#### checkRegisterDIDTxFee ", "needFee sela", needFee)
-
-	toETHfee := needFee * float64(did.FeeRate)
-	if float64(txFee) < toETHfee {
-		msg := fmt.Sprintf("invalid txFee, need %f, set %f", toETHfee, float64(txFee))
-		return errors.New(msg)
-	}
+	//payload := operation.DIDDoc
+	//buf := new(bytes.Buffer)
+	//operation.Serialize(buf, did.DIDVersion)
+	//
+	//needFee := getIDTxFee(payload.ID, payload.Expires, operation.Header.Operation, nil, buf.Len())
+	//log.Debug("#### checkRegisterDIDTxFee ", "needFee sela", needFee)
+	//
+	//toETHfee := needFee * float64(did.FeeRate)
+	//if float64(txFee) < toETHfee {
+	//	msg := fmt.Sprintf("invalid txFee, need %f, set %f", toETHfee, float64(txFee))
+	//	return errors.New(msg)
+	//}
 
 	//check fee and should paid fee
 	return nil
@@ -157,17 +157,17 @@ func checkRegisterDIDTxFee(operation *did.DIDPayload, txFee uint64) error {
 
 func checkCustomizedDIDTxFee(payload *did.DIDPayload, txFee uint64) error {
 	//2. calculate the  fee that one cutomized did tx should paid
-	doc := payload.DIDDoc
-	buf := new(bytes.Buffer)
-	payload.Serialize(buf, did.DIDVersion)
-	needFee := getIDTxFee(doc.ID, doc.Expires, payload.Header.Operation, doc.Controller, buf.Len())
-
-	toETHfee := needFee * float64(did.FeeRate)
-
-	if float64(txFee) < toETHfee {
-		msg := fmt.Sprintf("invalid txFee, need %f, set %f", toETHfee, float64(txFee))
-		return errors.New(msg)
-	}
+	//doc := payload.DIDDoc
+	//buf := new(bytes.Buffer)
+	//payload.Serialize(buf, did.DIDVersion)
+	//needFee := getIDTxFee(doc.ID, doc.Expires, payload.Header.Operation, doc.Controller, buf.Len())
+	//
+	//toETHfee := needFee * float64(did.FeeRate)
+	//
+	//if float64(txFee) < toETHfee {
+	//	msg := fmt.Sprintf("invalid txFee, need %f, set %f", toETHfee, float64(txFee))
+	//	return errors.New(msg)
+	//}
 
 	//check fee and should paid fee
 	return nil
@@ -1307,11 +1307,12 @@ func GetMultisignMN(mulstiSign string) (int, int, error) {
 
 //Payload
 //ID  Expires  Controller Operation Payload interface
-func getIDTxFee(customID, expires, operation string, controller interface{}, payloadLen int) float64 {
+func getIDTxFee(evm *EVM, customID, expires, operation string, controller interface{}, payloadLen int) float64 {
 	//lengthRate id lenght lengthRate
 	lengthRate := getCustomizedDIDLenFactor(customID)
 	//lifeRate Valid period lifeRate
-	lifeRate := getValidPeriodFactor(expires, time.Now())
+	stamp := time.Unix(evm.Time.Int64(), 0)
+	lifeRate := getValidPeriodFactor(expires, stamp)
 	//OperationRate operation create or update OperationRate
 	OperationRate := getOperationFactor(operation)
 	//multisigRate controller sign number multisigRate
@@ -1320,12 +1321,12 @@ func getIDTxFee(customID, expires, operation string, controller interface{}, pay
 	sizeRate := getSizeFactor(payloadLen)
 	//CustomIDFeeRate factor got from cr proposal
 	CustomIDFeeRate := didParam.CustomIDFeeRate
-	if spv.SpvService != nil {
-		feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
-		if feeRate != 0 {
-			CustomIDFeeRate = feeRate
-		}
-	}
+	//if spv.SpvService != nil {
+	//	feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
+	//	if feeRate != 0 {
+	//		CustomIDFeeRate = feeRate
+	//	}
+	//}
 	fmt.Printf("#### Printf getIDTxFee lengthRate %.16f lifeRate%.16f OperationRate %.16f multisigRate%.16f sizeRate%.16f CustomIDFeeRate %.16f",
 		lengthRate,  lifeRate, OperationRate,multisigRate,  sizeRate, float64(CustomIDFeeRate))
 	fee := (lengthRate*lifeRate*OperationRate*sizeRate + multisigRate) * float64(CustomIDFeeRate)
