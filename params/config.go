@@ -37,7 +37,7 @@ var (
 // the chain it belongs to.
 var TrustedCheckpoints = map[common.Hash]*TrustedCheckpoint{
 	MainnetGenesisHash: MainnetTrustedCheckpoint,
-	TestnetGenesisHash: TestnetTrustedCheckpoint,
+	//TestnetGenesisHash: TestnetTrustedCheckpoint,
 	RinkebyGenesisHash: RinkebyTrustedCheckpoint,
 	GoerliGenesisHash:  GoerliTrustedCheckpoint,
 }
@@ -100,10 +100,10 @@ var (
 
 	// MainnetTrustedCheckpoint contains the light client trusted checkpoint for the main network.
 	MainnetTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 30,
-		SectionHead:  common.HexToHash("0xe1f3f93a9e4a4155abaefefb268c9d3f28a12c87d3d62f668b6d7b528199ba7a"),
-		CHTRoot:      common.HexToHash("0x4faf71e39a25604bff04af3265a416ced4659be338675209d3323356668fef8e"),
-		BloomRoot:    common.HexToHash("0xad831af452d3ce534e8ed3ce271826c1310c786ee135fae5acbacc41b03142a6"),
+		SectionIndex: 4,
+		SectionHead:  common.HexToHash("0xf59eec56c4d82a960f5a54bed3f50e562ef30c5b212a9268f5136d67e07f92d3"),
+		CHTRoot:      common.HexToHash("0xebe5a789c01456c4726718790efb793442fc80f3c9a64f2085f4bdfe045ae857"),
+		BloomRoot:    common.HexToHash("0x33b936c91c36d9c10490fcb5b9eed785e4dea9b2bd5f3f889d02feb88194bbba"),
 	}
 
 	// MainnetCheckpointOracle contains a set of configs for the main network oracle.
