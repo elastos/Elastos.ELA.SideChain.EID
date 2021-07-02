@@ -29,7 +29,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0x7d0702054ad68913eff9137dfa0b0b6ff701d55062359deacad14859561f5567")
 	TestnetGenesisHash = common.HexToHash("0x3d0f9da9320556f6d58129419e041de28cf515eedc6b59f8dae49df98e3f943c")
-	RinkebyGenesisHash = common.HexToHash("0x14970cef05d63c9dd563ad99a581bcbce98a29257a97580e1daa7a9371a61e47")
+	RinkebyGenesisHash = common.HexToHash("0x1d2222712714d2419a27ea972e5a1e4b6ace05719a07f8aa75710780eff0280b")
 	GoerliGenesisHash  = common.HexToHash("0xbf7e331f7f7c1dd2e05159666b3bf8bc7a8a3a9eb1d518969eab529dd9b88c1a")
 )
 
@@ -38,8 +38,8 @@ var (
 var TrustedCheckpoints = map[common.Hash]*TrustedCheckpoint{
 	MainnetGenesisHash: MainnetTrustedCheckpoint,
 	//TestnetGenesisHash: TestnetTrustedCheckpoint,
-	RinkebyGenesisHash: RinkebyTrustedCheckpoint,
-	GoerliGenesisHash:  GoerliTrustedCheckpoint,
+	//RinkebyGenesisHash: RinkebyTrustedCheckpoint,
+	//GoerliGenesisHash:  GoerliTrustedCheckpoint,
 }
 
 // CheckpointOracles associates each known checkpoint oracles with the genesis hash of
