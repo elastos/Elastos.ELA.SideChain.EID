@@ -110,14 +110,14 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 		return errors.New("checkDIDTransaction [VM]  Check Sig FALSE")
 	}
 	doc := p.DIDDoc
-	if err = checkVerifiableCredentials(evm, doc.ID, doc.VerifiableCredential,
-		doc.Authentication, doc.PublicKey, nil, true); err != nil {
-		if err.Error() == "[VM] Check Sig FALSE" && evm.Context.BlockNumber.Cmp(configHeight) < 0{
-			log.Warn("checkRegisterDID end "," Check Sig FALSE ID", p.DIDDoc.ID)
-			return nil
-		}
-		return err
-	}
+	// if err = checkVerifiableCredentials(evm, doc.ID, doc.VerifiableCredential,
+	// 	doc.Authentication, doc.PublicKey, nil, true); err != nil {
+	// 	if err.Error() == "[VM] Check Sig FALSE" && evm.Context.BlockNumber.Cmp(configHeight) < 0{
+	// 		log.Warn("checkRegisterDID end "," Check Sig FALSE ID", p.DIDDoc.ID)
+	// 		return nil
+	// 	}
+	// 	return err
+	// }
 
 	if configHeight  == nil || evm.Context.BlockNumber.Cmp(configHeight) > 0 || senderAddr != configAddr {
 		DIDProofArray, err := getDocProof(p.DIDDoc.Proof)
