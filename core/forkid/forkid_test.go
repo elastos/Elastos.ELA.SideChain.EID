@@ -77,15 +77,15 @@ func TestCreation(t *testing.T) {
 			params.RinkebyChainConfig,
 			params.RinkebyGenesisHash,
 			[]testcase{
-				{0, ID{Hash: checksumToBytes(0xc070dcd1), Next: 1}},              // Unsynced, last Frontier block
-				{1, ID{Hash: checksumToBytes(0x56c61556), Next: 2}},              // First and last Homestead block
-				{2, ID{Hash: checksumToBytes(0x5d6130af), Next: 3}},              // First and last Tangerine block
-				{3, ID{Hash: checksumToBytes(0x240e0924), Next: 4}},              // First and last  Spurious block
-				{4, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}},       // First Byzantium block
-				{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}}, // Last Byzantium block
-				{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}},       // First Constantinople, and Petersburg block
-				{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}}, // Last Petersburg block
-				{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}},       // Today Istanbul block
+				{0, ID{Hash: checksumToBytes(0xca2a645c), Next: 1}},              // Unsynced, last Frontier block
+				{1, ID{Hash: checksumToBytes(0x6ac7b7aa), Next: 2}},              // First and last Homestead block
+				{2, ID{Hash: checksumToBytes(0x8a1c75cf), Next: 3}},              // First and last Tangerine block
+				{3, ID{Hash: checksumToBytes(0x6ebf4e17), Next: 4}},              // First and last  Spurious block
+				{4, ID{Hash: checksumToBytes(0xcd9b45ea), Next: 0}},       // First Byzantium block
+				{2208899, ID{Hash: checksumToBytes(0xcd9b45ea), Next: 0}}, // Last Byzantium block
+				//{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}},       // First Constantinople, and Petersburg block
+				//{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}}, // Last Petersburg block
+				//{2208899, ID{Hash: checksumToBytes(0x84a0dabb), Next: 0}},       // Today Istanbul block
 				//{10000000, ID{Hash: checksumToBytes(0x879d6e30), Next: 0}},      // Future Istanbul block
 			},
 		},
