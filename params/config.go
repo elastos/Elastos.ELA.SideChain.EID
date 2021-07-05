@@ -37,7 +37,7 @@ var (
 // the chain it belongs to.
 var TrustedCheckpoints = map[common.Hash]*TrustedCheckpoint{
 	MainnetGenesisHash: MainnetTrustedCheckpoint,
-	//TestnetGenesisHash: TestnetTrustedCheckpoint,
+	TestnetGenesisHash: TestnetTrustedCheckpoint,
 	//RinkebyGenesisHash: RinkebyTrustedCheckpoint,
 	//GoerliGenesisHash:  GoerliTrustedCheckpoint,
 }
@@ -167,10 +167,10 @@ var (
 
 	// TestnetTrustedCheckpoint contains the light client trusted checkpoint for the Ropsten test network.
 	TestnetTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 1,
-		SectionHead:  common.HexToHash("0xfeddddc5cf093ad3454b58eeeeaa37df6e45d94a5c5908926422fc289d33f397"),
-		CHTRoot:      common.HexToHash("0x959e4184054ce06490be80115554cdf72e4fd0ffe5c6dcd382976dfa0ef2d9e0"),
-		BloomRoot:    common.HexToHash("0x15abe2948f02d44b77d6b34f8c9e451cdc8f4e302fd448a384b6483997ee38a2"),
+		SectionIndex: 0x0,
+		SectionHead:  common.HexToHash("0x2052d0ab4392c28f9293469b4d0649be610f8e94c697b6b2a10987b453334835"),
+		CHTRoot:      common.HexToHash("0xb9bc3e543176ba51159ca616b58d8390990a50d67aae672be1117c8d9cf2779a"),
+		BloomRoot:    common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"),
 	}
 
 	// TestnetCheckpointOracle contains a set of configs for the Ropsten test network oracle.
