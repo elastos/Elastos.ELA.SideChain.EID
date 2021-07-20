@@ -40,7 +40,7 @@ func RunPrecompiledContractDID(evm *EVM, p PrecompiledContractDID, input []byte,
 	if error != nil {
 		return nil, error
 	}
-	log.Error("run did contract", "left gas", contract.Gas)
+	log.Info("run did contract", "left gas", contract.Gas)
 	if contract.UseGas(gas) {
 		return p.Run(evm, input, contract.Gas)
 	}
