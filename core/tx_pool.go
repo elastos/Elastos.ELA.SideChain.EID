@@ -522,10 +522,13 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
 	isMigrateDID := false
-	signer := types.MakeSigner(pool.chainconfig, pool.chain.CurrentBlock().Number())
-	msg, err := tx.AsMessage(signer)
+	// Make sure the transaction is signed properly
+	from, err := types.Sender(pool.signer, tx)
+	if err != nil {
+		return ErrInvalidSender
+	}
 
-	if err == nil && msg.From().String() == pool.chainconfig.OldDIDMigrateAddr &&
+	if err == nil && from.String() == pool.chainconfig.OldDIDMigrateAddr &&
 		pool.chainconfig.OldDIDMigrateHeight != nil &&
 		pool.chain.CurrentBlock().Number().Cmp(pool.chainconfig.OldDIDMigrateHeight) <= 0 {
 		isMigrateDID = true
@@ -549,11 +552,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if pool.currentMaxGas < tx.Gas() {
 		return ErrGasLimit
 	}
-	// Make sure the transaction is signed properly
-	from, err := types.Sender(pool.signer, tx)
-	if err != nil {
-		return ErrInvalidSender
-	}
+
 	// Drop non-local transactions under our own minimal accepted gas price
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
 	if !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {
