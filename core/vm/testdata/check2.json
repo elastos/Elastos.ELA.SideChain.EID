@@ -1,0 +1,143 @@
+{
+  "expires": "2026-07-13T04:35:55Z",
+  "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
+  "publicKey": [
+    {
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#primary",
+      "type": "ECDSAsecp256r1",
+      "controller": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
+      "publicKeyBase58": "vMYSz32qbWsNeDJpKsuuMaFsiApuZMz9XVy9DmEwysWg"
+    },
+    {
+      "type": "ECDSAsecp256r1",
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#key3",
+      "controller": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
+      "publicKeyBase58": "v2oJHmPL3omXwaW9U5ZjJPkqL8PBMnW4AKzuUgntNNDj"
+    },
+    {
+      "controller": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#key2",
+      "publicKeyBase58": "vsD4poMxMAHsXGnPUzXSBuq5QZym9tbrUpVXrmnYHToJ",
+      "type": "ECDSAsecp256r1"
+    },
+    {
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#recovery",
+      "type": "ECDSAsecp256r1",
+      "controller": "did:elastos:iaZ859Xhc2UGo2XZpgu6wVaF3F3oZ1YwYB",
+      "publicKeyBase58": "va6x6Wk863FchxYLvoFybS47u4h23EsxYXGwGbA3mVDm"
+    }
+  ],
+  "authorization": [
+    "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#recovery"
+  ],
+  "authentication": [
+    "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#primary",
+    "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#key3",
+    "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#key2"
+  ],
+  "proof": {
+    "signatureValue": "5gFhvdkMdHb2zXhKMRyQ-aGJkQKCOs_nkhY2Uesm8pnvd9jaSJaI27SEqWH2Gul76jJgUUlySMPKFi_YH3GbTA",
+    "type": "ECDSAsecp256r1",
+    "creator": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#primary",
+    "created": "2021-07-13T04:35:55Z"
+  },
+  "verifiableCredential": [
+    {
+      "type": [
+        "SelfProclaimedCredential",
+        "BasicProfileCredential"
+      ],
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#profile",
+      "expirationDate": "2026-07-13T04:35:55Z",
+      "issuanceDate": "2021-07-13T04:35:55Z",
+      "issuer": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
+      "credentialSubject": {
+        "name": "John",
+        "nation": "Singapore",
+        "gender": "Male",
+        "email": "john@example.com",
+        "twitter": "@john",
+        "language": "English",
+        "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
+      },
+      "proof": {
+        "verificationMethod": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#primary",
+        "created": "2021-07-13T04:35:55Z",
+        "type": "ECDSAsecp256r1",
+        "signature": "7uWBG3Q6uHxR4YJDp1mSPCTSLqumJpoeyQRZbMfD7LK43oUijrOsfSySdsHrQWU7pdon0MN5TOw1NWv8LvFCaw"
+      }
+    },
+    {
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#email",
+      "issuanceDate": "2021-07-13T04:35:55Z",
+      "expirationDate": "2026-07-13T04:35:55Z",
+      "issuer": "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj",
+      "type": [
+        "InternetAccountCredential",
+        "EmailCredential",
+        "BasicProfileCredential"
+      ],
+      "proof": {
+        "signature": "F-Ve6qZPGL5-wnMI6BIvyG3h4tHk6MY84Dww1HZJYlvpD1o967Ht9WpLgW0hqQJYt_skzyxy_WK-aJCHIICUtw",
+        "type": "ECDSAsecp256r1",
+        "created": "2021-07-13T04:35:55Z",
+        "verificationMethod": "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary"
+      },
+      "credentialSubject": {
+        "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
+        "email": "john@example.com"
+      }
+    }
+  ],
+  "service": [
+    {
+      "abc": "helloworld",
+      "bar": "foobar",
+      "date": "2021-07-13T04:35:55Z",
+      "foo": 123,
+      "foobar": "lalala...",
+      "serviceEndpoint": "carrier://X2tDd1ZTErwnHNot8pTdhp7C7Y9FxMPGD8ppiasUT4UsHH2BpF1d",
+      "type": "CarrierAddress",
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#carrier",
+      "map": {
+        "date": "2021-07-13T04:35:55Z",
+        "BAR": "Foobar",
+        "foo": 123,
+        "DATE": "2021-07-13T04:35:55Z",
+        "ABC": "Helloworld",
+        "FOO": 678,
+        "FOOBAR": "Lalala...",
+        "abc": "helloworld",
+        "bar": "foobar",
+        "foobar": "lalala..."
+      },
+      "ABC": "Helloworld",
+      "BAR": "Foobar",
+      "DATE": "2021-07-13T04:35:55Z",
+      "FOO": 678,
+      "FOOBAR": "Lalala...",
+      "MAP": {
+        "abc": "helloworld",
+        "bar": "foobar",
+        "date": "2021-07-13T04:35:55Z",
+        "ABC": "Helloworld",
+        "FOO": 678,
+        "FOOBAR": "Lalala...",
+        "foo": 123,
+        "foobar": "lalala...",
+        "BAR": "Foobar",
+        "DATE": "2021-07-13T04:35:55Z"
+      }
+    },
+    {
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#openid",
+      "type": "OpenIdConnectVersion1.0Service",
+      "serviceEndpoint": "https://openid.example.com/"
+    },
+    {
+      "id": "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y#vcr",
+      "type": "CredentialRepositoryService",
+      "serviceEndpoint": "https://did.example.com/credentials"
+    }
+  ]
+}

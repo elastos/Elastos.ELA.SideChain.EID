@@ -204,7 +204,31 @@ func isPublicKeyIDUnique(p *did.DIDPayload) bool {
 	return true
 }
 
-func checkPayloadSyntax(p *did.DIDPayload) error {
+func isVerifiCreIDUnique(p *did.DIDPayload) bool {
+	// New empty IDSet
+	IDSet := make(map[string]bool)
+	for _,v := range p.DIDDoc.VerifiableCredential{
+		if _, ok := IDSet[v.ID]; ok {
+			return false
+		}
+		IDSet[v.ID] = true
+	}
+	return true
+}
+
+func isServiceIDUnique(p *did.DIDPayload) bool {
+	// New empty IDSet
+	IDSet := make(map[string]bool)
+	for _,s :=range p.DIDDoc.Service{
+		if _, ok := IDSet[s.ID]; ok {
+			return false
+		}
+		IDSet[s.ID] = true
+	}
+	return true
+}
+
+func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	// check proof
 	if p.Proof.VerificationMethod == "" {
 		return errors.New("proof Creator is nil")
@@ -216,6 +240,14 @@ func checkPayloadSyntax(p *did.DIDPayload) error {
 	if p.DIDDoc != nil {
 		if !isPublicKeyIDUnique(p) {
 			return errors.New("doc public key id is not unique")
+		}
+		if evm.Context.BlockNumber.Cmp(evm.chainConfig.DocArraySortHeight) > 0 {
+			if !isVerifiCreIDUnique(p) {
+				return errors.New("doc verifiable credential id is not unique")
+			}
+			if !isServiceIDUnique(p) {
+				return errors.New("doc service id is not unique")
+			}
 		}
 		if err := checkAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
 			return err

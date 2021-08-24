@@ -803,7 +803,11 @@ var (
 		Usage: "before this height OldDIDMigrateAddrFlag can migate old did",
 		Value: 34560,//48 hours
 	}
-
+	DocArraySortHeightFlag = cli.Uint64Flag{
+		Name:  "docarraysortheight",
+		Usage: "after this height DocArraySortHeight doc array need sort",
+		Value: 0,//todo
+	}
 	OldDIDMigrateAddrFlag = cli.StringFlag{
 		Name:  "olddidmigrateaddr",
 		Usage: "configue old did migrate address",
@@ -1566,6 +1570,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.PbftDPosPort = uint16(ctx.GlobalUint(PbftDposPort.Name))
 	cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(ctx.GlobalUint64(OldDIDMigrateHeightFlag.Name))
 	cfg.OldDIDMigrateAddr = ctx.GlobalString(OldDIDMigrateAddrFlag.Name)
+	cfg.DocArraySortHeight = new(big.Int).SetUint64(ctx.GlobalUint64(DocArraySortHeightFlag.Name))
+	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
 	// Override any default configs for hard coded networks.
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
@@ -1578,6 +1584,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "testnet", "geth")
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
+		cfg.DocArraySortHeight =  new(big.Int).SetUint64(1)
+
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 24
@@ -1588,6 +1596,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "rinkeby", "geth")
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 	case ctx.GlobalBool(GoerliFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 25
@@ -1598,6 +1607,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "goerli", "geth")
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
@@ -1625,6 +1635,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 	}
 }
 

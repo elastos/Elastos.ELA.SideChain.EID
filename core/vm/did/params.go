@@ -1,13 +1,14 @@
 package did
 
-import "github.com/elastos/Elastos.ELA/common"
+import (
+	"github.com/elastos/Elastos.ELA/common"
+)
 
 const FeeRate int64 = 10000000000
 
 type DIDParams struct {
 	// CustomIDFeeRate defines the default fee rate of registerCustomID transaction
 	CustomIDFeeRate common.Fixed64
-
 	IsTest bool
 }
 
