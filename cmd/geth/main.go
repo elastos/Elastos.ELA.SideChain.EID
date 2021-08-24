@@ -173,6 +173,7 @@ var (
 		utils.PbftDposPort,
 		utils.OldDIDMigrateAddrFlag,
 		utils.OldDIDMigrateHeightFlag,
+		utils.DocArraySortHeightFlag,
 	}
 
 	rpcFlags = []cli.Flag{

@@ -93,12 +93,60 @@ type DIDPayloadData struct {
 	Expires              string                 `json:"expires"`
 }
 
+type PublicKeysSlice [] DIDPublicKeyInfo
+
+func (a PublicKeysSlice) Len() int {
+	return len(a)
+}
+func (a PublicKeysSlice) Swap(i, j int){
+	a[i], a[j] = a[j], a[i]
+}
+func (a PublicKeysSlice) Less(i, j int) bool {
+	result := false
+	if strings.Compare(a[i].ID, a[j].ID) < 0 {
+		result = true
+	}
+	return result
+}
+
+
+type ServiceSlice [] Service
+
+func (s ServiceSlice) Len() int {
+	return len(s)
+}
+func (s ServiceSlice) Swap(i, j int){
+	s[i], s[j] = s[j], s[i]
+}
+func (s ServiceSlice) Less(i, j int) bool {
+	result := false
+	if strings.Compare(s[i].ID, s[j].ID) < 0 {
+		result = true
+	}
+	return result
+}
+
+type VerifiableCredentialSlice [] VerifiableCredential
+
+func (v VerifiableCredentialSlice) Len() int {
+	return len(v)
+}
+func (v VerifiableCredentialSlice) Swap(i, j int){
+	v[i], v[j] = v[j], v[i]
+}
+func (v VerifiableCredentialSlice) Less(i, j int) bool {
+	result := false
+	if strings.Compare(v[i].ID, v[j].ID) < 0 {
+		result = true
+	}
+	return result
+}
+
 func (c *DIDPayloadData) GetData() []byte {
 	data, err := didjson.Marshal(c)
 	if err != nil {
 		return nil
 	}
-	println("data ", string(data))
 	return data
 }
 

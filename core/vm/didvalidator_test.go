@@ -48,6 +48,7 @@ var (
 	customizedDIDDocBytes2          []byte
 
 	headerPayloadBytes        []byte
+	changeDocPayload		  []byte
 	issuerDocByts             []byte
 	docDocBytes               []byte
 	custIDSingleSignDocBytes1 []byte
@@ -66,6 +67,10 @@ var (
 	batTTDocByts    []byte
 	barzIDDocByts   []byte
 	bazNewIDDocByts []byte
+
+	//doc slice sort
+	check2DocByte []byte
+
 )
 
 const (
@@ -89,6 +94,9 @@ func init() {
 	custIDVerifCredDocBytes, _ = LoadJsonData("./testdata/customized_did_verifiable_credential.json")
 
 	headerPayloadBytes, _ = LoadJsonData("./testdata/customized_did_multi_controllers.json")
+	changeDocPayload, _ = LoadJsonData("./testdata/changedocpayload.json")
+
+
 	issuerDocByts, _ = LoadJsonData("./testdata/issuer.json")
 	docDocBytes, _ = LoadJsonData("./testdata/document.json")
 	didVerifCred, _ = LoadJsonData("./testdata/did_verifiable_credential.json")
@@ -101,6 +109,7 @@ func init() {
 	batTTDocByts, _ = LoadJsonData("./testdata/baz.tt.json")
 	barzIDDocByts, _ = LoadJsonData("./testdata/baz.id.json")
 	bazNewIDDocByts, _ = LoadJsonData("./testdata/baz.new.id.json")
+	check2DocByte, _ = LoadJsonData("./testdata/check2.json")
 }
 
 var didPayloadBytes = []byte(
@@ -351,7 +360,7 @@ func getPayloadDIDInfo(id string, didOperation string, docBytes []byte, privateK
 		Payload: base64url.EncodeToString(docBytes),
 		Proof: did.Proof{
 			Type:               "ECDSAsecp256r1",
-			VerificationMethod: id + "#primary", //"did:elastos:" +
+			VerificationMethod: id + "#primary", //"did:elastos:" + primary
 		},
 		DIDDoc: info,
 	}
@@ -1273,7 +1282,40 @@ func checkDIDTransaction(didpayload []byte, db *state.StateDB) error {
 	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
+	evm.Time = &big.Int{}
+	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
+	if gas == math.MaxUint64 {
+		return errors.New("RequiredGas is 0")
+	}
+	result, err := did_contract.Run(evm, []byte(didpayload), gas)
+	if err != nil {
+		return err
+	}
+	val := common.BytesToHash(result)
+	if val.Big().Uint64() != 1 {
+		return errors.New("result error")
+	}
+	return nil
+}
 
+func checkDIDTransactionAfterMigrateHeight(didpayload []byte, db *state.StateDB) error {
+	preData := common.Hash{}
+	didpayload = append(preData.Bytes(), didpayload...)
+
+	did_contract := new(operationDID)
+	statedb := db
+	if statedb == nil {
+		statedb, _ = state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	}
+
+	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	evm.BlockNumber = new(big.Int).SetInt64(3)
+	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
+	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
+	evm.chainConfig.OldDIDMigrateAddr = "0xb445f9487bF570fF508eA9Ac320b59730e81e503"
+	evm.chainConfig.DocArraySortHeight= new(big.Int).SetInt64(2)
+	evm.Time = &big.Int{}
 	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
 	if gas == math.MaxUint64 {
 		return errors.New("RequiredGas is 0")
@@ -1852,4 +1894,11 @@ func TestIsDID(t *testing.T) {
 
 	ret := isDID(info)
 	assert.Equal(t, false ,ret)
+}
+
+func TestDocSliceSort(t *testing.T) {
+
+	err := checkDIDTransactionAfterMigrateHeight(changeDocPayload, nil)
+	assert.NoError(t, err)
+
 }

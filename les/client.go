@@ -81,6 +81,9 @@ func New(ctx *node.ServiceContext, config *eth.Config, node *node.Node) (*LightE
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir
 	chainConfig.OldDIDMigrateAddr = config.OldDIDMigrateAddr
 	chainConfig.OldDIDMigrateHeight = config.OldDIDMigrateHeight
+	chainConfig.DocArraySortHeight = config.DocArraySortHeight
+	log.Info("New", "chainConfig.DocArraySortHeight ", chainConfig.DocArraySortHeight)
+
 	if len(chainConfig.PbftKeyStore) > 0 {
 		config.PbftKeyStore = chainConfig.PbftKeyStore
 	} else {

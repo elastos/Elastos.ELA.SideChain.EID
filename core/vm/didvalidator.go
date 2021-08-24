@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -47,8 +48,64 @@ var didParam did.DIDParams
 
 const PrefixCRDID contract.PrefixType = 0x67
 
+//,config   *node.Config
 func InitDIDParams(params did.DIDParams) {
 	didParam = params
+}
+
+//sort doc Authentication or Authorization
+func sortAuthSlice(authSlice []interface{}) error {
+	var strAuth []string
+	var objsAuth = make(map[string]interface{})
+
+	for _, auth := range authSlice {
+		switch auth.(type) {
+		case string:
+			keyString := auth.(string)
+			strAuth = append(strAuth, keyString)
+		case map[string]interface{}:
+			data, err := json.Marshal(auth)
+			if err != nil {
+				return err
+			}
+			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
+			err = json.Unmarshal(data, didPublicKeyInfo)
+			if err != nil {
+				return err
+			}
+			strAuth = append(strAuth, didPublicKeyInfo.ID)
+			objsAuth[didPublicKeyInfo.ID] = auth
+		default:
+			return errors.New("[ID checkVerificationMethodV1] invalid  auth.(type)")
+		}
+	}
+	sort.Strings(strAuth)
+	for index, ID := range strAuth {
+		_, ok := objsAuth[ID]
+		if !ok {
+			authSlice[index] = ID
+		} else {
+			authSlice[index] = objsAuth[ID]
+		}
+	}
+	return nil
+}
+
+//sort doc slice by id
+func  sortDocSlice(verifyDoc *did.DIDDoc) error {
+	sort.Sort(did.PublicKeysSlice(verifyDoc.PublicKey))
+	sort.Sort(did.VerifiableCredentialSlice(verifyDoc.VerifiableCredential))
+	for _, v := range verifyDoc.VerifiableCredential {
+		sort.Strings(v.Type)
+	}
+	sort.Sort(did.ServiceSlice(verifyDoc.Service))
+	if err := sortAuthSlice(verifyDoc.Authentication); err != nil {
+		return err
+	}
+	if err := sortAuthSlice(verifyDoc.Authorization); err != nil {
+		return err
+	}
+	return nil
 }
 
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
@@ -65,7 +122,7 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 
 	if configHeight  == nil || evm.Context.BlockNumber.Cmp(configHeight) > 0 || senderAddr != configAddr{
 		// abnormal payload check
-		if err :=checkPayloadSyntax(p); err != nil {
+		if err :=checkPayloadSyntax(p, evm); err != nil {
 			log.Error("checkPayloadSyntax error", "error", err, "ID", p.DIDDoc.ID)
 			return  err
 		}
@@ -129,6 +186,13 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 		}
 		var verifyDoc *did.DIDDoc
 		verifyDoc = p.DIDDoc
+		//evm.chainConfig.DocArraySortHeight didParam.DocArraySortHeight
+		log.Info("checkRegisterDID", "evm.chainConfig.DocArraySortHeight", evm.chainConfig.DocArraySortHeight)
+		if evm.Context.BlockNumber.Cmp(evm.chainConfig.DocArraySortHeight) > 0 {
+			if err = sortDocSlice(verifyDoc); err != nil {
+				return err
+			}
+		}
 		if err = checkDIDInnerProof(evm,p.DIDDoc.ID, DIDProofArray, doc.DIDPayloadData, len(DIDProofArray), verifyDoc); err != nil {
 			return err
 		}
@@ -742,6 +806,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 //3, proof multisign verify
 func  checkDIDInnerProof(evm *EVM,ID string, DIDProofArray []*did.DocProof, iDateContainer interfaces.IDataContainer,
 	N int, verifyDoc *did.DIDDoc) error {
+
 	verifyOkCount := 0
 	//3, proof multisign verify
 	for _, CustomizedDIDProof := range DIDProofArray {
@@ -763,14 +828,12 @@ func  checkDIDInnerProof(evm *EVM,ID string, DIDProofArray []*did.DocProof, iDat
 		signature, _ := base64url.DecodeString(CustomizedDIDProof.SignatureValue)
 
 		var success bool
-
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
-
 		if err != nil {
 			return err
 		}
 		if !success {
-			return errors.New("[VM] Check Sig FALSE")
+			return errors.New("checkDIDInnerProof [VM] Check Sig FALSE")
 		}
 		verifyOkCount++
 	}
