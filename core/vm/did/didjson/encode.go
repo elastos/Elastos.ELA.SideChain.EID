@@ -696,13 +696,8 @@ func (me mapEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 		}
 	}
 	sort.Slice(sv, func(i, j int) bool {
-		if sv[i].s == "id" {
-			return true
-		}
-		if sv[j].s == "id" {
-			return false
-		}
-		return sv[i].s < sv[j].s })
+		return sv[i].s < sv[j].s
+	})
 
 	for i, kv := range sv {
 		if i > 0 {
