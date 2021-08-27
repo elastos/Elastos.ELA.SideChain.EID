@@ -32,6 +32,78 @@ import (
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
 )
 
+var didPayloadBytesMashal = []byte(
+	`{
+        "id" : "did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN",
+		"controller" : [ "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y", "did:elastos:igHbSCez6H3gTuVPzwNZRrdj92GCJ6hD5d" ],
+		"verifiableCredential" : [ {
+			"id" : "did:elastos:example#profile",
+			"type" : [ "BasicProfileCredential", "SelfProclaimedCredential" ],
+			"issuer" : "did:elastos:example",
+			"issuanceDate" : "2021-01-28T06:38:35Z",
+			"expirationDate" : "2026-01-28T06:38:35Z",
+			"credentialSubject" : {
+				"id" : "did:elastos:example",
+				"name" : "Example LLC",
+				"email" : "contact@example.com",
+				"website" : "https://example.com/"
+			},
+			"proof" : {
+				"type" : "ECDSAsecp256r1",
+				"created" : "2021-01-28T06:38:35Z",
+				"verificationMethod" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary",
+				"signature" : "e-W2o8Grqd0IrkWOEvGjHvWmTKl_hwuQFwk3rR1YZmxBySO7nYoardIZ5PLT_6rSViXNd8jPVFKXQRVbpeBVhQ"
+			}
+		} ],
+        "publicKey":[{ "id": "did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",
+                       "type":"ECDSAsecp256r1",
+                       "controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN",
+                       "publicKeyBase58":"27bqfhMew6TjL4NMz2u8b2cFCvGovaELqr19Xytt1rDmd"
+                      }
+                    ],
+        "authentication":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",
+                          {
+                               "id": "did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",
+                               "type":"ECDSAsecp256r1",
+                               "controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN",
+                               "publicKeyBase58":"zNxoZaZLdackZQNMas7sCkPRHZsJ3BtdjEvM2y5gNvKJ"
+                           }
+                         ],
+        "authorization":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default"],
+		"service": [
+			{
+			  "id": "testid1",
+              "type": "testtype1",
+              "serviceEndpoint": "testendpoint1"
+		   },
+			{
+			  "id": "testid2",
+              "serviceEndpoint": "testendpoint2",
+              "type": "testtype2",
+              "abc": "123",
+              "cde": "789",
+              "bcd": "456"
+		   }
+		],
+        "expires" : "2023-02-10T17:00:00Z"
+	}`)
+
+var sortedDIDPayloadData2 = `{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","controller":["did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y","did:elastos:igHbSCez6H3gTuVPzwNZRrdj92GCJ6hD5d"],"publicKey":[{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","type":"ECDSAsecp256r1","controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","publicKeyBase58":"27bqfhMew6TjL4NMz2u8b2cFCvGovaELqr19Xytt1rDmd"}],"authentication":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",{"controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","publicKeyBase58":"zNxoZaZLdackZQNMas7sCkPRHZsJ3BtdjEvM2y5gNvKJ","type":"ECDSAsecp256r1"}],"authorization":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default"],"verifiableCredential":[{"id":"did:elastos:example#profile","type":["BasicProfileCredential","SelfProclaimedCredential"],"issuer":"did:elastos:example","issuanceDate":"did:elastos:example","expirationDate":"did:elastos:example","credentialSubject":{"id":"did:elastos:example","email":"contact@example.com","name":"Example LLC","website":"https://example.com/"}}],"service":[{"id":"testid1","type":"testtype1","serviceEndpoint":"testendpoint1"},{"id":"testid2","type":"testtype2","serviceEndpoint":"testendpoint2","abc":"123","bcd":"456","cde":"789"}],"expires":"2023-02-10T17:00:00Z"}`
+
+func TestMashalDIDPayloadData(t *testing.T) {
+	// test for unmarshal did payload from bytes
+	info := new(did.DIDPayloadData)
+	err := json.Unmarshal(didPayloadBytesMashal, info)
+	assert.NoError(t, err)
+
+	data, err := info.MarshalJSON()
+	assert.NoError(t, err)
+
+	buf := new(bytes.Buffer)
+	buf.WriteString(sortedDIDPayloadData2)
+	assert.Equal(t, buf.Bytes(), data)
+}
+
 var (
 	bankKey, _ = crypto.GenerateKey()
 	bankAddr   = crypto.PubkeyToAddress(bankKey.PublicKey)
@@ -48,7 +120,7 @@ var (
 	customizedDIDDocBytes2          []byte
 
 	headerPayloadBytes        []byte
-	changeDocPayload		  []byte
+	changeDocPayload          []byte
 	issuerDocByts             []byte
 	docDocBytes               []byte
 	custIDSingleSignDocBytes1 []byte
@@ -70,15 +142,13 @@ var (
 
 	//doc slice sort
 	check2DocByte []byte
-
 )
 
 const (
-	PayloadPrivateKey = "a38aa1f5f693a13ef0cf2f1c1c0155cbcdd9386f37b0000739f8cb50af601b7b"
+	PayloadPrivateKey     = "a38aa1f5f693a13ef0cf2f1c1c0155cbcdd9386f37b0000739f8cb50af601b7b"
 	User2PrivateKeyBase58 = "AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J"
-	User2PublicKeyBase58 = "kTYQhMtoimm9wV3vy4q9EVy4Z1WxRqxhvngztdGo1Dmc"
-
-	)
+	User2PublicKeyBase58  = "kTYQhMtoimm9wV3vy4q9EVy4Z1WxRqxhvngztdGo1Dmc"
+)
 
 func init() {
 	id11DocByts, _ = LoadJsonData("./testdata/issuer.id.json")
@@ -95,7 +165,6 @@ func init() {
 
 	headerPayloadBytes, _ = LoadJsonData("./testdata/customized_did_multi_controllers.json")
 	changeDocPayload, _ = LoadJsonData("./testdata/changedocpayload.json")
-
 
 	issuerDocByts, _ = LoadJsonData("./testdata/issuer.json")
 	docDocBytes, _ = LoadJsonData("./testdata/document.json")
@@ -1314,7 +1383,7 @@ func checkDIDTransactionAfterMigrateHeight(didpayload []byte, db *state.StateDB)
 	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xb445f9487bF570fF508eA9Ac320b59730e81e503"
-	evm.chainConfig.DocArraySortHeight= new(big.Int).SetInt64(2)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.Time = &big.Int{}
 	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
 	if gas == math.MaxUint64 {
@@ -1461,8 +1530,7 @@ func TestGetSizeFactor(t *testing.T) {
 		{34 * 1024, 3.1967102737178337},
 		{4142, 1.303455068958811},
 		{1024 * 1024, 1507.8735777995842},
-		{32771,0.6613621736996009},
-
+		{32771, 0.6613621736996009},
 	}
 	for _, test := range tests {
 		lenFactor := getSizeFactor(test.payLoadSize)
@@ -1847,18 +1915,18 @@ func TestCheckKeyReference(t *testing.T) {
 	fmt.Println("123")
 	id := "did:elastos:iTWqanUovh3zHfnExGaan4SJAXG3DCZC6j"
 
-	err := checkKeyReference(id, info.Authentication, info.Authorization,info.PublicKey)
+	err := checkKeyReference(id, info.Authentication, info.Authorization, info.PublicKey)
 	assert.NoError(t, err)
 	//						"#notexist",
 	oriAuth := info.Authentication
 	//oriAuthor := info.Authorization
 	info.Authentication = append(info.Authentication, "#notexist")
-	err = checkKeyReference(id, info.Authentication, info.Authorization,info.PublicKey)
-	assert.Equal(t,"checkKeyReference authen key is not exit in public key array", err.Error())
-	info.Authentication =oriAuth
+	err = checkKeyReference(id, info.Authentication, info.Authorization, info.PublicKey)
+	assert.Equal(t, "checkKeyReference authen key is not exit in public key array", err.Error())
+	info.Authentication = oriAuth
 	info.Authorization = append(info.Authorization, "#notexist")
-	err = checkKeyReference(id, info.Authentication, info.Authorization,info.PublicKey)
-	assert.Equal(t,"checkKeyReference authorization key is not exit in public key array", err.Error())
+	err = checkKeyReference(id, info.Authentication, info.Authorization, info.PublicKey)
+	assert.Equal(t, "checkKeyReference authorization key is not exit in public key array", err.Error())
 }
 
 func TestIsDID(t *testing.T) {
@@ -1893,7 +1961,7 @@ func TestIsDID(t *testing.T) {
 	didjson.Unmarshal(didPayloadBytes, info)
 
 	ret := isDID(info)
-	assert.Equal(t, false ,ret)
+	assert.Equal(t, false, ret)
 }
 
 func TestDocSliceSort(t *testing.T) {
