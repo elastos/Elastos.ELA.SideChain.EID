@@ -23,7 +23,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/base64url"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/didjson"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
@@ -302,7 +301,7 @@ func TestCommonDIDPayloadOperation(t *testing.T) {
 
 func getPayloadUpdateDID() *did.DIDPayload {
 	info := new(did.DIDDoc)
-	didjson.Unmarshal(didPayloadBytes, info)
+	json.Unmarshal(didPayloadBytes, info)
 
 	return &did.DIDPayload{
 		Header: did.Header{
@@ -404,13 +403,13 @@ func TestCheckRegisterDID(t *testing.T) {
 	didParam.CustomIDFeeRate = 0
 	statedb.RemoveDIDLog(common.Hash{})
 
-	docBytes, err := didjson.Marshal(tx2)
+	docBytes, err := json.Marshal(tx2)
 	assert.NoError(t, err)
 
 	err2 := checkDIDTransaction(docBytes, statedb)
 	assert.EqualError(t, err2, "DID WRONG OPERATION ALREADY EXIST")
 
-	docBytes, err = didjson.Marshal(tx1)
+	docBytes, err = json.Marshal(tx1)
 	assert.NoError(t, err)
 	err3 := checkDIDTransaction(docBytes, statedb)
 	assert.NoError(t, err3)
@@ -1911,7 +1910,7 @@ func TestCheckKeyReference(t *testing.T) {
         "expires" : "2023-02-10T17:00:00Z"
 	}`)
 	info := new(did.DIDDoc)
-	didjson.Unmarshal(didPayloadBytes, info)
+	json.Unmarshal(didPayloadBytes, info)
 	fmt.Println("123")
 	id := "did:elastos:iTWqanUovh3zHfnExGaan4SJAXG3DCZC6j"
 
@@ -1958,7 +1957,7 @@ func TestIsDID(t *testing.T) {
         "expires" : "2023-02-10T17:00:00Z"
 	}`)
 	info := new(did.DIDDoc)
-	didjson.Unmarshal(didPayloadBytes, info)
+	json.Unmarshal(didPayloadBytes, info)
 
 	ret := isDID(info)
 	assert.Equal(t, false, ret)
