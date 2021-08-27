@@ -9,7 +9,6 @@ import (
 	"github.com/elastos/Elastos.ELA/common"
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/base64url"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/didjson"
 )
 
 const DIDVersion = 0x00
@@ -116,7 +115,7 @@ type CustomIDTicket struct {
 }
 
 func (c *CustomIDTicketData) GetData() []byte {
-	data, err := didjson.Marshal(c)
+	data, err := json.Marshal(c)
 	if err != nil {
 		return nil
 	}
