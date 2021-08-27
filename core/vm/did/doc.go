@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did/didjson"
-
 	"github.com/elastos/Elastos.ELA/common"
 )
 
@@ -70,11 +68,12 @@ type VerifiableCredentialData struct {
 }
 
 func (p *VerifiableCredentialData) GetData() []byte {
-	data, err := didjson.Marshal(p)
+	buf := new(bytes.Buffer)
+	err := MarshalVerifiableCredentialData(p, buf)
 	if err != nil {
 		return nil
 	}
-	return data
+	return buf.Bytes()
 }
 
 func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buffer) error {
@@ -153,7 +152,6 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 	}
 
 	buf.WriteRune('}')
-	fmt.Println(buf.String())
 	return nil
 }
 
@@ -185,8 +183,8 @@ func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) 
 	})
 
 	l := len(sortedData)
+	buf.WriteRune('{')
 	for i, data := range sortedData {
-		buf.WriteRune('{')
 		err := writeKey(buf, data.key)
 		if err != nil {
 			return err
@@ -252,8 +250,8 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 	})
 
 	l := len(sortedData)
+	buf.WriteRune('{')
 	for i, data := range sortedData {
-		buf.WriteRune('{')
 		err := writeKey(buf, data.key)
 		if err != nil {
 			return err
@@ -357,6 +355,7 @@ func (p *DIDPayloadData) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	buf.Write(idv)
+	buf.WriteRune(',')
 
 	// Controller
 	if p.Controller != nil {
@@ -444,7 +443,7 @@ func (p *DIDPayloadData) MarshalJSON() ([]byte, error) {
 		}
 		buf.WriteRune('[')
 		for i, vc := range p.VerifiableCredential {
-			if err = MarshalCredentialSubject(vc, buf); err != nil {
+			if err = MarshalVerifiableCredentialData(vc.VerifiableCredentialData, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
@@ -461,9 +460,16 @@ func (p *DIDPayloadData) MarshalJSON() ([]byte, error) {
 		if err := writeKey(buf, "service"); err != nil {
 			return nil, err
 		}
-		if err := MarshalService(p.Service, buf); err != nil {
-			return nil, err
+		buf.WriteRune('[')
+		for i, se := range p.Service {
+			if err := MarshalService(se, buf); err != nil {
+				return nil, err
+			}
+			if i != count-1 {
+				buf.WriteRune(',')
+			}
 		}
+		buf.WriteRune(']')
 		buf.WriteRune(',')
 	}
 
@@ -496,8 +502,7 @@ func writeKey(buf *bytes.Buffer, key string) error {
 }
 
 func (c *DIDPayloadData) GetData() []byte {
-
-	data, err := didjson.Marshal(c)
+	data, err := c.MarshalJSON()
 	if err != nil {
 		return nil
 	}
