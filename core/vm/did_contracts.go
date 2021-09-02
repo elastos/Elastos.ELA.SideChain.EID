@@ -402,6 +402,12 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		p.Serialize(buf, did.DIDVersion)
 		evm.StateDB.AddDIDLog(id, p.Header.Operation, buf.Bytes())
 	case did.Declare_Verifiable_Credential_Operation, did.Revoke_Verifiable_Credential_Operation:
+		payloadBase64, _ := base64url.DecodeString(p.Payload)
+		credentialDoc := new(did.VerifiableCredentialDoc)
+		if err := json.Unmarshal(payloadBase64, credentialDoc); err != nil {
+			return false32Byte, errors.New("createDIDVerify Payload is error")
+		}
+		p.CredentialDoc = credentialDoc
 		if err := checkVerifiableCredential(evm, p); err != nil {
 			log.Error("checkVerifiableCredential error", "error", err)
 			return false32Byte, err
