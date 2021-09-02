@@ -621,6 +621,7 @@ func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.
 				return errors.New("checkVerifiableCredentials NOT FIND PUBLIC KEY OF VerificationMethod")
 			}
 			issuerPublicKey = base58.Decode(pubKeyStr)
+
 		} else {
 			//2,if Issuer is not empty string, get Issuer public key from db，
 			//if Issuer is not exist  check if realIssuer is DID,
@@ -632,6 +633,7 @@ func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.
 						return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
 					}
 					issuerPublicKey = base58.Decode(pubKeyStr)
+
 				} else {
 					return err
 				}
@@ -648,7 +650,6 @@ func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.
 		cridential.CompleteCompact(ID)
 		// verify proof
 		var success bool
-
 		success, err = did.VerifyByVM(cridential.VerifiableCredentialData, issuerCode, signature)
 		if err != nil {
 			return err
@@ -1787,6 +1788,7 @@ func checkDIDVerifiableCredential(evm *EVM, signer string,
 	signature, _ := base64url.DecodeString(proof.Signature)
 
 	var success bool
+
 	success, err = did.VerifyByVM(credPayload, code, signature)
 
 	if err != nil {

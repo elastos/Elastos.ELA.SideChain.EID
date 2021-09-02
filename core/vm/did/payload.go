@@ -43,6 +43,12 @@ type DIDTransactionData struct {
 	Operation DIDPayload `json:"operation"`
 }
 
+type ListDIDVerifCreentials struct {
+	DID         string   `json:"did"`
+	Credentials []string `json:"credentials"`
+}
+
+
 // header of Customized DID transaction payload
 type Header struct {
 	Specification string `json:"specification"`

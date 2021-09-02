@@ -3,6 +3,7 @@ package rawdb
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 type EntryPrefix byte
 
 const (
+	IX_DIDVerifiableCredentials          EntryPrefix = 0x87
 	IX_ISDID                             EntryPrefix = 0x88
 	IX_DeactivateCustomizedDID           EntryPrefix = 0x89
 	IX_VerifiableCredentialExpiresHeight EntryPrefix = 0x90
@@ -34,11 +36,13 @@ const (
 	IX_DIDDeactivate                     EntryPrefix = 0x98
 	IX_CUSTOMIZEDDIDExpiresHeight        EntryPrefix = 0x99
 )
+
 var (
-	ERR_READ_TX = errors.New("read transaction error")
-	ERR_READ_RECEIPT = errors.New("read receipt error")
-	ERR_NOT_DIDRECEIPT = errors.New("receipt is not contain did")
+	ERR_READ_TX               = errors.New("read transaction error")
+	ERR_READ_RECEIPT          = errors.New("read receipt error")
+	ERR_NOT_DIDRECEIPT        = errors.New("receipt is not contain did")
 	ERR_NOT_DEACTIVATERECEIPT = errors.New("receipt is not contain deactivate tx")
+	ERR_NOT_FOUND 			  = errors.New("not found")
 )
 
 func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight uint64,
@@ -134,13 +138,15 @@ func TryGetExpiresHeight(Expires string, blockHeight uint64, blockTimeStamp uint
 	return expiresHeight, nil
 }
 
-
 func persistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
 	expiresHeight uint64) error {
 	key := []byte{byte(IX_DIDExpiresHeight)}
 	key = append(key, idKey...)
 	data, err := db.Get(key)
 	if err != nil {
+		if err.Error() != ERR_NOT_FOUND.Error() {
+			return err
+		}
 		// when not exist, only put the current expires height into db.
 		buf := new(bytes.Buffer)
 		if err := elaCom.WriteVarUint(buf, 1); err != nil {
@@ -183,6 +189,9 @@ func persistRegisterDIDTxHash(db ethdb.KeyValueStore, idKey []byte, txHash elaCo
 
 	data, err := db.Get(key)
 	if err != nil {
+		if err.Error() != ERR_NOT_FOUND.Error() {
+			return err
+		}
 		// when not exist, only put the current payload hash into db.
 		buf := new(bytes.Buffer)
 		if err := elaCom.WriteVarUint(buf, 1); err != nil {
@@ -246,7 +255,7 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chain
 	}
 
 	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _,_ := ReadReceipt(db.(ethdb.Database), thash, config)
+	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 	if recp == nil {
 		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
 			if recps.Len() > 0 {
@@ -292,7 +301,7 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.C
 	}
 
 	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _,_ := ReadReceipt(db.(ethdb.Database), thash, config)
+	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 	if recp == nil {
 		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
 			if recps.Len() > 0 {
@@ -359,7 +368,7 @@ func GetAllDIDTxTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chai
 			return nil, ERR_READ_TX
 		}
 
-		recp, _, _,_ := ReadReceipt(db.(ethdb.Database), thash, config)
+		recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 		if recp == nil {
 			return nil, ERR_READ_RECEIPT
 		}
@@ -428,7 +437,6 @@ func GetLastCustomizedDIDTxData(db ethdb.KeyValueStore, idKey []byte) (*did.DIDT
 	return tempTxData, nil
 }
 
-
 func persistRegisterDIDPayload(db ethdb.KeyValueStore, txHash elaCom.Uint256, p *did.DIDPayload) error {
 	key := []byte{byte(IX_DIDPayload)}
 	key = append(key, txHash.Bytes()...)
@@ -481,7 +489,7 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 		//keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
 		//keyPayload = append(keyPayload, txHash.Bytes()...)
 		thash := common.BytesToHash(txHash.Bytes())
-		recp, _, _,_ := ReadReceipt(db.(ethdb.Database), thash, config)
+		recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 		if recp == nil {
 			if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
 				if recps.Len() > 0 {
@@ -513,7 +521,6 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 	return transactionsData, nil
 }
 
-
 func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_VerifiableCredentialTXHash)}
 	key = append(key, idKey...)
@@ -540,7 +547,7 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 	//keyPayload = append(keyPayload, txHash.Bytes()...)
 
 	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _,_ := ReadReceipt(db.(ethdb.Database), thash, config)
+	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 	if recp == nil {
 		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
 			if recps.Len() > 0 {
@@ -572,7 +579,7 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 }
 
 func DeleteDIDLog(db ethdb.KeyValueStore, didLog *types.DIDLog) error {
-	if didLog == nil  {
+	if didLog == nil {
 		return errors.New("didLog is nil")
 	}
 	id := didLog.DID
@@ -636,6 +643,11 @@ func rollbackVerifiableCredentialTx(db ethdb.KeyValueStore, credentialIDKey []by
 
 	//rollback expires height
 	err = rollbackVerifiableCredentialExpiresHeight(db, credentialIDKey)
+	if err != nil {
+		return err
+	}
+
+	err = rollbackDIDVerifCredentials(db, credentialIDKey)
 	if err != nil {
 		return err
 	}
@@ -827,6 +839,18 @@ func rollbackRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte) erro
 	return db.Put(key, buf.Bytes())
 }
 
+func getCredentialOwner(credentialSubject interface{})string{
+	creSub := credentialSubject.(map[string]interface{})
+	owner := ""
+	for k, v := range creSub {
+		if k == did.ID_STRING {
+			owner = v.(string)
+			break
+		}
+	}
+	return owner
+}
+
 //persistVerifiableCredentialTx
 func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	blockHeight uint64, blockTimeStamp uint64, thash common.Hash) error {
@@ -861,6 +885,14 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	//if err := persistVerifiableCredentialPayload(db, txhash, payload); err != nil {
 	//	return err
 	//}
+	//only declare credentials will be stored
+
+	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation{
+		owner := getCredentialOwner(payload.CredentialDoc.CredentialSubject)
+		if err := persistDIDVerifCredentials(db, []byte(owner), verifyCred.ID); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -872,6 +904,9 @@ func persistVerifiableCredentialExpiresHeight(db ethdb.KeyValueStore,
 
 	data, err := db.Get(key)
 	if err != nil {
+		if err.Error() != ERR_NOT_FOUND.Error() {
+			return err
+		}
 		// when not exist, only put the current expires height into db.
 		buf := new(bytes.Buffer)
 		if err := elaCom.WriteVarUint(buf, 1); err != nil {
@@ -915,6 +950,9 @@ func persisterifiableCredentialTxHash(db ethdb.KeyValueStore,
 
 	data, err := db.Get(key)
 	if err != nil {
+		if err.Error() != ERR_NOT_FOUND.Error() {
+			return err
+		}
 		// when not exist, only put the current payload hash into db.
 		buf := new(bytes.Buffer)
 		if err := elaCom.WriteVarUint(buf, 1); err != nil {
@@ -964,4 +1002,140 @@ func persistVerifiableCredentialPayload(db ethdb.KeyValueStore,
 	buf := new(bytes.Buffer)
 	p.Serialize(buf, did.VerifiableCredentialVersion)
 	return db.Put(key, buf.Bytes())
+}
+
+func persistDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte, credentilaID string) error {
+	key := []byte{byte(IX_DIDVerifiableCredentials)}
+	key = append(key, idKey...)
+
+	data, err := db.Get(key)
+	if err != nil {
+		if err.Error() != ERR_NOT_FOUND.Error() {
+			return err
+		}
+		// when not exist, only put the current payload hash into db.
+		buf := new(bytes.Buffer)
+		if err := elaCom.WriteVarUint(buf, 1); err != nil {
+			return err
+		}
+		err = elaCom.WriteVarString(buf, credentilaID)
+		if err != nil {
+			return errors.New(fmt.Sprintf( "[persistDIDVerifCredentials], WriteVarString credentilaID %s error ",
+				credentilaID))
+		}
+		return db.Put(key, buf.Bytes())
+	}
+
+	// when exist, should add current payload hash to the end of the list.
+	r := bytes.NewReader(data)
+	count, err := elaCom.ReadVarUint(r, 0)
+	if err != nil {
+		return err
+	}
+	count++
+
+	buf := new(bytes.Buffer)
+
+	// write count
+	if err := elaCom.WriteVarUint(buf, count); err != nil {
+		return err
+	}
+
+	err = elaCom.WriteVarString(buf, credentilaID)
+	if err != nil {
+		return errors.New(fmt.Sprintf( "[persistDIDVerifCredentials], WriteVarString2 credentilaID %s error ",
+			credentilaID))
+	}
+
+	// write old credential ids
+	if _, err := r.WriteTo(buf); err != nil {
+		return err
+	}
+	return db.Put(key, buf.Bytes())
+}
+
+func rollbackDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte) error {
+
+	key := []byte{byte(IX_DIDVerifiableCredentials)}
+	key = append(key, idKey...)
+
+	data, err := db.Get(key)
+	if err != nil {
+		return err
+	}
+
+	r := bytes.NewReader(data)
+	// get the count of credential ids
+	count, err := elaCom.ReadVarUint(r, 0)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("not exist")
+	}
+	_,err = elaCom.ReadVarString(r)
+	if err != nil {
+		return err
+	}
+
+	if count == 1 {
+		return db.Delete(key)
+	}
+
+	buf := new(bytes.Buffer)
+	// write count
+	if err := elaCom.WriteVarUint(buf, count-1); err != nil {
+		return err
+	}
+	// write old credential ids
+	if _, err := r.WriteTo(buf); err != nil {
+		return err
+	}
+	return db.Put(key, buf.Bytes())
+}
+
+func GetAllDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte,skip,limit int64) (*did.ListDIDVerifCreentials, error) {
+	key := []byte{byte(IX_DIDVerifiableCredentials)}
+	key = append(key, idKey...)
+
+	var credentials did.ListDIDVerifCreentials
+	credentials.DID = string(idKey)
+	data, err := db.Get(key)
+	if err != nil {
+		return &credentials, err
+	}
+
+	r := bytes.NewReader(data)
+	count, err := elaCom.ReadVarUint(r, 0)
+	if err != nil {
+		return &credentials, err
+	}
+	//-1 means all
+	if limit < 0 {
+		limit = int64(count)
+	}
+	end:=int64(0)
+	if skip < int64(count) {
+		end = skip
+		if skip+limit <= int64(count) {
+			end = skip + limit
+		} else {
+			end = int64(count)
+		}
+	}
+	for i := int64(0); i < end; i++ {
+		if i < skip {
+			_,err := elaCom.ReadVarString(r)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
+		credID,err := elaCom.ReadVarString(r)
+		if err != nil {
+			return nil, err
+		}
+		credentials.Credentials = append(credentials.Credentials, credID)
+	}
+	return &credentials, nil
 }
