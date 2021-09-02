@@ -118,6 +118,27 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	return rpcPayloadDid, nil
 }
 
+func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param map[string]interface{}) (interface{}, error) {
+	idParam, ok := param["did"].(string)
+	if !ok {
+		return nil, http.NewError(int(service.InvalidParams), "did is null")
+	}
+
+	skip, ok := param["skip"].(float64)
+	limit, ok := param["limit"].(float64)
+	if int64(skip) < 0 {
+		return nil, http.NewError(int(service.InvalidParams), "skip is negative")
+	}
+
+	credentialID := idParam
+	buf := new(bytes.Buffer)
+	buf.WriteString(credentialID)
+	txsData, _ := rawdb.GetAllDIDVerifCredentials(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), int64(skip),
+		int64(limit))
+	return txsData, nil
+}
+
+
 func (s *PublicTransactionPoolAPI) getDeactiveTx(ctx context.Context, idKey []byte) (*didapi.RpcTranasactionData, error) {
 	//get deactive tx date
 	deactiveTxData, err := rawdb.GetDeactivatedTxData(s.b.ChainDb().(ethdb.KeyValueStore), idKey,
