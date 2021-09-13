@@ -87,7 +87,7 @@ var didPayloadBytesMashal = []byte(
         "expires" : "2023-02-10T17:00:00Z"
 	}`)
 
-var sortedDIDPayloadData2 = `{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","controller":["did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y","did:elastos:igHbSCez6H3gTuVPzwNZRrdj92GCJ6hD5d"],"publicKey":[{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","type":"ECDSAsecp256r1","controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","publicKeyBase58":"27bqfhMew6TjL4NMz2u8b2cFCvGovaELqr19Xytt1rDmd"}],"authentication":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",{"controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","publicKeyBase58":"zNxoZaZLdackZQNMas7sCkPRHZsJ3BtdjEvM2y5gNvKJ","type":"ECDSAsecp256r1"}],"authorization":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default"],"verifiableCredential":[{"id":"did:elastos:example#profile","type":["BasicProfileCredential","SelfProclaimedCredential"],"issuer":"did:elastos:example","issuanceDate":"did:elastos:example","expirationDate":"did:elastos:example","credentialSubject":{"id":"did:elastos:example","email":"contact@example.com","name":"Example LLC","website":"https://example.com/"}}],"service":[{"id":"testid1","type":"testtype1","serviceEndpoint":"testendpoint1"},{"id":"testid2","type":"testtype2","serviceEndpoint":"testendpoint2","abc":"123","bcd":"456","cde":"789"}],"expires":"2023-02-10T17:00:00Z"}`
+var sortedDIDPayloadData2 = `{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","controller":["did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y","did:elastos:igHbSCez6H3gTuVPzwNZRrdj92GCJ6hD5d"],"publicKey":[{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","type":"ECDSAsecp256r1","controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","publicKeyBase58":"27bqfhMew6TjL4NMz2u8b2cFCvGovaELqr19Xytt1rDmd"}],"authentication":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",{"controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","publicKeyBase58":"zNxoZaZLdackZQNMas7sCkPRHZsJ3BtdjEvM2y5gNvKJ","type":"ECDSAsecp256r1"}],"authorization":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default"],"verifiableCredential":[{"id":"did:elastos:example#profile","type":["BasicProfileCredential","SelfProclaimedCredential"],"issuer":"did:elastos:example","issuanceDate":"2021-01-28T06:38:35Z","expirationDate":"2026-01-28T06:38:35Z","credentialSubject":{"id":"did:elastos:example","email":"contact@example.com","name":"Example LLC","website":"https://example.com/"},"proof":{"type":"ECDSAsecp256r1","created":"2021-01-28T06:38:35Z","verificationMethod":"did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary","signature":"e-W2o8Grqd0IrkWOEvGjHvWmTKl_hwuQFwk3rR1YZmxBySO7nYoardIZ5PLT_6rSViXNd8jPVFKXQRVbpeBVhQ"}}],"service":[{"id":"testid1","type":"testtype1","serviceEndpoint":"testendpoint1"},{"id":"testid2","type":"testtype2","serviceEndpoint":"testendpoint2","abc":"123","bcd":"456","cde":"789"}],"expires":"2023-02-10T17:00:00Z"}`
 
 func TestMashalDIDPayloadData(t *testing.T) {
 	// test for unmarshal did payload from bytes
@@ -95,12 +95,13 @@ func TestMashalDIDPayloadData(t *testing.T) {
 	err := json.Unmarshal(didPayloadBytesMashal, info)
 	assert.NoError(t, err)
 
-	data, err := info.MarshalJSON()
+	data, err := did.MarshalDIDPayloadData(info)
 	assert.NoError(t, err)
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(sortedDIDPayloadData2)
 	assert.Equal(t, buf.Bytes(), data)
+	assert.Equal(t, info.GetData(), data)
 }
 
 var (
