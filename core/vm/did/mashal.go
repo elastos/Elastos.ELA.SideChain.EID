@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"sort"
 )
 
@@ -111,7 +110,7 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 		}
 		buf.WriteRune('[')
 		for i, vc := range p.VerifiableCredential {
-			if err = MarshalVerifiableCredentialData(vc.VerifiableCredentialData, buf); err != nil {
+			if err = MarshalVerifiableCredential(vc, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
@@ -155,10 +154,99 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 
 	buf.WriteRune('}')
 
-	fmt.Println(buf.String())
 	return buf.Bytes(), nil
 }
 
+func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) error {
+	buf.WriteRune('{')
+
+	// ID
+	err := writeKey(buf, "id")
+	if err != nil {
+		return err
+	}
+	idv, err := json.Marshal(p.ID)
+	if err != nil {
+		return err
+	}
+	buf.Write(idv)
+	buf.WriteRune(',')
+
+	// Type
+	count := len(p.Type)
+	if count != 0 {
+		err := writeKey(buf, "type")
+		if err != nil {
+			return err
+		}
+		tpe, err := json.Marshal(p.Type)
+		if err != nil {
+			return err
+		}
+		buf.Write(tpe)
+		buf.WriteRune(',')
+	}
+
+	// Issuer
+	if err = writeKey(buf, "issuer"); err != nil {
+		return err
+	}
+	ise, err := json.Marshal(p.Issuer)
+	if err != nil {
+		return err
+	}
+	buf.Write(ise)
+	buf.WriteRune(',')
+
+	// IssuanceDate
+	err = writeKey(buf, "issuanceDate")
+	if err != nil {
+		return err
+	}
+	isd, err := json.Marshal(p.IssuanceDate)
+	if err != nil {
+		return err
+	}
+	buf.Write(isd)
+	buf.WriteRune(',')
+
+	// ExpirationDate
+	err = writeKey(buf, "expirationDate")
+	if err != nil {
+		return err
+	}
+	exp, err := json.Marshal(p.ExpirationDate)
+	if err != nil {
+		return err
+	}
+	buf.Write(exp)
+	buf.WriteRune(',')
+
+	// CredentialSubject
+	err = writeKey(buf, "credentialSubject")
+	if err != nil {
+		return err
+	}
+	err = MarshalCredentialSubject(p.CredentialSubject, buf)
+	if err != nil {
+		return err
+	}
+	buf.WriteRune(',')
+
+	// proof
+	err = writeKey(buf, "proof")
+	if err != nil {
+		return err
+	}
+	pf, err := json.Marshal(p.Proof)
+	if err != nil {
+		return err
+	}
+	buf.Write(pf)
+
+	buf.WriteRune('}')
+	return nil
+}
 
 func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buffer) error {
 	buf.WriteRune('{')
@@ -206,7 +294,7 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 	if err != nil {
 		return err
 	}
-	isd, err := json.Marshal(p.Issuer)
+	isd, err := json.Marshal(p.IssuanceDate)
 	if err != nil {
 		return err
 	}
@@ -218,7 +306,7 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 	if err != nil {
 		return err
 	}
-	exp, err := json.Marshal(p.Issuer)
+	exp, err := json.Marshal(p.ExpirationDate)
 	if err != nil {
 		return err
 	}
@@ -281,10 +369,9 @@ func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) 
 
 		if i != l-1 {
 			buf.WriteRune(',')
-		} else {
-			buf.WriteRune('}')
 		}
 	}
+	buf.WriteRune('}')
 
 	return nil
 }
