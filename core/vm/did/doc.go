@@ -78,8 +78,6 @@ type Service struct {
 	ID              string `json:"id"`
 	Type            string `json:"type"`
 	ServiceEndpoint string `json:"serviceEndpoint"`
-	//user define extra property
-	//ExtraProperty interface{} `json:"extraProperty,omitempty"`
 }
 
 type DIDPayloadData struct {
@@ -110,7 +108,7 @@ func (a PublicKeysSlice) Less(i, j int) bool {
 	return result
 }
 
-type ServiceSlice []Service
+type ServiceSlice []interface{}
 
 func (s ServiceSlice) Len() int {
 	return len(s)
@@ -120,7 +118,9 @@ func (s ServiceSlice) Swap(i, j int) {
 }
 func (s ServiceSlice) Less(i, j int) bool {
 	result := false
-	if strings.Compare(s[i].ID, s[j].ID) < 0 {
+	serviceI := s[i].(map[string]interface{})
+	serviceJ := s[j].(map[string]interface{})
+	if strings.Compare(serviceI["id"].(string), serviceJ["id"].(string)) < 0 {
 		result = true
 	}
 	return result
@@ -142,10 +142,6 @@ func (v VerifiableCredentialSlice) Less(i, j int) bool {
 	return result
 }
 
-func (p *DIDPayloadData) MarshalJSON() ([]byte, error) {
-	return MarshalDIDPayloadData(p)
-}
-
 func writeKey(buf *bytes.Buffer, key string) error {
 	sig, err := json.Marshal(key)
 	if err != nil {
@@ -157,7 +153,7 @@ func writeKey(buf *bytes.Buffer, key string) error {
 }
 
 func (c *DIDPayloadData) GetData() []byte {
-	data, err := c.MarshalJSON()
+	data, err := MarshalDIDPayloadData(c)
 	if err != nil {
 		return nil
 	}

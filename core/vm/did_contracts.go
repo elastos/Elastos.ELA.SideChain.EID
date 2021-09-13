@@ -207,7 +207,7 @@ func isPublicKeyIDUnique(p *did.DIDPayload) bool {
 func isVerifiCreIDUnique(p *did.DIDPayload) bool {
 	// New empty IDSet
 	IDSet := make(map[string]bool)
-	for _,v := range p.DIDDoc.VerifiableCredential{
+	for _, v := range p.DIDDoc.VerifiableCredential {
 		if _, ok := IDSet[v.ID]; ok {
 			return false
 		}
@@ -219,11 +219,23 @@ func isVerifiCreIDUnique(p *did.DIDPayload) bool {
 func isServiceIDUnique(p *did.DIDPayload) bool {
 	// New empty IDSet
 	IDSet := make(map[string]bool)
-	for _,s :=range p.DIDDoc.Service{
-		if _, ok := IDSet[s.ID]; ok {
-			return false
+
+	//iteraotr each sercie
+	for _, service := range p.DIDDoc.Service {
+		svcMap := service.(map[string]interface{})
+		//iterator each item of service
+		for k, v := range svcMap {
+			//if it is id
+			if k == did.ID_STRING {
+				//id value
+				id := v.(string)
+				//if id is duplicate
+				if _, ok := IDSet[id]; ok {
+					return false
+				}
+				IDSet[id] = true
+			}
 		}
-		IDSet[s.ID] = true
 	}
 	return true
 }
@@ -318,7 +330,7 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 			}
 			needFee := getIDTxFee(evm, ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
 
-			log.Info("#### did RequiredGas getIDTxFee ",  "needFee", uint64(needFee))
+			log.Info("#### did RequiredGas getIDTxFee ", "needFee", uint64(needFee))
 			return uint64(needFee), nil
 		}
 	}
