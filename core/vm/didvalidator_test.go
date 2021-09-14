@@ -27,6 +27,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 
+	types2 "github.com/elastos/Elastos.ELA.SideChain/types"
 	elacom "github.com/elastos/Elastos.ELA/common"
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
 )
@@ -87,7 +88,7 @@ var didPayloadBytesMashal = []byte(
         "expires" : "2023-02-10T17:00:00Z"
 	}`)
 
-var sortedDIDPayloadData2 = `{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","controller":["did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y","did:elastos:igHbSCez6H3gTuVPzwNZRrdj92GCJ6hD5d"],"publicKey":[{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","type":"ECDSAsecp256r1","controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","publicKeyBase58":"27bqfhMew6TjL4NMz2u8b2cFCvGovaELqr19Xytt1rDmd"}],"authentication":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",{"controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","publicKeyBase58":"zNxoZaZLdackZQNMas7sCkPRHZsJ3BtdjEvM2y5gNvKJ","type":"ECDSAsecp256r1"}],"authorization":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default"],"verifiableCredential":[{"id":"did:elastos:example#profile","type":["BasicProfileCredential","SelfProclaimedCredential"],"issuer":"did:elastos:example","issuanceDate":"2021-01-28T06:38:35Z","expirationDate":"2026-01-28T06:38:35Z","credentialSubject":{"id":"did:elastos:example","email":"contact@example.com","name":"Example LLC","website":"https://example.com/"},"proof":{"type":"ECDSAsecp256r1","created":"2021-01-28T06:38:35Z","verificationMethod":"did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary","signature":"e-W2o8Grqd0IrkWOEvGjHvWmTKl_hwuQFwk3rR1YZmxBySO7nYoardIZ5PLT_6rSViXNd8jPVFKXQRVbpeBVhQ"}}],"service":[{"id":"testid1","type":"testtype1","serviceEndpoint":"testendpoint1"},{"id":"testid2","type":"testtype2","serviceEndpoint":"testendpoint2","abc":"123","bcd":"456","cde":"789"}],"expires":"2023-02-10T17:00:00Z"}`
+var sortedDIDPayloadData2 = `{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","controller":["did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y","did:elastos:igHbSCez6H3gTuVPzwNZRrdj92GCJ6hD5d"],"publicKey":[{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","type":"ECDSAsecp256r1","controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","publicKeyBase58":"27bqfhMew6TjL4NMz2u8b2cFCvGovaELqr19Xytt1rDmd"}],"authentication":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default",{"id":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default","type":"ECDSAsecp256r1","controller":"did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN","publicKeyBase58":"zNxoZaZLdackZQNMas7sCkPRHZsJ3BtdjEvM2y5gNvKJ"}],"authorization":["did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#default"],"verifiableCredential":[{"id":"did:elastos:example#profile","type":["BasicProfileCredential","SelfProclaimedCredential"],"issuer":"did:elastos:example","issuanceDate":"2021-01-28T06:38:35Z","expirationDate":"2026-01-28T06:38:35Z","credentialSubject":{"id":"did:elastos:example","email":"contact@example.com","name":"Example LLC","website":"https://example.com/"},"proof":{"type":"ECDSAsecp256r1","created":"2021-01-28T06:38:35Z","verificationMethod":"did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary","signature":"e-W2o8Grqd0IrkWOEvGjHvWmTKl_hwuQFwk3rR1YZmxBySO7nYoardIZ5PLT_6rSViXNd8jPVFKXQRVbpeBVhQ"}}],"service":[{"id":"testid1","type":"testtype1","serviceEndpoint":"testendpoint1"},{"id":"testid2","type":"testtype2","serviceEndpoint":"testendpoint2","abc":"123","bcd":"456","cde":"789"}],"expires":"2023-02-10T17:00:00Z"}`
 
 func TestMashalDIDPayloadData(t *testing.T) {
 	// test for unmarshal did payload from bytes
@@ -97,7 +98,6 @@ func TestMashalDIDPayloadData(t *testing.T) {
 
 	data, err := did.MarshalDIDPayloadData(info)
 	assert.NoError(t, err)
-
 	buf := new(bytes.Buffer)
 	buf.WriteString(sortedDIDPayloadData2)
 	assert.Equal(t, buf.Bytes(), data)
@@ -1969,4 +1969,49 @@ func TestDocSliceSort(t *testing.T) {
 	err := checkDIDTransactionAfterMigrateHeight(changeDocPayload, nil)
 	assert.NoError(t, err)
 
+}
+//new
+func TestNewCustomizedDID(t *testing.T) {
+	id1 := "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj"
+	privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ" //413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ
+	tx1 := getPayloadDIDInfo(id1, "create", id11DocByts, privateKey1Str)
+	outputPayloadToFile(tx1, "user2.dest.payload.json")
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	buf := new(bytes.Buffer)
+	tx1.Serialize(buf, did.DIDVersion)
+
+	statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+	err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}), 0, 100)
+	assert.NoError(t, err1)
+	statedb.RemoveDIDLog(common.Hash{})
+
+	//examplercorp.id.json
+	didParam.IsTest = true
+	tx3 := getCustomizedDIDDoc(id1, "create", customizedDIDDocSingleContrller, privateKey1Str)
+	//短名字did:elastos:example
+	outputPayloadToFile(tx3, "did:elastos:example.json")
+
+	receipt := getCreateDIDReceipt(*tx1)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
+
+	didParam.CustomIDFeeRate = 0
+	err3 := checkCustomizedDID(evm, tx3, 20000)
+	assert.NoError(t, err3)
+
+	didParam.IsTest = false
+}
+
+func outputPayloadToFile(payload types2.Payload, filename string) {
+	b11, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	dest, err := os.Create(filename)
+	if err != nil {
+		return
+	}
+	defer dest.Close()
+	dest.Write(b11)
 }

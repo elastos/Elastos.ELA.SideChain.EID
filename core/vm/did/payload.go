@@ -31,9 +31,9 @@ type DIDPayload struct {
 	Payload string `json:"payload"`
 	Proof   Proof  `json:"proof"`
 
-	DIDDoc        *DIDDoc
-	CredentialDoc *VerifiableCredentialDoc
-	Ticket        *CustomIDTicket
+	DIDDoc        *DIDDoc	`json:"-"`
+	CredentialDoc *VerifiableCredentialDoc	`json:"-"`
+	Ticket        *CustomIDTicket	`json:"ticket,omitempty"`
 }
 
 type DIDTransactionData struct {

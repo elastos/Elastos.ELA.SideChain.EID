@@ -833,6 +833,7 @@ func checkDIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof, iDat
 		signature, _ := base64url.DecodeString(CustomizedDIDProof.SignatureValue)
 
 		var success bool
+
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
 		if err != nil {
 			return err
@@ -1082,15 +1083,16 @@ func getDefaultPublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 }
 
 func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
+
 	if spv.SpvService == nil && didParam.IsTest == true {
 		return nil
-	} else {
-		return errors.New("spv is not inited")
 	}
 	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs()
 	if err != nil {
 		return err
 	}
+	log.Debug("checkCustomizedDIDAvailable reservedCustomIDs", reservedCustomIDs)
+
 	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs()
 	if err != nil {
 		return err
@@ -1389,12 +1391,13 @@ func getIDTxFee(evm *EVM, customID, expires, operation string, controller interf
 	sizeRate := getSizeFactor(payloadLen)
 	//CustomIDFeeRate factor got from cr proposal
 	CustomIDFeeRate := didParam.CustomIDFeeRate
-	//if spv.SpvService != nil {
-	//	feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
-	//	if feeRate != 0 {
-	//		CustomIDFeeRate = feeRate
-	//	}
-	//}
+	if spv.SpvService != nil {
+		feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
+		log.Debug("getIDTxFee  "," feeRate ", feeRate)
+		if feeRate != 0 {
+			CustomIDFeeRate = feeRate
+		}
+	}
 	fmt.Printf("#### Printf getIDTxFee lengthRate %.16f lifeRate%.16f OperationRate %.16f multisigRate%.16f sizeRate%.16f CustomIDFeeRate %.16f",
 		lengthRate, lifeRate, OperationRate, multisigRate, sizeRate, float64(CustomIDFeeRate))
 	fee := (lengthRate*lifeRate*OperationRate*sizeRate + multisigRate) * float64(CustomIDFeeRate)

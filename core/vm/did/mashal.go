@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+
 )
+
 
 func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 	var b []byte
@@ -31,13 +33,11 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 			return nil, err
 		}
 
-		//if id, ok := p.Controller.(string); ok {
 		idv, err := json.Marshal(p.Controller)
 		if err != nil {
 			return nil, err
 		}
 		buf.Write(idv)
-		//}
 
 		buf.WriteRune(',')
 	}
@@ -74,15 +74,20 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 	// Authentication
 	count = len(p.Authentication)
 	if count != 0 {
-		err := writeKey(buf, "authentication")
+		err = writeKey(buf, "authentication")
 		if err != nil {
 			return nil, err
 		}
-		ath, err := json.Marshal(p.Authentication)
-		if err != nil {
-			return nil, err
+		buf.WriteRune('[')
+		for i, authen := range p.Authentication {
+			if err = MarshalAuthentication(authen, buf); err != nil {
+				return nil, err
+			}
+			if i != count-1 {
+				buf.WriteRune(',')
+			}
 		}
-		buf.Write(ath)
+		buf.WriteRune(']')
 		buf.WriteRune(',')
 	}
 
@@ -93,11 +98,16 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		ath, err := json.Marshal(p.Authorization)
-		if err != nil {
-			return nil, err
+		buf.WriteRune('[')
+		for i, vc := range p.Authorization {
+			if err = MarshalAuthentication(vc, buf); err != nil {
+				return nil, err
+			}
+			if i != count-1 {
+				buf.WriteRune(',')
+			}
 		}
-		buf.Write(ath)
+		buf.WriteRune(']')
 		buf.WriteRune(',')
 	}
 
@@ -210,17 +220,20 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 	buf.Write(isd)
 	buf.WriteRune(',')
 
-	// ExpirationDate
-	err = writeKey(buf, "expirationDate")
-	if err != nil {
-		return err
+	// ExpirationDate if not empty str
+	if p.ExpirationDate != "" {
+		err = writeKey(buf, "expirationDate")
+		if err != nil {
+			return err
+		}
+		exp, err := json.Marshal(p.ExpirationDate)
+		if err != nil {
+			return err
+		}
+		buf.Write(exp)
+		buf.WriteRune(',')
 	}
-	exp, err := json.Marshal(p.ExpirationDate)
-	if err != nil {
-		return err
-	}
-	buf.Write(exp)
-	buf.WriteRune(',')
+
 
 	// CredentialSubject
 	err = writeKey(buf, "credentialSubject")
@@ -302,16 +315,19 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 	buf.WriteRune(',')
 
 	// ExpirationDate
-	err = writeKey(buf, "expirationDate")
-	if err != nil {
-		return err
+	if p.ExpirationDate != "" {
+		err = writeKey(buf, "expirationDate")
+		if err != nil {
+			return err
+		}
+		exp, err := json.Marshal(p.ExpirationDate)
+		if err != nil {
+			return err
+		}
+		buf.Write(exp)
+		buf.WriteRune(',')
 	}
-	exp, err := json.Marshal(p.ExpirationDate)
-	if err != nil {
-		return err
-	}
-	buf.Write(exp)
-	buf.WriteRune(',')
+
 
 	// CredentialSubject
 	err = writeKey(buf, "credentialSubject")
@@ -438,6 +454,39 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 		} else {
 			buf.WriteRune('}')
 		}
+	}
+
+	return nil
+}
+
+
+func MarshalAuthentication(auth interface{}  , buf *bytes.Buffer) error {
+
+	switch auth.(type) {
+	case string:
+		keyString := auth.(string)
+		isd, err := json.Marshal(keyString)
+		if err != nil {
+			return err
+		}
+		buf.Write(isd)
+	case map[string]interface{}:
+		data, err := json.Marshal(auth)
+		if err != nil {
+			return err
+		}
+		didPublicKeyInfo := new(DIDPublicKeyInfo)
+		err = json.Unmarshal(data, didPublicKeyInfo)
+		if err != nil {
+			return err
+		}
+		isd, err := json.Marshal(didPublicKeyInfo)
+		if err != nil {
+			return err
+		}
+		buf.Write(isd)
+	default:
+		return errors.New("[ID MarshalAuthentication] invalid  auth.(type)")
 	}
 
 	return nil

@@ -174,17 +174,22 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	}
 	//remove DID_ELASTOS_PREFIX
 	id := idParam
-	if rawdb.IsURIHasPrefix(idParam) {
-		id = did.GetDIDFromUri(id)
-	} else {
-		//add prefix
-		idParam = did.DID_ELASTOS_PREFIX + idParam
-	}
-
-	//check is valid address
-	_, err := elacom.Uint168FromAddress(id)
+	isDID, err := rawdb.IsDID(s.b.ChainDb().(ethdb.KeyValueStore),id)
 	if err != nil {
-		return nil, http.NewError(int(service.InvalidParams), "invalid did")
+		return nil, http.NewError(int(service.InvalidParams), "IsDID failed")
+	}
+	if isDID{
+		if rawdb.IsURIHasPrefix(idParam) {
+			id = did.GetDIDFromUri(id)
+		} else {
+			//add prefix
+			idParam = did.DID_ELASTOS_PREFIX + idParam
+		}
+		//check is valid address
+		_, err := elacom.Uint168FromAddress(id)
+		if err != nil {
+			return nil, http.NewError(int(service.InvalidParams), "invalid did")
+		}
 	}
 
 	isGetAll, ok := param["all"].(bool)

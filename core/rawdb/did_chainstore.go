@@ -48,48 +48,32 @@ var (
 
 func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight uint64,
 	blockTimeStamp uint64) error {
-	fmt.Println("#### houpei PersistRegisterDIDTx begin ",blockHeight)
-
 	var err error
 	var buffer *bytes.Reader
 	operation := new(did.DIDPayload)
 	buffer = bytes.NewReader(log.Data)
 	err = operation.Deserialize(buffer, did.DIDVersion)
 	if err != nil {
-		fmt.Println("#### houpei PersistRegisterDIDTx 000 ",err.Error())
-
 		return err
 	}
 	idKey := []byte(operation.DIDDoc.ID)
-	fmt.Println("#### houpei PersistRegisterDIDTx 2 ",blockHeight)
 
 	expiresHeight, err := TryGetExpiresHeight(operation.DIDDoc.Expires, blockHeight, blockTimeStamp)
 	if err != nil {
-		fmt.Println("#### houpei PersistRegisterDIDTx 111 ",err.Error())
-
 		return err
 	}
-	fmt.Println("#### houpei PersistRegisterDIDTx 3 ",blockHeight)
 
 	if err := persistRegisterDIDExpiresHeight(db, idKey, expiresHeight); err != nil {
-		fmt.Println("#### houpei PersistRegisterDIDTx 222 ",err.Error())
-
 		return err
 	}
-	fmt.Println("#### houpei PersistRegisterDIDTx 4 ",blockHeight)
 
 	thash, err := elaCom.Uint256FromBytes(log.TxHash.Bytes())
 	if err != nil {
-		fmt.Println("#### houpei PersistRegisterDIDTx 333 ",err.Error())
-
 		return err
 	}
 	if err := persistRegisterDIDTxHash(db, idKey, *thash); err != nil {
-		fmt.Println("#### houpei PersistRegisterDIDTx 4444 ",err.Error())
-
 		return err
 	}
-	fmt.Println("#### houpei PersistRegisterDIDTx 5 ",blockHeight)
 
 	// didPayload is persisted in receipt
 	//if err := persistRegisterDIDPayload(db, *thash, operation); err != nil {
@@ -101,12 +85,8 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 		isDID = 1
 	}
 	if err := persistIsDID(db, idKey, isDID); err != nil {
-		fmt.Println("#### houpei PersistRegisterDIDTx 555 ",err.Error())
-
 		return err
 	}
-	fmt.Println("#### houpei PersistRegisterDIDTx end ",blockHeight)
-
 	return nil
 }
 

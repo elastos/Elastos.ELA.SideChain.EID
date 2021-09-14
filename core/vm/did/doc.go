@@ -163,7 +163,7 @@ func (c *DIDPayloadData) GetData() []byte {
 // public keys of payload in DID transaction payload
 type DIDPublicKeyInfo struct {
 	ID              string `json:"id"`
-	Type            string `json:"type"`
+	Type            string `json:"type,omitempty"`
 	Controller      string `json:"controller"`
 	PublicKeyBase58 string `json:"publicKeyBase58"`
 }
