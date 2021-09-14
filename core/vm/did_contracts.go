@@ -345,7 +345,8 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	senderAddr := evm.Context.Origin.String()
 	log.Info("####", "configAddr", configAddr, "senderAddr", senderAddr)
 
-	//BlockNumber <= configHeight senderAddr must be configAddr
+	//BlockNumber <= configHei
+	//ght senderAddr must be configAddr
 	if evm.Context.BlockNumber.Cmp(configHeight) <= 0 {
 		if senderAddr != configAddr {
 			log.Info("#### BlockNumber.Cmp(configHeight) <= 0 or callerAddress.String() != configAddr")

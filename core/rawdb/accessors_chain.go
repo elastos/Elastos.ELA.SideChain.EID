@@ -19,6 +19,7 @@ package rawdb
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math/big"
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
@@ -464,6 +465,8 @@ func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
 func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, btime uint64) error {
 	var err error
 	for _, receipt := range receipts {
+		fmt.Println("#### houpei WriteDIDReceipts ",receipt.DIDLog.Operation)
+
 		if receipt.Status != 1 {
 			continue
 		}
