@@ -29,6 +29,9 @@ type Config struct {
 
 	//node version
 	NodeVersion string
+
+	//this spv GenesisBlockAddress
+	GenesisBlockAddress string
 }
 
 /*
@@ -83,8 +86,11 @@ type SPVService interface {
 	// GetReceivedCustomIDs query all controversial received custom ID.
 	GetReceivedCustomIDs() (map[string]common.Uint168, error)
 
+	//HaveRetSideChainDepositCoinTx query tx data by tx hash
+	HaveRetSideChainDepositCoinTx(txHash common.Uint256) bool
+
 	// GetRateOfCustomIDFee query current rate of custom ID fee.
-	GetRateOfCustomIDFee() (common.Fixed64, error)
+	GetRateOfCustomIDFee(height uint32) (common.Fixed64, error)
 
 	// GetBlockListener Get block listener
 	GetBlockListener() BlockListener

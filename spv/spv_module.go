@@ -129,7 +129,7 @@ func NewService(cfg *Config, client *rpc.Client, tmux *event.TypeMux) (*Service,
 	}
 	spvCfg := &spv.Config{
 		DataDir:    cfg.DataDir,
-		FilterType: filter.FTNexTTurnDPOSInfo,
+		FilterType: filter.FTCustomID,
 		OnRollback: nil, // Not implemented yet
 	}
 	//chainParams, spvCfg = ResetConfig(chainParams, spvCfg)
@@ -422,6 +422,7 @@ func IteratorUnTransaction(from ethCommon.Address) {
 			}
 			fee, _, _ := FindOutputFeeAndaddressByTxHash(string(txHash))
 			if fee.Uint64() <= 0 {
+				setNextSeek(seek)
 				break
 			}
 			err, finished := SendTransaction(from, string(txHash), fee)
@@ -545,6 +546,7 @@ func FindOutputFeeAndaddressByTxHash(transactionHash string) (*big.Int, ethCommo
 	}
 	addrs := strings.Split(string(addrss), ",")
 	if !ethCommon.IsHexAddress(addrs[0]) {
+		log.Error("SpvServicedb is error target: ", "addr", addrs[0], "elaHash", transactionHash)
 		return new(big.Int), emptyaddr, new(big.Int)
 	}
 	outputs, err := spvTransactiondb.Get([]byte(transactionHash + "Output"))
