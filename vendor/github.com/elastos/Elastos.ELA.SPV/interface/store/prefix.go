@@ -32,4 +32,12 @@ var (
 	BKTRevertPosition  = []byte("revertp")
 	BKTRevertPositions = []byte("revertps")
 	BKTConsensus       = []byte("consensus")
+
+	//ReturnSideChainDepositCoin
+	BKTReturnSideChainDepositCoin = []byte("retschdepositcoin")
+
+	BKTReservedCustomID     = []byte("rscid")
+	BKTReceivedCustomID     = []byte("rccid")
+	BKTChangeCustomIDFee    = []byte("ccidf")
+	BKTCustomIDFeePositions = []byte("cidfps")
 )
