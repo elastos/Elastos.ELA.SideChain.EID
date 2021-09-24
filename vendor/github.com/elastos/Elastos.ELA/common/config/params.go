@@ -195,6 +195,9 @@ var DefaultParams = Params{
 	CheckRewardHeight:           436812,
 	VoteStatisticsHeight:        512881,
 	RegisterCRByDIDHeight:       598000,
+	//todo
+	ProhibitTransferToDIDHeight: 0,
+	DIDSideChainAddress:         "XKUh4GLhFJiqAMTF6HyWQrV9pK9HcGUdfJ",
 	ToleranceDuration:           5 * time.Second,
 	MaxInactiveRounds:           720 * 2,
 	InactivePenalty:             0, //there will be no penalty in this version
@@ -218,11 +221,11 @@ var DefaultParams = Params{
 	WalletPath:                  "keystore.dat",
 	RPCServiceLevel:             ConfigurationPermitted.String(),
 	NodeProfileStrategy:         Balanced.String(),
-	MaxNodePerHost:              10,
+	MaxNodePerHost:              72,
 	CkpManager: checkpoint.NewManager(&checkpoint.Config{
-		EnableHistory:      false,
+		EnableHistory:      true,
 		HistoryStartHeight: uint32(0),
-		NeedSave:           false,
+		NeedSave:           true,
 	}),
 	TxCacheVolume:                      100000,
 	CheckVoteCRCountHeight:             658930,
@@ -245,9 +248,13 @@ var DefaultParams = Params{
 	DPOSNodeCrossChainHeight:           2000000,
 	RevertToPOWNoBlockTime:             12 * 3600,
 	StopConfirmBlockTime:               11 * 3600,
-	HalvingRewardHeight:                1051200, // 4 * 365 * 720
-	HalvingRewardInterval:              1051200, // 4 * 365 * 720
-	NewELAIssuanceHeight:               919800,  // 3.5 * 365 * 720
+	HalvingRewardHeight:                1051200,   // 4 * 365 * 720
+	HalvingRewardInterval:              1051200,   // 4 * 365 * 720
+	NewELAIssuanceHeight:               919800,    // 3.5 * 365 * 720
+	SmallCrossTransferThreshold:        100000000, //TODO reset latter
+	ReturnDepositCoinFee:               100,       //TODO reset latter
+	NewCrossChainStartHeight:           2000000,   // todo complete me
+	ReturnCrossChainCoinStartHeight:    2000000,   // todo complete me
 }
 
 // TestNet returns the network parameters for the test network.
@@ -309,6 +316,9 @@ func (p *Params) TestNet() *Params {
 	copy.CheckRewardHeight = 100
 	copy.VoteStatisticsHeight = 0
 	copy.RegisterCRByDIDHeight = 483500
+	//todo
+	copy.ProhibitTransferToDIDHeight = 0
+	copy.DIDSideChainAddress = "XKUh4GLhFJiqAMTF6HyWQrV9pK9HcGUdfJ"
 	copy.EnableUtxoDB = true
 	copy.EnableCORS = false
 	copy.VoterRejectPercentage = 10
@@ -330,9 +340,13 @@ func (p *Params) TestNet() *Params {
 	copy.RevertToPOWNoBlockTime = 12 * 3600
 	copy.StopConfirmBlockTime = 11 * 3600
 	copy.RevertToPOWStartHeight = 815060
-	copy.HalvingRewardHeight = 877880    //767000 + 154 * 720
-	copy.HalvingRewardInterval = 1051200 //4 * 365 * 720
-	copy.NewELAIssuanceHeight = 774920   //767000 + 720 * 11
+	copy.HalvingRewardHeight = 877880              //767000 + 154 * 720
+	copy.HalvingRewardInterval = 1051200           //4 * 365 * 720
+	copy.NewELAIssuanceHeight = 774920             //767000 + 720 * 11
+	copy.SmallCrossTransferThreshold = 100000000   //TODO reset latter
+	copy.ReturnDepositCoinFee = 100                //TODO reset latter
+	copy.NewCrossChainStartHeight = 2000000        // todo complete me
+	copy.ReturnCrossChainCoinStartHeight = 2000000 // todo complete me
 
 	return &copy
 }
@@ -396,6 +410,10 @@ func (p *Params) RegNet() *Params {
 	copy.CheckRewardHeight = 280000
 	copy.VoteStatisticsHeight = 0
 	copy.RegisterCRByDIDHeight = 393000
+	//todo
+	copy.ProhibitTransferToDIDHeight = 0
+	copy.DIDSideChainAddress = "XKUh4GLhFJiqAMTF6HyWQrV9pK9HcGUdfJ"
+
 	copy.EnableUtxoDB = true
 	copy.EnableCORS = false
 	copy.VoterRejectPercentage = 10
@@ -417,9 +435,13 @@ func (p *Params) RegNet() *Params {
 	copy.RevertToPOWNoBlockTime = 12 * 3600
 	copy.StopConfirmBlockTime = 11 * 3600
 	copy.RevertToPOWStartHeight = 706240
-	copy.HalvingRewardHeight = 801240    //690360 + 154 * 720
-	copy.HalvingRewardInterval = 1051200 //4 * 365 * 720
-	copy.NewELAIssuanceHeight = 691740   //690300 + 720 * 2
+	copy.HalvingRewardHeight = 801240              //690360 + 154 * 720
+	copy.HalvingRewardInterval = 1051200           //4 * 365 * 720
+	copy.NewELAIssuanceHeight = 691740             //690300 + 720 * 2
+	copy.SmallCrossTransferThreshold = 100000000   //TODO reset latter
+	copy.ReturnDepositCoinFee = 100                //TODO reset latter
+	copy.NewCrossChainStartHeight = 2000000        // todo complete me
+	copy.ReturnCrossChainCoinStartHeight = 2000000 // todo complete me
 
 	return &copy
 }
@@ -539,6 +561,9 @@ type Params struct {
 	// CRVotingStartHeight defines the height of CR voting started.
 	CRVotingStartHeight uint32
 
+	// NewCrossChainStartHeight defines the height of new cross chain transaction started.
+	NewCrossChainStartHeight uint32
+
 	// CRCommitteeStartHeight defines the height of CR Committee started.
 	CRCommitteeStartHeight uint32
 
@@ -563,6 +588,12 @@ type Params struct {
 	// RegisterCRByDIDHeight defines the height to support register and update
 	// CR by CID and CID.
 	RegisterCRByDIDHeight uint32
+
+	//Prohibit transfers to did height
+	ProhibitTransferToDIDHeight uint32
+
+	//did side chain address
+	DIDSideChainAddress string
 
 	// CRCArbiters defines the fixed CRC arbiters producing the block.
 	CRCArbiters []string
@@ -739,6 +770,16 @@ type Params struct {
 
 	// NewELAIssuanceHeight represents the new issuance ELA amount after proposal #1631
 	NewELAIssuanceHeight uint32
+
+	// SMALLCrossTransferThreshold indicates the minimum amount consider as Small transfer
+	SmallCrossTransferThreshold common.Fixed64
+
+	// ReturnDepositCoinFee indicates the fee the
+	ReturnDepositCoinFee common.Fixed64
+
+	// ReturnCrossChainCoinStartHeight indeicates the start height of
+	// ReturnCroossChainDepositCoin transaction
+	ReturnCrossChainCoinStartHeight uint32
 }
 
 // rewardPerBlock calculates the reward for each block by a specified time
