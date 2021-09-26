@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -328,13 +330,28 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 			if isRegisterDID {
 				ID = ""
 			}
-			needFee := getIDTxFee(evm, ID, payloadInfo.Expires, p.Header.Operation, nil, buf.Len())
+			needFee := getIDTxFee(evm, ID, payloadInfo.Expires, p.Header.Operation, payloadInfo.Controller, buf.Len())
 
 			log.Info("#### did RequiredGas getIDTxFee ", "needFee", uint64(needFee))
 			return uint64(needFee), nil
 		}
 	}
 	return params.DIDBaseGasCost, nil
+}
+
+func checkExpires(Expires  string ,  blockTimeStamp *big.Int )error{
+	expiresTime, err := time.Parse(time.RFC3339, Expires)
+	if err != nil {
+		return errors.New("invalid Expires format")
+	}
+	fmt.Println("expiresTime.Unix()", expiresTime.Unix())
+	fmt.Println("blockTimeStamp.Int64()", blockTimeStamp.Int64())
+
+	//expiresTime
+	if  expiresTime.Unix() <=  blockTimeStamp.Int64() {
+		return errors.New("Expires time is too short")
+	}
+	return nil
 }
 
 func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
@@ -373,6 +390,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 			return false32Byte, errors.New("createDIDVerify Payload is error")
 		}
 		p.DIDDoc = payloadInfo
+
 
 		var err error
 		isRegisterDID := isDID(p.DIDDoc)

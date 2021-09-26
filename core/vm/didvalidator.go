@@ -109,11 +109,13 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 }
 
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
-	_, err := time.Parse(time.RFC3339, p.DIDDoc.Expires)
-	if err != nil {
-		return errors.New("invalid Expires")
+	//_, err := time.Parse(time.RFC3339, p.DIDDoc.Expires)
+	//if err != nil {
+	//	return errors.New("invalid Expires")
+	//}
+	if err := checkExpires(p.DIDDoc.Expires, evm.Time); err != nil {
+		return  err
 	}
-
 	//check txn fee use RequiredGas
 	//fee := evm.GasPrice.Uint64() * gas
 	configHeight := evm.chainConfig.OldDIDMigrateHeight
@@ -712,11 +714,14 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	//if err := checkCustomizedDIDTxFee(customizedDIDPayload, fee); err != nil {
 	//	return err
 	//}
-
+	var err error
 	//check Expires must be  format RFC3339
-	_, err := time.Parse(time.RFC3339, customizedDIDPayload.DIDDoc.Expires)
-	if err != nil {
-		return errors.New("invalid Expires")
+	//_, err := time.Parse(time.RFC3339, customizedDIDPayload.DIDDoc.Expires)
+	//if err != nil {
+	//	return errors.New("invalid Expires")
+	//}
+	if err := checkExpires(customizedDIDPayload.DIDDoc.Expires, evm.Time); err != nil {
+		return  err
 	}
 	//if this customized did is already exist operation should not be create
 	//if this customized did is not exist operation should not be update
@@ -873,6 +878,9 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 		signature, _ := base64url.DecodeString(CustomizedDIDProof.SignatureValue)
 
 		var success bool
+		fmt.Println("checkDIDInnerProof publicKeyBase58 ", publicKeyBase58)
+		fmt.Println("checkDIDInnerProof signature ", CustomizedDIDProof.SignatureValue)
+		fmt.Println("checkDIDInnerProof data ", string(iDateContainer.GetData()))
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
 
 		if err != nil {
@@ -1380,6 +1388,7 @@ func GetMultisignMN(mulstiSign string) (int, int, error) {
 func getIDTxFee(evm *EVM, customID, expires, operation string, controller interface{}, payloadLen int) float64 {
 	//lengthRate id lenght lengthRate
 	lengthRate := getCustomizedDIDLenFactor(customID)
+
 	//lifeRate Valid period lifeRate
 	stamp := time.Unix(evm.Time.Int64(), 0)
 	lifeRate := getValidPeriodFactor(expires, stamp)
@@ -1406,24 +1415,29 @@ func getIDTxFee(evm *EVM, customID, expires, operation string, controller interf
 
 func getCustomizedDIDLenFactor(ID string) float64 {
 	len := len(ID)
+	var lengthRate float64
 	if len == 0 {
 		return 0.3
 	} else if len == 1 {
-		return 6400
+		lengthRate= 6400
 	} else if len == 2 {
 		return 3200
 	} else if len == 3 {
 		return 1200
 	} else if len <= 32 {
 		//100 - [(n-1) / 8 ]
-		return 100 - float64((len-1)/8)
+		lengthRate= 100 - float64((len-1)/8)
 	} else if len <= 64 {
 		//93 + [(n-1) / 8 ]
-		return 93 + float64((len-1)/8)
+		lengthRate= 93 + float64((len-1)/8)
 	} else {
 		//100 * (n-59) / 3
-		return 100 * ((float64(len) - 59) / 2)
+		lengthRate= 100 * ((float64(len) - 59) / 2)
 	}
+	if lengthRate < 0 {
+		lengthRate = 0
+	}
+	return  lengthRate
 }
 
 func getDays(t1, t2 time.Time) int64 {
@@ -1435,6 +1449,9 @@ func getDays(t1, t2 time.Time) int64 {
 func getValidPeriodFactor(Expires string, nowTime time.Time) float64 {
 	expiresTime, _ := time.Parse(time.RFC3339, Expires)
 	days := getDays(expiresTime, nowTime)
+	if days <0 {
+		days = 0
+	}
 	if days < 180 {
 		days += 180
 	}
@@ -1445,6 +1462,9 @@ func getValidPeriodFactor(Expires string, nowTime time.Time) float64 {
 		lifeRate = years * ((100 - (3 * math.Log2(1))) / 100)
 	} else {
 		lifeRate = years * ((100 - (3 * math.Log2(years))) / 100)
+	}
+	if lifeRate <0 {
+		lifeRate = 0
 	}
 	return lifeRate
 
@@ -1479,6 +1499,9 @@ func getSizeFactor(payLoadSize int) float64 {
 		factor = math.Log10(float64(payLoadSize)/1024)/2 + 1
 	} else {
 		factor = math.Pow(float64(payLoadSize)/1024, 0.9)*math.Log10(float64(payLoadSize)/1024) - 33.4
+	}
+	if factor <0  {
+		factor = 0
 	}
 	return factor
 }

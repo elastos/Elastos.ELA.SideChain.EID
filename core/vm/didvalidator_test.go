@@ -332,6 +332,8 @@ func TestIDChainStore_CreateDIDTx(t *testing.T) {
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
 	evm.BlockNumber = new(big.Int).SetInt64(1)
+	//2021 09 24 unix 1632450124
+	evm.Time =new(big.Int).SetInt64(1632450124)
 	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
 
 	doc := getPayloadCreateDID()
@@ -355,11 +357,11 @@ func TestIDChainStore_CreateDIDTx(t *testing.T) {
 
 	info.DIDDoc.Expires = "Mon Jan _2 15:04:05 2006"
 	err = checkRegisterDID(evm, info, gas)
-	assert.EqualError(t, err, "invalid Expires")
+	assert.EqualError(t, err, "invalid Expires format")
 
 	info.DIDDoc.Expires = "2006-01-02T15:04:05Z07:00"
 	err = checkRegisterDID(evm, info, gas)
-	assert.EqualError(t, err, "invalid Expires")
+	assert.EqualError(t, err, "invalid Expires format")
 
 	info.DIDDoc.Expires = originExpires
 	err = checkRegisterDID(evm, info, gas)
@@ -376,7 +378,7 @@ func TestIDChainStore_CreateDIDTx(t *testing.T) {
 	data, err := json.Marshal(info)
 	assert.NoError(t, err)
 	err = checkDIDTransaction(data, statedb)
-	assert.EqualError(t, err, "invalid Expires")
+	assert.EqualError(t, err, "invalid Expires format")
 }
 
 func TestCheckRegisterDID(t *testing.T) {
@@ -611,6 +613,7 @@ func TestCustomizedDID(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	evm.Time=big.NewInt(0)
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 
@@ -646,6 +649,7 @@ func TestCustomizedDIDMultSign(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	evm.Time=big.NewInt(0)
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 	statedb.AddDIDLog(idUser1, did.Create_DID_Operation, buf.Bytes())
@@ -1752,7 +1756,7 @@ func TestCustomizedDIDTransferProofs(t *testing.T) {
 	statedb, _ := state.New(hash1, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
-
+	evm.Time=big.NewInt(0)
 	user1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
 	user1PrivateKeyStr := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
 	user1TX := getPayloadDIDInfo(user1, "create", user1IDDocByts, user1PrivateKeyStr)
@@ -1979,6 +1983,7 @@ func TestNewCustomizedDID(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	evm.Time=big.NewInt(0)
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 
@@ -1990,7 +1995,7 @@ func TestNewCustomizedDID(t *testing.T) {
 	//examplercorp.id.json
 	didParam.IsTest = true
 	tx3 := getCustomizedDIDDoc(id1, "create", customizedDIDDocSingleContrller, privateKey1Str)
-	//短名字did:elastos:example
+	//did:elastos:example
 	outputPayloadToFile(tx3, "did:elastos:example.json")
 
 	receipt := getCreateDIDReceipt(*tx1)
