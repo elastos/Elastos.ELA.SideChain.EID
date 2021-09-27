@@ -25,6 +25,7 @@ type NetworkConfig struct {
 	IPAddress   string
 	Magic       uint32
 	DefaultPort uint16
+	MaxNodePerHost uint32
 
 	Account    account.Account
 	MedianTime dtime.MedianTimeSource
@@ -312,6 +313,7 @@ func NewNetwork(cfg *NetworkConfig) (*Network, error) {
 		MagicNumber:      cfg.Magic,
 		DefaultPort:      cfg.DefaultPort,
 		TimeSource:       cfg.MedianTime,
+		MaxNodePerHost:   cfg.MaxNodePerHost,
 		MakeEmptyMessage: makeEmptyMessage,
 		HandleMessage:    network.handleMessage,
 		PingNonce:        network.GetCurrentHeight,

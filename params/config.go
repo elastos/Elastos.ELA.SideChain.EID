@@ -95,6 +95,7 @@ var (
 			Magic: 202001,
 			IPAddress: "",
 			DPoSPort: 0,
+			MaxNodePerHost: 100,
 		},
 	}
 
@@ -162,6 +163,7 @@ var (
 			Magic: 202001,
 			IPAddress: "",
 			DPoSPort: 0,
+			MaxNodePerHost: 100,
 		},
 	}
 
@@ -229,6 +231,7 @@ var (
 			Magic: 202001,
 			IPAddress: "",
 			DPoSPort: 0,
+			MaxNodePerHost: 100,
 		},
 	}
 
@@ -294,6 +297,7 @@ var (
 			Magic: 202001,
 			IPAddress: "",
 			DPoSPort: 0,
+			MaxNodePerHost: 100,
 		},
 	}
 
@@ -451,6 +455,7 @@ type PbftConfig struct {
 	PrintLevel    uint8  `json:"printlevel"`
 	MaxLogsSize   int64  `json:"maxlogssize"`
 	MaxPerLogSize int64  `json:"maxperlogsize"`
+	MaxNodePerHost uint32 `json:"maxnodeperhost"`//MaxNodePerHost defines max nodes that one host can establish.
 }
 
 func (p *PbftConfig) String() string {
