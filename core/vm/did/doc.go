@@ -108,6 +108,24 @@ func (a PublicKeysSlice) Less(i, j int) bool {
 	return result
 }
 
+type ControllerSlice []interface{}
+
+func (s ControllerSlice) Len() int {
+	return len(s)
+}
+func (s ControllerSlice) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ControllerSlice) Less(i, j int) bool {
+	result := false
+	serviceI := s[i].(string)
+	serviceJ := s[j].(string)
+	if strings.Compare(serviceI, serviceJ) < 0 {
+		result = true
+	}
+	return result
+}
+
 type ServiceSlice []interface{}
 
 func (s ServiceSlice) Len() int {

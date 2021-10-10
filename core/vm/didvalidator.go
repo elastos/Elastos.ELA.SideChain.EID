@@ -52,7 +52,12 @@ const PrefixCRDID contract.PrefixType = 0x67
 func InitDIDParams(params did.DIDParams) {
 	didParam = params
 }
-
+//Controller
+func sortControllerSlice(controller interface{})  {
+	if controllers, ok :=controller.([]interface{}); ok{
+		sort.Sort(did.ControllerSlice(controllers))
+	}
+}
 //sort doc Authentication or Authorization
 func sortAuthSlice(authSlice []interface{}) error {
 	var strAuth []string
@@ -93,6 +98,7 @@ func sortAuthSlice(authSlice []interface{}) error {
 
 //sort doc slice by id
 func sortDocSlice(verifyDoc *did.DIDDoc) error {
+	sortControllerSlice(verifyDoc.Controller)
 	sort.Sort(did.PublicKeysSlice(verifyDoc.PublicKey))
 	sort.Sort(did.VerifiableCredentialSlice(verifyDoc.VerifiableCredential))
 	for _, v := range verifyDoc.VerifiableCredential {

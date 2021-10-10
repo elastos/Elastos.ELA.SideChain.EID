@@ -172,24 +172,11 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	if !ok {
 		return nil, http.NewError(int(service.InvalidParams), "did is null")
 	}
-	//remove DID_ELASTOS_PREFIX
-	id := idParam
-	isDID, err := rawdb.IsDID(s.b.ChainDb().(ethdb.KeyValueStore),id)
-	if err != nil {
-		return nil, http.NewError(int(service.InvalidParams), "IsDID failed")
-	}
-	if isDID{
-		if rawdb.IsURIHasPrefix(idParam) {
-			id = did.GetDIDFromUri(id)
-		} else {
-			//add prefix
-			idParam = did.DID_ELASTOS_PREFIX + idParam
-		}
-		//check is valid address
-		_, err := elacom.Uint168FromAddress(id)
-		if err != nil {
-			return nil, http.NewError(int(service.InvalidParams), "invalid did")
-		}
+	//remove DID_ELASTOS_PREFI
+	idWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(idWithPrefix) {
+		//add prefix
+		idWithPrefix = did.DID_ELASTOS_PREFIX + idParam
 	}
 
 	isGetAll, ok := param["all"].(bool)
@@ -200,7 +187,7 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	var rpcPayloadDid didapi.RpcPayloadDIDInfo
 
 	buf := new(bytes.Buffer)
-	buf.WriteString(idParam)
+	buf.WriteString(idWithPrefix)
 	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 		rpcPayloadDid.DID = idParam
@@ -236,7 +223,7 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 
 		tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 		if index == 0 {
-			if rawdb.IsDIDDeactivated(s.b.ChainDb().(ethdb.KeyValueStore), idParam) {
+			if rawdb.IsDIDDeactivated(s.b.ChainDb().(ethdb.KeyValueStore), idWithPrefix) {
 				didDocState = didapi.Deactivated
 				//fill in
 				deactiveTXData, err := s.getDeactiveTx(ctx, buf.Bytes())
