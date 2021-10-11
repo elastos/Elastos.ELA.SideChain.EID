@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -115,10 +116,11 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 }
 
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
-	//_, err := time.Parse(time.RFC3339, p.DIDDoc.Expires)
-	//if err != nil {
-	//	return errors.New("invalid Expires")
-	//}
+	idString := did.GetDIDFromUri(p.DIDDoc.ID)
+	// check idstring
+	if !IsLetterOrNumber(idString) {
+		return errors.New("invalid  DID: only letter and number is allowed")
+	}
 	if err := checkExpires(p.DIDDoc.Expires, evm.Time); err != nil {
 		return  err
 	}
@@ -709,9 +711,22 @@ func getIssuerPublicKey(evm *EVM, issuerID, verificationMethod string, isDID boo
 	return publicKey, nil
 }
 
+func IsLetterOrNumber(s string) bool {
+	isLetterOrNumber := regexp.MustCompile(`^[a-zA-Z0-9]+$`).MatchString
+	return isLetterOrNumber(s)
+}
+
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
 
 	// check Custom ID available?
+	idString := did.GetDIDFromUri(customizedDIDPayload.DIDDoc.ID)
+	if idString == ""{
+		return errors.New("customizedid is empty str")
+	}
+	// check idstring
+	if !IsLetterOrNumber(idString) {
+		return errors.New("invalid custom ID: only letter and number is allowed")
+	}
 	if err := checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
 		return err
 	}
@@ -1114,8 +1129,9 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if reservedCustomIDs == nil || len(reservedCustomIDs) == 0 {
 		return nil
 	}
-	if _, ok := reservedCustomIDs[cPayload.DIDDoc.ID]; ok {
-		if customDID, ok := receivedCustomIDs[cPayload.DIDDoc.ID]; ok {
+	noPrefixID := did.GetDIDFromUri(cPayload.DIDDoc.ID)
+	if _, ok := reservedCustomIDs[noPrefixID]; ok {
+		if customDID, ok := receivedCustomIDs[noPrefixID]; ok {
 			rcDID, err := customDID.ToAddress()
 			if err != nil {
 				return errors.New("invalid customDID in db")

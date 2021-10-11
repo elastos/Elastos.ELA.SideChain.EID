@@ -391,7 +391,9 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		}
 		p.DIDDoc = payloadInfo
 
-
+		if !strings.HasPrefix(p.DIDDoc.ID, did.DID_ELASTOS_PREFIX) {
+			return false32Byte, errors.New("ID must have prefix did:elastos:")
+		}
 		var err error
 		isRegisterDID := isDID(p.DIDDoc)
 		if isRegisterDID {
@@ -454,10 +456,6 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 }
 
 func isDID(didDoc *did.DIDDoc) bool {
-
-	if !strings.HasPrefix(didDoc.ID, did.DID_ELASTOS_PREFIX) {
-		return false
-	}
 	idString := did.GetDIDFromUri(didDoc.ID)
 
 	for _, pkInfo := range didDoc.PublicKey {
