@@ -174,4 +174,5 @@ type Config struct {
 	OldDIDMigrateAddr     string
 	OldDIDMigrateHeight   *big.Int
 	DocArraySortHeight    *big.Int
+	DynamicArbiterHeight uint64
 }

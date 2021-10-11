@@ -813,6 +813,11 @@ var (
 		Usage: "configue old did migrate address",
 		Value: "0xFEca85Ac94C1c9ef6e1293fc1F94486305420D7f",
 	}
+	DynamicArbiter = cli.Uint64Flag{
+		Name:  "spv.arbiter.height",
+		Usage: "configue the offset blocks to pre-connect to switch to pbft consensus",
+		Value: 0,
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -1572,6 +1577,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.OldDIDMigrateAddr = ctx.GlobalString(OldDIDMigrateAddrFlag.Name)
 	cfg.DocArraySortHeight = new(big.Int).SetUint64(ctx.GlobalUint64(DocArraySortHeightFlag.Name))
 	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
+	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
 	// Override any default configs for hard coded networks.
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
@@ -1586,6 +1592,9 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
 		cfg.DocArraySortHeight =  new(big.Int).SetUint64(1)
 
+		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
+			cfg.DynamicArbiterHeight = 1
+		}
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 24
@@ -1597,6 +1606,9 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
 		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
+			cfg.DynamicArbiterHeight = 2
+		}
 	case ctx.GlobalBool(GoerliFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 25
@@ -1611,6 +1623,9 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
+		}
+		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
+			cfg.DynamicArbiterHeight = 3
 		}
 		// Create new developer account or reuse existing one
 		var (

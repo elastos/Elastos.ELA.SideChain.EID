@@ -26,7 +26,9 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/withdrawfailedtx"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 
 	ecom "github.com/elastos/Elastos.ELA/common"
@@ -228,6 +230,17 @@ func (p *Pbft) subscribeEvent() {
 						log.Info("For the same batch of aribters, no need to re-connect direct net")
 					}
 				}
+			}
+		case dpos.ETSmallCroTx:
+			if croTx, ok := e.Data.(*smallcrosstx.ETSmallCrossTx); ok {
+				msg := dmsg.NewSmallCroTx(croTx.Signature, croTx.RawTx)
+				p.BroadMessage(msg)
+			}
+
+		case dpos.ETFailedWithdrawTx:
+			if failEvt, ok := e.Data.(*withdrawfailedtx.FailedWithdrawEvent); ok {
+				msg := dmsg.NewFailedWithdrawTx(failEvt.Signature, failEvt.Txid)
+				p.BroadMessage(msg)
 			}
 		}
 	})
@@ -737,7 +750,7 @@ func (p *Pbft) SetBlockChain(chain *core.BlockChain) {
 
 func (p *Pbft) broadConfirmMsg(confirm *payload.Confirm, height uint64) {
 	msg := dmsg.NewConfirmMsg(confirm, height)
-	p.network.BroadcastMessage(msg)
+	p.BroadMessage(msg)
 }
 
 func (p *Pbft) verifyConfirm(confirm *payload.Confirm, elaHeight uint64) error {
