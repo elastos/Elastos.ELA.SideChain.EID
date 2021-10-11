@@ -1,18 +1,18 @@
-// Copyright 2016 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of Elastos.ELA.SideChain.ESC.
+// Copyright 2016 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ESC is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ESC is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ESC. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/reexec"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/cmdtest"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/cmdtest"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 func tmpdir(t *testing.T) string {

@@ -1,18 +1,18 @@
-// Copyright 2016 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of Elastos.ELA.SideChain.ESC.
+// Copyright 2016 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ESC is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ESC is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ESC. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -23,11 +23,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi/bind"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/compiler"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi/bind"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/compiler"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"gopkg.in/urfave/cli.v1"
 )
 

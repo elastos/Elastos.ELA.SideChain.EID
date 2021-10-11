@@ -1,18 +1,18 @@
-// Copyright 2018 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of the Elastos.ELA.SideChain.ESC library.
+// Copyright 2018 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ESC library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ESC library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ESC library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 // +build none
 
@@ -77,7 +77,7 @@ var (
 		"signer/rules/deps",
 
 		// skip special licenses
-		"crypto/secp256k1", // Relicensed to BSD-3 via https://github.com/elastos/Elastos.ELA.SideChain.ESC/pull/17225
+		"crypto/secp256k1", // Relicensed to BSD-3 via https://github.com/elastos/Elastos.ELA.SideChain.EID/pull/17225
 	}
 
 	// paths with this prefix are licensed as GPL. all other files are LGPL.
@@ -88,13 +88,13 @@ var (
 	licenseCommentRE = regexp.MustCompile(`^//\s*(Copyright|This file is part of).*?\n(?://.*?\n)*\n*`)
 
 	// this text appears at the start of AUTHORS
-	authorsFileHeader = "# This is the official list of Elastos.ELA.SideChain.ESC authors for copyright purposes.\n\n"
+	authorsFileHeader = "# This is the official list of Elastos.ELA.SideChain.EID authors for copyright purposes.\n\n"
 )
 
 // this template generates the license comment.
 // its input is an info structure.
 var licenseT = template.Must(template.New("").Parse(`
-// Copyright {{.Year}} The Elastos.ELA.SideChain.ESC Authors
+// Copyright {{.Year}} The Elastos.ELA.SideChain.EID Authors
 // This file is part of {{.Whole false}}.
 //
 // {{.Whole true}} is free software: you can redistribute it and/or modify
@@ -133,12 +133,12 @@ func (i info) ShortLicense() string {
 
 func (i info) Whole(startOfSentence bool) string {
 	if i.gpl() {
-		return "Elastos.ELA.SideChain.ESC"
+		return "Elastos.ELA.SideChain.EID"
 	}
 	if startOfSentence {
-		return "The Elastos.ELA.SideChain.ESC library"
+		return "The Elastos.ELA.SideChain.EID library"
 	}
-	return "the Elastos.ELA.SideChain.ESC library"
+	return "the Elastos.ELA.SideChain.EID library"
 }
 
 func (i info) gpl() bool {

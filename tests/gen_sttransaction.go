@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
 )
 
 var _ = (*stTransactionMarshaling)(nil)

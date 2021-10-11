@@ -1,18 +1,18 @@
-// Copyright 2019 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of the Elastos.ELA.SideChain.ESC library.
+// Copyright 2019 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ESC library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ESC library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ESC library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 package fourbyte
 
@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/core"
 )
 
 // ValidateTransaction does a number of checks on the supplied transaction, and
@@ -49,7 +49,7 @@ func (db *Database) ValidateTransaction(selector *string, tx *core.SendTxArgs) (
 	if tx.To == nil {
 		// Contract creation should contain sufficient data to deploy a contract. A
 		// typical error is omitting sender due to some quirk in the javascript call
-		// e.g. https://github.com/elastos/Elastos.ELA.SideChain.ESC/issues/16106.
+		// e.g. https://github.com/elastos/Elastos.ELA.SideChain.EID/issues/16106.
 		if len(data) == 0 {
 			// Prevent sending ether into black hole (show stopper)
 			if tx.Value.ToInt().Cmp(big.NewInt(0)) > 0 {

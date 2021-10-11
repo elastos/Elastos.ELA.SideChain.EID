@@ -1,18 +1,18 @@
-// Copyright 2014 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of the Elastos.ELA.SideChain.ESC library.
+// Copyright 2014 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ESC library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ESC library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ESC library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package eth implements the Ethereum protocol.
 package eth
@@ -28,37 +28,37 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi/bind"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/blocksigner"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/clique"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/ethash"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/pbft"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/bloombits"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/events"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/dpos"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/filters"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/gasprice"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/ethapi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/miner"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enr"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi/bind"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/blocksigner"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/clique"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/ethash"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/pbft"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/bloombits"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/filters"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/gasprice"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/ethapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/miner"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enr"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	elapeer "github.com/elastos/Elastos.ELA/dpos/p2p/peer"

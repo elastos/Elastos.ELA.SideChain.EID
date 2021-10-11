@@ -1,18 +1,18 @@
-// Copyright 2015 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of the Elastos.ELA.SideChain.ESC library.
+// Copyright 2015 The Elastos.ELA.SideChain.EID Authors
+// This file is part of the Elastos.ELA.SideChain.EID library.
 //
-// The Elastos.ELA.SideChain.ESC library is free software: you can redistribute it and/or modify
+// The Elastos.ELA.SideChain.EID library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Elastos.ELA.SideChain.ESC library is distributed in the hope that it will be useful,
+// The Elastos.ELA.SideChain.EID library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the Elastos.ELA.SideChain.ESC library. If not, see <http://www.gnu.org/licenses/>.
+// along with the Elastos.ELA.SideChain.EID library. If not, see <http://www.gnu.org/licenses/>.
 
 package ethapi
 
@@ -28,28 +28,28 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/tyler-smith/go-bip39"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/keystore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/scwallet"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/math"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/clique"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/ethash"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/rawdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/dpos"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/smallcrosstx"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/spv"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/withdrawfailedtx"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/scwallet"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/clique"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/ethash"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/withdrawfailedtx"
 
 	"github.com/elastos/Elastos.ELA/events"
 )
@@ -419,7 +419,7 @@ func (s *PrivateAccountAPI) SignTransaction(ctx context.Context, args SendTxArgs
 //
 // The key used to calculate the signature is decrypted with the given password.
 //
-// https://github.com/elastos/Elastos.ELA.SideChain.ESC/wiki/Management-APIs#personal_sign
+// https://github.com/elastos/Elastos.ELA.SideChain.EID/wiki/Management-APIs#personal_sign
 func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr common.Address, passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
 	account := accounts.Account{Address: addr}
@@ -447,7 +447,7 @@ func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr c
 // Note, the signature must conform to the secp256k1 curve R, S and V values, where
 // the V value must be 27 or 28 for legacy reasons.
 //
-// https://github.com/elastos/Elastos.ELA.SideChain.ESC/wiki/Management-APIs#personal_ecRecover
+// https://github.com/elastos/Elastos.ELA.SideChain.EID/wiki/Management-APIs#personal_ecRecover
 func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Bytes) (common.Address, error) {
 	if len(sig) != crypto.SignatureLength {
 		return common.Address{}, fmt.Errorf("signature must be %d bytes long", crypto.SignatureLength)

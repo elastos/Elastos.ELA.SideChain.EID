@@ -39,7 +39,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
 // Ensure the KDF generates appropriately sized keys.

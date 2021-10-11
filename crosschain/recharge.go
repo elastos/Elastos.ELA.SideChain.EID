@@ -1,9 +1,9 @@
 package crosschain
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 )
 
 func IsRechargeTx(tx *types.Transaction) bool {
