@@ -42,7 +42,7 @@ import (
 	"fmt"
 	"hash"
 
-	ethcrypto "github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	ethcrypto "github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
 var (

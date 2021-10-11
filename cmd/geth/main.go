@@ -1,18 +1,18 @@
-// Copyright 2014 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of Elastos.ELA.SideChain.ESC.
+// Copyright 2014 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ESC is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ESC is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ESC. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 // geth is the official command-line client for Ethereum.
 package main
@@ -29,23 +29,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/keystore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/console"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/events"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethclient"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/debug"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/les"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/smallcrosstx"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/spv"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/withdrawfailedtx"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/console"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethclient"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/debug"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/les"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/withdrawfailedtx"
 
 	elacom "github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/core/contract"
@@ -68,7 +68,7 @@ var (
 	gitCommit = ""
 	gitDate   = ""
 	// The app that holds all commands and flags.
-	app = utils.NewApp(gitCommit, gitDate, "the Elastos.ELA.SideChain.ESC command line interface")
+	app = utils.NewApp(gitCommit, gitDate, "the Elastos.ELA.SideChain.EID command line interface")
 	// flags that configure the node
 	nodeFlags = []cli.Flag{
 		utils.IdentityFlag,
@@ -220,7 +220,7 @@ func init() {
 	// Initialize the CLI app and start Geth
 	app.Action = geth
 	app.HideVersion = true // we have a command to print the version
-	app.Copyright = "Copyright 2013-2019 The Elastos.ELA.SideChain.ESC Authors"
+	app.Copyright = "Copyright 2013-2019 The Elastos.ELA.SideChain.EID Authors"
 	app.Commands = []cli.Command{
 		// See chaincmd.go:
 		initCommand,

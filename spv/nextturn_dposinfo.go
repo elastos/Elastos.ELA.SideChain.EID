@@ -3,7 +3,7 @@ package spv
 import (
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 

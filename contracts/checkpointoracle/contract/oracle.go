@@ -7,12 +7,12 @@ import (
 	"math/big"
 	"strings"
 
-	ethereum "github.com/elastos/Elastos.ELA.SideChain.ESC"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi/bind"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
+	ethereum "github.com/elastos/Elastos.ELA.SideChain.EID"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi/bind"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

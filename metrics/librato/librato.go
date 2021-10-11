@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
 )
 
 // a regexp for extracting the unit from time.Duration.String

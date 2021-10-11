@@ -1,18 +1,18 @@
-// Copyright 2019 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of Elastos.ELA.SideChain.ESC.
+// Copyright 2019 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ESC is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ESC is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ESC. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -21,10 +21,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/forkid"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enr"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/forkid"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enr"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"gopkg.in/urfave/cli.v1"
 )
 

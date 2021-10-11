@@ -1,20 +1,20 @@
-// Copyright 2015 The Elastos.ELA.SideChain.ESC Authors
-// This file is part of Elastos.ELA.SideChain.ESC.
+// Copyright 2015 The Elastos.ELA.SideChain.EID Authors
+// This file is part of Elastos.ELA.SideChain.EID.
 //
-// Elastos.ELA.SideChain.ESC is free software: you can redistribute it and/or modify
+// Elastos.ELA.SideChain.EID is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Elastos.ELA.SideChain.ESC is distributed in the hope that it will be useful,
+// Elastos.ELA.SideChain.EID is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Elastos.ELA.SideChain.ESC. If not, see <http://www.gnu.org/licenses/>.
+// along with Elastos.ELA.SideChain.EID. If not, see <http://www.gnu.org/licenses/>.
 
-// Package utils contains internal helper functions for Elastos.ELA.SideChain.ESC commands.
+// Package utils contains internal helper functions for Elastos.ELA.SideChain.EID commands.
 package utils
 
 import (
@@ -32,38 +32,38 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/pbft"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/keystore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/fdlimit"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/clique"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/ethash"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/dashboard"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/gasprice"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethstats"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/graphql"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/les"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics/influxdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/miner"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/discv5"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enode"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/nat"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/netutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
-	whisper "github.com/elastos/Elastos.ELA.SideChain.ESC/whisper/whisperv6"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/pbft"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/fdlimit"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/clique"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/ethash"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dashboard"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/gasprice"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethstats"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/graphql"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/les"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics/influxdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/miner"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/discv5"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/nat"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/netutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
+	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
 	pcsclite "github.com/gballet/go-libpcsclite"
 	cli "gopkg.in/urfave/cli.v1"
 )
