@@ -37,9 +37,9 @@ var TestnetBootnodes = []string{
 // RinkebyBootnodes are the enode URLs of the P2P bootstrap nodes running on the
 // Rinkeby test network.
 var RinkebyBootnodes = []string{
-	"enode://ae29f21785c49231e4cc7f505c046ad13eaa2c3851b0241ba737cabea98950efab9f095b2cae52c042bb6b977ddbbd19eeeb2c9a1f990d46850138dfbefcffba@@3.209.120.83:20640",
-	"enode://7ccf14cf7ca30177ac2533bd7c9c73fbacc59c4e8a012cb1fa1328da1f3ab06aef2dadbb378510d471a8a57d2c11c79585cfacfa8946fde55529c1db761a0910@@3.212.134.14:20640",
-	"enode://35fc836cc3f0300d889e9f7fb572c40ecc37848eb5d634ed6d89645392a2dcc21f12be46a02021980d32259449004956077a185c45ded5d4487b5c50155454c7@@3.212.156.65:20640",
+	"enode://ae29f21785c49231e4cc7f505c046ad13eaa2c3851b0241ba737cabea98950efab9f095b2cae52c042bb6b977ddbbd19eeeb2c9a1f990d46850138dfbefcffba@3.209.120.83:20640",
+	"enode://7ccf14cf7ca30177ac2533bd7c9c73fbacc59c4e8a012cb1fa1328da1f3ab06aef2dadbb378510d471a8a57d2c11c79585cfacfa8946fde55529c1db761a0910@3.212.134.14:20640",
+	"enode://35fc836cc3f0300d889e9f7fb572c40ecc37848eb5d634ed6d89645392a2dcc21f12be46a02021980d32259449004956077a185c45ded5d4487b5c50155454c7@3.212.156.65:20640",
 }
 
 // GoerliBootnodes are the enode URLs of the P2P bootstrap nodes running on the
