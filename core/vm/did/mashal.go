@@ -454,7 +454,6 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 
 	return nil
 }
-<<<<<<< HEAD
 
 
 func MarshalAuthentication(auth interface{}  , buf *bytes.Buffer) error {
