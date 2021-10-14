@@ -8,6 +8,8 @@ package mempool
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
+	"strconv"
 
 	"github.com/elastos/Elastos.ELA/blockchain"
 	"github.com/elastos/Elastos.ELA/common"
@@ -43,7 +45,7 @@ func strArrayCRCProposalCustomID(tx *types.Transaction) (interface{}, error) {
 		return nil, fmt.Errorf(
 			"CRC proposal payload cast failed, tx:%s", tx.Hash())
 	}
-	if p.ProposalType  != payload.ReceiveCustomID {
+	if p.ProposalType != payload.ReceiveCustomID {
 		return nil, nil
 	}
 	return p.ReceivedCustomIDList, nil
@@ -96,6 +98,46 @@ func strChangeCustomIDFee(tx *types.Transaction) (interface{}, error) {
 	return nil, nil
 }
 
+func hashCRCProposalRegisterSideChainName(
+	tx *types.Transaction) (interface{}, error) {
+	p, ok := tx.Payload.(*payload.CRCProposal)
+	if !ok {
+		return nil, fmt.Errorf(
+			"crcProposal payload cast failed, tx:%s", tx.Hash())
+	}
+	if p.ProposalType == payload.RegisterSideChain {
+		return p.SideChainName, nil
+	}
+
+	return nil, nil
+}
+
+func hashCRCProposalRegisterSideChainMagicNumber(
+	tx *types.Transaction) (interface{}, error) {
+	p, ok := tx.Payload.(*payload.CRCProposal)
+	if !ok {
+		return nil, fmt.Errorf(
+			"crcProposal payload cast failed, tx:%s", tx.Hash())
+	}
+	if p.ProposalType == payload.RegisterSideChain {
+		return strconv.Itoa(int(p.MagicNumber)), nil
+	}
+	return nil, nil
+}
+
+func hashCRCProposalRegisterSideChainGenesisHash(
+	tx *types.Transaction) (interface{}, error) {
+	p, ok := tx.Payload.(*payload.CRCProposal)
+	if !ok {
+		return nil, fmt.Errorf(
+			"crcProposal payload cast failed, tx:%s", tx.Hash())
+	}
+	if p.ProposalType == payload.RegisterSideChain {
+		return p.GenesisHash, nil
+	}
+	return nil, nil
+}
+
 func hashCRCProposalWithdrawProposalHash(
 	tx *types.Transaction) (interface{}, error) {
 	p, ok := tx.Payload.(*payload.CRCProposalWithdraw)
@@ -135,7 +177,7 @@ func hashNextTurnDPOSInfoTxPayloadHash(tx *types.Transaction) (interface{}, erro
 }
 
 func hashCustomIDProposalResultTxPayloadHash(tx *types.Transaction) (interface{}, error) {
-	_, ok := tx.Payload.(*payload.CustomIDProposalResult)
+	_, ok := tx.Payload.(*payload.RecordProposalResult)
 	if !ok {
 		return nil, fmt.Errorf(
 			"custom ID proposal result tx payload cast failed, tx:%s", tx.Hash())
@@ -309,6 +351,34 @@ func addrUnregisterCRCID(tx *types.Transaction) (interface{}, error) {
 // hash array related functions
 func hashArraySidechainTransactionHashes(
 	tx *types.Transaction) (interface{}, error) {
+	if tx.PayloadVersion == payload.WithdrawFromSideChainVersion {
+		p, ok := tx.Payload.(*payload.WithdrawFromSideChain)
+		if !ok {
+			return nil, fmt.Errorf(
+				"withdraw from sidechain payload cast failed, tx: %s",
+				tx.Hash())
+		}
+
+		array := make([]common.Uint256, 0, len(p.SideChainTransactionHashes))
+		for _, v := range p.SideChainTransactionHashes {
+			array = append(array, v)
+		}
+		return array, nil
+	} else if tx.PayloadVersion == payload.WithdrawFromSideChainVersionV1 {
+		array := make([]common.Uint256, 0)
+		for _, output := range tx.Outputs {
+			if output.Type != types.OTWithdrawFromSideChain {
+				continue
+			}
+			witPayload, ok := output.Payload.(*outputpayload.Withdraw)
+			if !ok {
+				continue
+			}
+			array = append(array, witPayload.SideChainTransactionHash)
+		}
+		return array, nil
+	}
+
 	p, ok := tx.Payload.(*payload.WithdrawFromSideChain)
 	if !ok {
 		return nil, fmt.Errorf(
@@ -321,6 +391,25 @@ func hashArraySidechainTransactionHashes(
 		array = append(array, v)
 	}
 	return array, nil
+}
+
+// hash array related functions
+func hashArraySidechainReturnDepositTransactionHashes(
+	tx *types.Transaction) (interface{}, error) {
+	arrayHash := make([]common.Uint256, 0)
+	for _, output := range tx.Outputs {
+		if output.Type == types.OTReturnSideChainDepositCoin {
+			payload, ok := output.Payload.(*outputpayload.ReturnSideChainDeposit)
+			if ok {
+				arrayHash = append(arrayHash, payload.DepositTransactionHash)
+			} else {
+				return nil, fmt.Errorf(
+					"sidechain return deposit tx from sidechain output payload cast failed, tx: %s",
+					tx.Hash())
+			}
+		}
+	}
+	return arrayHash, nil
 }
 
 // str array related functions

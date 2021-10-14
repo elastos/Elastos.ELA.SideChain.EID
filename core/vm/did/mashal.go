@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
-
 )
-
 
 func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 	var b []byte
@@ -327,8 +325,6 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 		buf.Write(exp)
 		buf.WriteRune(',')
 	}
-
-
 	// CredentialSubject
 	err = writeKey(buf, "credentialSubject")
 	if err != nil {
@@ -458,6 +454,7 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 
 	return nil
 }
+<<<<<<< HEAD
 
 
 func MarshalAuthentication(auth interface{}  , buf *bytes.Buffer) error {
@@ -491,3 +488,4 @@ func MarshalAuthentication(auth interface{}  , buf *bytes.Buffer) error {
 
 	return nil
 }
+

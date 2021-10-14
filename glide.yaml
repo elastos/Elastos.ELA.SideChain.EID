@@ -125,10 +125,10 @@ import:
 - package: github.com/AlexpanXX/fsnotify
 #- package: github.com/elastos/Elastos.ELA.SideChain
 #  version: v0.1.8
-- package: github.com/elastos/Elastos.ELA.SPV
-  version: 217f2e459d333333e4f25c5dc5d613dc82be3506
-- package: github.com/elastos/Elastos.ELA
-  version: 87aef49384e354905dd819df7e92bff96acb35f4
+- package: github.com/elastos/Elastos.ELA.SPV #feature_customID
+  version: 8491d04cb398fd029b3d23b5b37b4f74308f4f2a
+- package: github.com/elastos/Elastos.ELA #feature_customID
+  version: 805be25514e3cbeb31f84edbfb249261ba8d54f2
 - package: github.com/gorilla/websocket
 - package: github.com/mattn/go-sqlite3
 - package: github.com/btcsuite/btcd/wire

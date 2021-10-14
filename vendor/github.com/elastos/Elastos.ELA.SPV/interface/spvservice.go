@@ -81,7 +81,7 @@ func NewSPVService(cfg *Config) (*spvservice, error) {
 		originArbiters = append(originArbiters, v)
 	}
 	dataStore, err := store.NewDataStore(dataDir, originArbiters,
-		len(cfg.ChainParams.CRCArbiters)*3)
+		len(cfg.ChainParams.CRCArbiters)*3, cfg.GenesisBlockAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -233,8 +233,13 @@ func (s *spvservice) GetReceivedCustomIDs() (map[string]common.Uint168, error) {
 }
 
 // Get rate of custom ID fee.
-func (s *spvservice) GetRateOfCustomIDFee() (common.Fixed64, error) {
-	return s.db.CID().GetCustomIDFeeRate()
+func (s *spvservice) GetRateOfCustomIDFee(height uint32) (common.Fixed64, error) {
+	return s.db.CID().GetCustomIDFeeRate(height)
+}
+
+//GetReturnSideChainDepositCoin query tx data by tx hash
+func (s *spvservice) HaveRetSideChainDepositCoinTx(txHash common.Uint256) bool {
+	return s.db.CID().HaveRetSideChainDepositCoinTx(txHash)
 }
 
 func (s *spvservice) GetTransactionIds(height uint32) ([]*common.Uint256, error) {
@@ -305,6 +310,16 @@ func (s *spvservice) putTx(batch store.DataBatch, utx util.Transaction,
 		if err != nil {
 			return false, err
 		}
+	case types.ReturnSideChainDepositCoin:
+		_, ok := tx.Payload.(*payload.ReturnSideChainDepositCoin)
+		if !ok {
+			return false, errors.New("invalid ReturnSideChainDepositCoin tx")
+		}
+		nakedBatch := batch.GetNakedBatch()
+		err := s.db.CID().BatchPutRetSideChainDepositCoinTx(tx.Transaction, nakedBatch)
+		if err != nil {
+			return false, err
+		}
 	case types.CRCProposal:
 		p, ok := tx.Payload.(*payload.CRCProposal)
 		if !ok {
@@ -326,12 +341,12 @@ func (s *spvservice) putTx(batch store.DataBatch, utx util.Transaction,
 			}
 		case payload.ChangeCustomIDFee:
 			if err := s.db.CID().BatchPutControversialChangeCustomIDFee(
-				p.RateOfCustomIDFee, p.Hash(tx.PayloadVersion), nakedBatch); err != nil {
+				p.RateOfCustomIDFee, p.Hash(tx.PayloadVersion), p.EIDEffectiveHeight, nakedBatch); err != nil {
 				return false, err
 			}
 		}
-	case types.CustomIDResult:
-		p, ok := tx.Payload.(*payload.CustomIDProposalResult)
+	case types.ProposalResult:
+		p, ok := tx.Payload.(*payload.RecordProposalResult)
 		if !ok {
 			return false, errors.New("invalid custom ID result tx")
 		}

@@ -320,6 +320,7 @@ func findSlot(pos []uint32, height uint32, arbitersCount int) (uint32, error) {
 func calcHash(data []byte) [32]byte {
 	return sha256.Sum256(data)
 }
+
 func (c *arbiters) GetConsensusAlgorithmByHeight(height uint32) (byte, error) {
 	c.RLock()
 	defer c.RUnlock()
@@ -357,20 +358,24 @@ func (c *arbiters) BatchPutRevertTransaction(batch *leveldb.Batch, workingHeight
 	c.Lock()
 	defer c.Unlock()
 
-	// update position
-	batch.Put(BKTRevertPosition, uint32toBytes(workingHeight))
-
-	// update positions
-	posCache := c.getCurrentRevertPositions()
-	newPosCache := make([]uint32, 0)
-	for _, p := range posCache {
-		if p < workingHeight {
-			newPosCache = append(newPosCache, p)
-		}
+	pos := c.getCurrentRevertPosition()
+	var isRollback bool
+	if workingHeight <= pos {
+		isRollback = true
 	}
-	newPosCache = append(newPosCache, workingHeight)
-	c.revertPOSCache = newPosCache
-	batch.Put(BKTRevertPositions, uint32ArrayToBytes(c.revertPOSCache))
+	batch.Put(BKTRevertPosition, uint32toBytes(workingHeight))
+	if !isRollback {
+		posCache := c.getCurrentRevertPositions()
+		newPosCache := make([]uint32, 0)
+		for _, p := range posCache {
+			if p < workingHeight {
+				newPosCache = append(newPosCache, p)
+			}
+		}
+		newPosCache = append(newPosCache, workingHeight)
+		c.revertPOSCache = newPosCache
+		batch.Put(BKTRevertPositions, uint32ArrayToBytes(c.revertPOSCache))
+	}
 
 	buf := new(bytes.Buffer)
 	if err := common.WriteUint32(buf, workingHeight); err != nil {

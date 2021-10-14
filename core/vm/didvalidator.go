@@ -1425,7 +1425,7 @@ func getIDTxFee(evm *EVM, customID, expires, operation string, controller interf
 	//CustomIDFeeRate factor got from cr proposal
 	CustomIDFeeRate := didParam.CustomIDFeeRate
 	if spv.SpvService != nil {
-		feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
+		feeRate, _ := spv.SpvService.GetRateOfCustomIDFee(uint32(evm.BlockNumber.Uint64()))
 		log.Debug("getIDTxFee  "," feeRate ", feeRate)
 		if feeRate != 0 {
 			CustomIDFeeRate = feeRate
