@@ -134,10 +134,6 @@ web3._extend({
 			getter: 'pbft_dispatcher'
 		}),
 		new web3._extend.Property({
-			name: 'account',
-			getter: 'pbft_account'
-		}),
-		new web3._extend.Property({
 			name: 'network',
 			getter: 'pbft_network'
 		}),

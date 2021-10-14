@@ -1389,12 +1389,12 @@ func getIDTxFee(evm *EVM, customID, expires, operation string, controller interf
 	sizeRate := getSizeFactor(payloadLen)
 	//CustomIDFeeRate factor got from cr proposal
 	CustomIDFeeRate := didParam.CustomIDFeeRate
-	//if spv.SpvService != nil {
-	//	feeRate, _ := spv.SpvService.GetRateOfCustomIDFee()
-	//	if feeRate != 0 {
-	//		CustomIDFeeRate = feeRate
-	//	}
-	//}
+	if spv.SpvService != nil {
+		feeRate, _ := spv.SpvService.GetRateOfCustomIDFee(uint32(evm.BlockNumber.Uint64()))
+		if feeRate != 0 {
+			CustomIDFeeRate = feeRate
+		}
+	}
 	fmt.Printf("#### Printf getIDTxFee lengthRate %.16f lifeRate%.16f OperationRate %.16f multisigRate%.16f sizeRate%.16f CustomIDFeeRate %.16f",
 		lengthRate, lifeRate, OperationRate, multisigRate, sizeRate, float64(CustomIDFeeRate))
 	fee := (lengthRate*lifeRate*OperationRate*sizeRate + multisigRate) * float64(CustomIDFeeRate)
