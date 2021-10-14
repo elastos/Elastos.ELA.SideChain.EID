@@ -1113,6 +1113,7 @@ func getDefaultPublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 
 func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 
+	log.Error("checkCustomizedDIDAvailable 1")
 	if spv.SpvService == nil && didParam.IsTest == true {
 		return nil
 	}
@@ -1120,12 +1121,13 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if err != nil {
 		return err
 	}
-	log.Debug("checkCustomizedDIDAvailable reservedCustomIDs", reservedCustomIDs)
-
+	log.Error("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
 	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs()
 	if err != nil {
 		return err
 	}
+	log.Error("checkCustomizedDIDAvailable ", "receivedCustomIDs ", receivedCustomIDs)
+
 	if reservedCustomIDs == nil || len(reservedCustomIDs) == 0 {
 		return nil
 	}
