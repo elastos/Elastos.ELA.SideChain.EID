@@ -1129,7 +1129,7 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	log.Error("checkCustomizedDIDAvailable ", "receivedCustomIDs ", receivedCustomIDs)
 
 	if reservedCustomIDs == nil || len(reservedCustomIDs) == 0 {
-		return nil
+		return errors.New("Before registe customized did must have reservedCustomIDs")
 	}
 	noPrefixID := did.GetDIDFromUri(cPayload.DIDDoc.ID)
 	if _, ok := reservedCustomIDs[noPrefixID]; ok {
