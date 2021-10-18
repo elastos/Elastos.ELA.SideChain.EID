@@ -1145,9 +1145,9 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 			} else {
 				// customID need be one of the controller.
 				var controllerCount int
-				if dids, ok := cPayload.DIDDoc.Controller.([]string); ok {
+				if dids, ok := cPayload.DIDDoc.Controller.([]interface{}); ok {
 					for _, did := range dids {
-						if strings.Contains(did, rcDID) {
+						if strings.Contains(did.(string), rcDID){
 							controllerCount++
 						}
 					}
@@ -1158,9 +1158,12 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 					return errors.New("not in controller")
 				}
 				// customID need be one oof the signature
-				if proofs, ok := cPayload.DIDDoc.Proof.([]*did.DocProof); ok {
-					var invalidProofCount int
-					for _, proof := range proofs {
+				dIDProofArray := make([]*did.DocProof, 0)
+				customizedDIDProof := &did.DocProof{}
+				//	var invalidProofCount int
+				if err := Unmarshal(cPayload.DIDDoc.Proof, &dIDProofArray); err == nil {
+					invalidProofCount := 0
+					for _, proof := range dIDProofArray {
 						if strings.Contains(proof.Creator, rcDID) {
 							invalidProofCount++
 						}
@@ -1170,12 +1173,12 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 					} else if invalidProofCount > 1 {
 						return errors.New("there is duplicated signature of custom ID")
 					}
-				} else if proof, ok := cPayload.DIDDoc.Proof.(*did.DocProof); ok {
-					if !strings.Contains(proof.Creator, rcDID) {
+				} else if err := Unmarshal(cPayload.DIDDoc.Proof, customizedDIDProof); err == nil {
+					contrID, _ := did.GetController(customizedDIDProof.Creator) // check customID
+					if !strings.Contains(contrID, rcDID) {
 						return errors.New("there is no signature of custom ID")
 					}
 				} else {
-					//error
 					return errors.New("invalid Proof type")
 				}
 			}
