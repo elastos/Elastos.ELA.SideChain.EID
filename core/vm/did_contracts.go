@@ -296,6 +296,38 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	}
 	return nil
 }
+//
+func IsDocProofCtrUnique(Proof interface{})error{
+	DIDProofArray := make([]*did.DocProof, 0)
+	CustomizedDIDProof := &did.DocProof{}
+	//var bExist bool
+	if err := Unmarshal(Proof, &DIDProofArray); err == nil {
+		//check unique
+		creatorMgr := make(map[string]struct{}, 0)
+		for _, CustomizedDIDProof := range DIDProofArray {
+			if _,ok :=  creatorMgr[CustomizedDIDProof.Creator]; ok{
+				return errors.New("Proof creator is duplicated")
+			}
+			creatorMgr[CustomizedDIDProof.Creator] = struct{}{}
+		}
+
+	} else if err := Unmarshal(Proof, CustomizedDIDProof); err == nil {
+		//if one controller no need check
+	} else {
+		//error
+		return errors.New("isVerificationsMethodsValid Invalid Proof type")
+	}
+
+	return nil
+}
+
+func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
+	//doc := p.DIDDoc
+	if p.DIDDoc != nil {
+		return IsDocProofCtrUnique(p.DIDDoc.Proof)
+	}
+	return nil
+}
 
 func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 	data := getData(input, 32, uint64(len(input))-32)

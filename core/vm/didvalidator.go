@@ -717,7 +717,10 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-
+	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
+		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
+		return err
+	}
 	// check Custom ID available?
 	idString := did.GetDIDFromUri(customizedDIDPayload.DIDDoc.ID)
 	if idString == ""{
