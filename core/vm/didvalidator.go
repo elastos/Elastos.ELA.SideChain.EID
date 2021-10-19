@@ -1133,12 +1133,13 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if spv.SpvService == nil && didParam.IsTest == true {
 		return nil
 	}
-	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs()
+	elaHeight := spv.SpvService.GetBlockListener().BlockHeight()
+	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs(elaHeight)
 	if err != nil {
 		return err
 	}
 	log.Error("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
-	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs()
+	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs(elaHeight)
 	if err != nil {
 		return err
 	}
