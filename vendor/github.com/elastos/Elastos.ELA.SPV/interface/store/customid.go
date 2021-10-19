@@ -17,7 +17,15 @@ import (
 // Ensure customID implement CustomID interface.
 var _ CustomID = (*customID)(nil)
 
-const DefaultFeeRate common.Fixed64 = 1e8
+const (
+	DefaultConfirmations uint32         = 6
+	DefaultFeeRate       common.Fixed64 = 1e8
+)
+
+type CustomIDInfo struct {
+	DID    common.Uint168
+	Height uint32
+}
 
 type customID struct {
 	batch
@@ -25,8 +33,8 @@ type customID struct {
 	db                  *leveldb.DB
 	b                   *leveldb.Batch
 	cache               map[common.Uint256]uint32
-	reservedCustomIDs   map[string]struct{}
-	receivedCustomIDs   map[string]common.Uint168
+	reservedCustomIDs   map[string]uint32
+	receivedCustomIDs   map[string]CustomIDInfo // key: customID
 	customIDFeePosCache []uint32
 
 	//this spv GenesisBlockAddress
@@ -38,8 +46,8 @@ func NewCustomID(db *leveldb.DB, GenesisBlockAddress string) *customID {
 		db:                  db,
 		b:                   new(leveldb.Batch),
 		cache:               make(map[common.Uint256]uint32),
-		reservedCustomIDs:   make(map[string]struct{}, 0),
-		receivedCustomIDs:   make(map[string]common.Uint168, 0),
+		reservedCustomIDs:   make(map[string]uint32, 0),
+		receivedCustomIDs:   make(map[string]CustomIDInfo, 0),
 		GenesisBlockAddress: GenesisBlockAddress,
 	}
 }
@@ -79,11 +87,11 @@ func (c *customID) PutControversialChangeCustomIDFee(rate common.Fixed64, propos
 }
 
 func (c *customID) PutCustomIDProposalResults(
-	results []payload.ProposalResult) error {
+	results []payload.ProposalResult, height uint32) error {
 	c.Lock()
 	defer c.Unlock()
 	batch := new(leveldb.Batch)
-	if err := c.batchPutCustomIDProposalResults(results, batch); err != nil {
+	if err := c.batchPutCustomIDProposalResults(results, height, batch); err != nil {
 		return err
 	}
 	return c.db.Write(batch, nil)
@@ -137,15 +145,15 @@ func (c *customID) BatchDeleteControversialChangeCustomIDFee(
 }
 
 func (c *customID) BatchPutCustomIDProposalResults(
-	results []payload.ProposalResult, batch *leveldb.Batch) error {
+	results []payload.ProposalResult, height uint32, batch *leveldb.Batch) error {
 	c.Lock()
 	defer c.Unlock()
 
-	return c.batchPutCustomIDProposalResults(results, batch)
+	return c.batchPutCustomIDProposalResults(results, height, batch)
 }
 
 func (c *customID) batchPutCustomIDProposalResults(
-	results []payload.ProposalResult, batch *leveldb.Batch) error {
+	results []payload.ProposalResult, height uint32, batch *leveldb.Batch) error {
 	// add new reserved custom ID into cache.
 	for _, r := range results {
 		switch r.ProposalType {
@@ -165,8 +173,8 @@ func (c *customID) batchPutCustomIDProposalResults(
 				if err != nil {
 					return err
 				}
-				for k, v := range reservedCustomIDs {
-					c.reservedCustomIDs[k] = v
+				for k, _ := range reservedCustomIDs {
+					c.reservedCustomIDs[k] = height
 				}
 				// update db.
 				if err := c.batchPutReservedCustomIDs(batch); err != nil {
@@ -194,7 +202,10 @@ func (c *customID) batchPutCustomIDProposalResults(
 					return err
 				}
 				for k, v := range receivedCustomIDs {
-					c.receivedCustomIDs[k] = v
+					c.receivedCustomIDs[k] = CustomIDInfo{
+						DID:    v,
+						Height: height,
+					}
 				}
 				// update db.
 				if err := c.batchPutReceivedCustomIDs(batch); err != nil {
@@ -243,14 +254,16 @@ func (c *customID) batchPutControversialReservedCustomIDs(
 
 func (c *customID) batchPutReservedCustomIDs(batch *leveldb.Batch) error {
 	// store reserved custom ID.
-
 	w := new(bytes.Buffer)
 	err := common.WriteVarUint(w, uint64(len(c.reservedCustomIDs)))
 	if err != nil {
 		return err
 	}
-	for k, _ := range c.reservedCustomIDs {
+	for k, v := range c.reservedCustomIDs {
 		if err := common.WriteVarString(w, k); err != nil {
+			return err
+		}
+		if err := common.WriteUint32(w, v); err != nil {
 			return err
 		}
 	}
@@ -284,11 +297,14 @@ func (c *customID) batchPutReceivedCustomIDs(batch *leveldb.Batch) error {
 	if err != nil {
 		return err
 	}
-	for id, did := range c.receivedCustomIDs {
+	for id, info := range c.receivedCustomIDs {
 		if err := common.WriteVarString(w, id); err != nil {
 			return err
 		}
-		if err := did.Serialize(w); err != nil {
+		if err := info.DID.Serialize(w); err != nil {
+			return err
+		}
+		if err := common.WriteUint32(w, info.Height); err != nil {
 			return err
 		}
 	}
@@ -342,16 +358,16 @@ func (c *customID) batchPutChangeCustomIDFee(batch *leveldb.Batch, feeRate commo
 	return nil
 }
 
-func (c *customID) GetReservedCustomIDs() (map[string]struct{}, error) {
+func (c *customID) GetReservedCustomIDs(height uint32) (map[string]struct{}, error) {
 	c.RLock()
 	defer c.RUnlock()
-	return c.getReservedCustomIDs()
+	return c.getReservedCustomIDs(height)
 }
 
-func (c *customID) GetReceivedCustomIDs() (map[string]common.Uint168, error) {
+func (c *customID) GetReceivedCustomIDs(height uint32) (map[string]common.Uint168, error) {
 	c.RLock()
 	defer c.RUnlock()
-	return c.getReceivedCustomIDs()
+	return c.getReceivedCustomIDs(height)
 }
 
 func (c *customID) GetCustomIDFeeRate(height uint32) (common.Fixed64, error) {
@@ -360,18 +376,24 @@ func (c *customID) GetCustomIDFeeRate(height uint32) (common.Fixed64, error) {
 	return c.getCustomIDFeeRate(height)
 }
 
-func (c *customID) getReservedCustomIDs() (map[string]struct{}, error) {
-	if len(c.reservedCustomIDs) != 0 {
-		return c.reservedCustomIDs, nil
+func (c *customID) getReservedCustomIDs(height uint32) (map[string]struct{}, error) {
+	if len(c.reservedCustomIDs) == 0 {
+		ids, err := c.getReservedCustomIDsFromDB()
+		if err != nil {
+			return nil, err
+		}
+		// refresh the cache.
+		c.reservedCustomIDs = ids
 	}
 
-	ids, err := c.getReservedCustomIDsFromDB()
-	if err != nil {
-		return nil, err
+	results := make(map[string]struct{})
+	for k, v := range c.reservedCustomIDs {
+		if height < v+DefaultConfirmations {
+			continue
+		}
+		results[k] = struct{}{}
 	}
-	// refresh the cache.
-	c.reservedCustomIDs = ids
-	return ids, nil
+	return results, nil
 }
 
 func (c *customID) getControversialReservedCustomIDsFromDB(proposalHash common.Uint256) (map[string]struct{}, error) {
@@ -401,10 +423,10 @@ func (c *customID) removeControversialReservedCustomIDsFromDB(
 	batch.Delete(toKey(BKTReservedCustomID, proposalHash.Bytes()...))
 }
 
-func (c *customID) getReservedCustomIDsFromDB() (map[string]struct{}, error) {
+func (c *customID) getReservedCustomIDsFromDB() (map[string]uint32, error) {
 	var val []byte
 	//if return no err,reservedCustomIDs also allocated
-	reservedCustomIDs := make(map[string]struct{}, 0)
+	reservedCustomIDs := make(map[string]uint32, 0)
 	val, err := c.db.Get(BKTReservedCustomID, nil)
 	if err != nil {
 		if err.Error() == leveldb.ErrNotFound.Error() {
@@ -422,7 +444,11 @@ func (c *customID) getReservedCustomIDsFromDB() (map[string]struct{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		reservedCustomIDs[id] = struct{}{}
+		height, err := common.ReadUint32(r)
+		if err != nil {
+			return nil, err
+		}
+		reservedCustomIDs[id] = height
 	}
 	return reservedCustomIDs, nil
 }
@@ -459,9 +485,9 @@ func (c *customID) removeControversialReceivedCustomIDsFromDB(
 	batch.Delete(toKey(BKTReceivedCustomID, proposalHash.Bytes()...))
 }
 
-func (c *customID) getReceivedCustomIDsFromDB() (map[string]common.Uint168, error) {
+func (c *customID) getReceivedCustomIDsFromDB() (map[string]CustomIDInfo, error) {
 	var val []byte
-	receiedCustomIDs := make(map[string]common.Uint168, 0)
+	receiedCustomIDs := make(map[string]CustomIDInfo, 0)
 
 	val, err := c.db.Get(BKTReceivedCustomID, nil)
 	if err != nil {
@@ -484,23 +510,37 @@ func (c *customID) getReceivedCustomIDsFromDB() (map[string]common.Uint168, erro
 		if err = did.Deserialize(r); err != nil {
 			return nil, err
 		}
-		receiedCustomIDs[id] = did
+		height, err := common.ReadUint32(r)
+		if err != nil {
+			return nil, err
+		}
+		receiedCustomIDs[id] = CustomIDInfo{
+			DID:    did,
+			Height: height,
+		}
 	}
 	return receiedCustomIDs, nil
 }
 
-func (c *customID) getReceivedCustomIDs() (map[string]common.Uint168, error) {
-	if len(c.receivedCustomIDs) != 0 {
-		return c.receivedCustomIDs, nil
+func (c *customID) getReceivedCustomIDs(height uint32) (map[string]common.Uint168, error) {
+	if len(c.receivedCustomIDs) == 0 {
+		ids, err := c.getReceivedCustomIDsFromDB()
+		if err != nil {
+			return nil, err
+		}
+		// refresh the cache.
+		c.receivedCustomIDs = ids
 	}
 
-	ids, err := c.getReceivedCustomIDsFromDB()
-	if err != nil {
-		return nil, err
+	results := make(map[string]common.Uint168)
+	for k, v := range c.receivedCustomIDs {
+		if height < v.Height+DefaultConfirmations {
+			continue
+		}
+		results[k] = v.DID
 	}
-	// refresh the cache.
-	c.receivedCustomIDs = ids
-	return ids, nil
+
+	return results, nil
 }
 
 func (c *customID) getCustomIDFeeRate(height uint32) (common.Fixed64, error) {
