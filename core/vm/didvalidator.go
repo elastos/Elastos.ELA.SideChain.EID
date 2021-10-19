@@ -1111,6 +1111,22 @@ func getDefaultPublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 	}
 }
 
+func ReserveCustomToLower(reservedCustomIDs map[string]struct{})map[string]struct{}{
+	lowerCustomIDs := make(map[string]struct{}, 0)
+	for id,_ := range reservedCustomIDs{
+		lowerCustomIDs[strings.ToLower(id)] =struct{}{}
+	}
+	return	lowerCustomIDs
+}
+
+func ReceivedCustomToLower(receivedCustomIDs map[string]common.Uint168)map[string]common.Uint168{
+	lowerCustomIDs := make(map[string]common.Uint168, 0)
+	for id, v := range receivedCustomIDs{
+		lowerCustomIDs[strings.ToLower(id)] =v
+	}
+	return	lowerCustomIDs
+}
+
 func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 
 	log.Error("checkCustomizedDIDAvailable 1")
@@ -1131,9 +1147,14 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if reservedCustomIDs == nil || len(reservedCustomIDs) == 0 {
 		return errors.New("Before registe customized did must have reservedCustomIDs")
 	}
+	reservedCustomIDs = ReserveCustomToLower(reservedCustomIDs)
+	receivedCustomIDs = ReceivedCustomToLower(receivedCustomIDs)
 	noPrefixID := did.GetDIDFromUri(cPayload.DIDDoc.ID)
-	if _, ok := reservedCustomIDs[noPrefixID]; ok {
-		if customDID, ok := receivedCustomIDs[noPrefixID]; ok {
+	//customID is no prefix and lower character
+	customID := strings.ToLower(noPrefixID)
+
+	if _, ok := reservedCustomIDs[customID]; ok {
+		if customDID, ok := receivedCustomIDs[customID]; ok {
 			rcDID, err := customDID.ToAddress()
 			if err != nil {
 				return errors.New("invalid customDID in db")

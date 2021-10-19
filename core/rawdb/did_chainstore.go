@@ -56,7 +56,17 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	if err != nil {
 		return err
 	}
-	idKey := []byte(operation.DIDDoc.ID)
+	isDID := uint64(0)
+	if did.IsDID(operation.DIDDoc.ID, operation.DIDDoc.PublicKey) {
+		isDID = 1
+	}
+	idKey := []byte{}
+	//customized id store lower
+	if isDID != 1{
+		idKey = []byte(strings.ToLower(operation.DIDDoc.ID))
+	}else{
+		idKey = []byte(operation.DIDDoc.ID)
+	}
 
 	expiresHeight, err := TryGetExpiresHeight(operation.DIDDoc.Expires, blockHeight, blockTimeStamp)
 	if err != nil {
@@ -80,10 +90,7 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	//	return err
 	//}
 
-	isDID := uint64(0)
-	if did.IsDID(operation.DIDDoc.ID, operation.DIDDoc.PublicKey) {
-		isDID = 1
-	}
+
 	if err := persistIsDID(db, idKey, isDID); err != nil {
 		return err
 	}
