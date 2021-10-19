@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/elastos/Elastos.ELA.SideChain/service"
@@ -190,9 +191,20 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	buf.WriteString(idWithPrefix)
 	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
-		rpcPayloadDid.DID = idParam
-		rpcPayloadDid.Status = didapi.NonExist
-		return rpcPayloadDid, nil
+		//try customized lower character
+		id := did.GetDIDFromUri(idWithPrefix)
+		lowerID := strings.ToLower(id)
+		lowerPrefixID := did.DID_ELASTOS_PREFIX +lowerID
+		buf.Reset()
+		buf.WriteString(lowerPrefixID)
+		//try customized id
+		txData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+		if err != nil {
+			//if we can not find customized then it means non exist
+			rpcPayloadDid.DID = idParam
+			rpcPayloadDid.Status = didapi.NonExist
+			return rpcPayloadDid, nil
+		}
 	}
 
 	var txsData []did.DIDTransactionData
