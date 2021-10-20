@@ -168,7 +168,6 @@ func (s *PublicTransactionPoolAPI) getDeactiveTx(ctx context.Context, idKey []by
 //xxl modify to PublicTransactionPoolAPI
 func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[string]interface{}) (interface{}, error) {
 	var didDocState didapi.DidDocState = didapi.NonExist
-
 	idParam, ok := param["did"].(string)
 	if !ok {
 		return nil, http.NewError(int(service.InvalidParams), "did is null")

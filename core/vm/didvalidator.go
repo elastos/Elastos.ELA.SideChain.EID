@@ -717,6 +717,9 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
+	if spv.MainChainIsPowMode(){
+		return errors.New("Pow mode can not send customized tx")
+	}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
 		return err
@@ -1136,13 +1139,19 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if spv.SpvService == nil && didParam.IsTest == true {
 		return nil
 	}
-	elaHeight := spv.SpvService.GetBlockListener().BlockHeight()
-	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs(elaHeight)
+	if  spv.SpvService == nil{
+		return nil
+	}
+	bestHeader,err := spv.SpvService.HeaderStore().GetBest()
+	if err != nil{
+		return err
+	}
+	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs(bestHeader.Height)
 	if err != nil {
 		return err
 	}
 	log.Error("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
-	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs(elaHeight)
+	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs(bestHeader.Height)
 	if err != nil {
 		return err
 	}
