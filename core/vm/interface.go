@@ -90,6 +90,9 @@ type StateDB interface {
 	ReadBlock(hash common.Hash, number uint64) *types.Block
 
 	GetDeactivatedTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
+
+	GetDIDExpiresHeight(idKey []byte)  (uint32, error)
+
 }
 
 // CallContext provides a basic interface for the EVM calling conventions. The EVM

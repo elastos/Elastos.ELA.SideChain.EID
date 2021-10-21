@@ -150,6 +150,30 @@ func TryGetExpiresHeight(Expires string, blockHeight uint64, blockTimeStamp uint
 	return expiresHeight, nil
 }
 
+func  GetDIDExpiresHeight(db ethdb.KeyValueStore,idKey []byte) (uint32, error) {
+	key := []byte{byte(IX_DIDExpiresHeight)}
+	key = append(key, idKey...)
+
+	var expiresBlockHeight uint32
+	data, err := db.Get(key)
+	if err != nil {
+		return 0, err
+	}
+
+	r := bytes.NewReader(data)
+	count, err := elaCom.ReadVarUint(r, 0)
+	if err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		return 0, errors.New("not exist")
+	}
+	if expiresBlockHeight, err = elaCom.ReadUint32(r); err != nil {
+		return 0, err
+	}
+	return expiresBlockHeight, nil
+}
+
 func persistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
 	expiresHeight uint64) error {
 	key := []byte{byte(IX_DIDExpiresHeight)}
