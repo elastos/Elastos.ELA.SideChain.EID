@@ -168,3 +168,8 @@ func (self *StateDB) ReadBlock(hash common.Hash, number uint64) *types.Block {
 func (self *StateDB) GetDeactivatedTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)  {
 	return rawdb.GetDeactivatedTxData(self.db.TrieDB().DiskDB().(ethdb.Database), idKey, config)
 }
+
+func (self *StateDB) GetDIDExpiresHeight(idKey []byte)  (uint32, error) {
+	return rawdb.GetDIDExpiresHeight(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey)
+}
+

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"regexp"
 	"sort"
 	"strconv"
@@ -116,6 +117,25 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 }
 
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
+	log.Error("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
+
+	{
+		if  spv.SpvService == nil{
+			return nil
+		}
+		log.Error("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
+		bestHeader,err := spv.SpvService.HeaderStore().GetBest()
+		if err != nil{
+			return err
+		}
+		log.Error("checkRegisterDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
+			"elaHeight",bestHeader.Height)
+
+		if spv.MainChainIsPowMode(){
+			log.Error("checkCustomizedDID MainChainIsPowMode return")
+			return errors.New("Pow mode can not send customized tx")
+		}
+	}
 	idString := did.GetDIDFromUri(p.DIDDoc.ID)
 	// check idstring
 	if !IsLetterOrNumber(idString) {
@@ -717,8 +737,24 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-	if spv.MainChainIsPowMode(){
-		return errors.New("Pow mode can not send customized tx")
+	log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
+
+	{
+		if  spv.SpvService == nil{
+			return nil
+		}
+		log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
+		bestHeader,err := spv.SpvService.HeaderStore().GetBest()
+		if err != nil{
+			return err
+		}
+		log.Error("checkCustomizedDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
+			"elaHeight",bestHeader.Height)
+
+		if spv.MainChainIsPowMode(){
+			log.Error("checkCustomizedDID MainChainIsPowMode return")
+			return errors.New("Pow mode can not send customized tx")
+		}
 	}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
@@ -840,6 +876,19 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 
 }
 
+func isControllerExpired(evm *EVM, did string )(bool, error)  {
+	id1 := []byte(did)
+	expiresHeight, err := evm.StateDB.GetDIDExpiresHeight(id1)
+	if err != nil {
+		return true ,err
+	}
+	expiresHeightInt :=new(big.Int).SetUint64(uint64(expiresHeight))
+	if evm.BlockNumber.Cmp(expiresHeightInt) > 0 {
+		return true ,nil
+	}
+	return false, nil
+}
+
 //3, proof multisign verify
 func checkDIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof, iDateContainer interfaces.IDataContainer,
 	N int, verifyDoc *did.DIDDoc) error {
@@ -887,6 +936,14 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 	verifyOkCount := 0
 	//3, proof multisign verify
 	for _, CustomizedDIDProof := range DIDProofArray {
+		prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
+		expired, err := isControllerExpired(evm,prefixedDID)
+		if  err!= nil{
+			return err
+		}
+		if expired {
+			return errors.New("one of the controller is expired")
+		}
 		//get  public key
 		publicKeyBase58, _ := getDefaultPublicKey(evm, ID, CustomizedDIDProof.Creator, false, verifyDoc.PublicKey,
 			verifyDoc.Authentication, verifyDoc.Controller)
@@ -1227,7 +1284,8 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 func checkCustomizedDIDOperation(evm *EVM, header *did.Header,
 	customizedDID string) error {
 	buf := new(bytes.Buffer)
-	buf.WriteString(customizedDID)
+	lowCustomDID := strings.ToLower(customizedDID)
+	buf.WriteString(lowCustomDID)
 	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 
 	dbExist := true
@@ -1601,6 +1659,15 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 		return errors.New("DID WAS AREADY DEACTIVE")
 	}
 
+	prefixDID,_ := GetDIDAndCompactSymbolFromUri(deactivateDIDOpt.Proof.VerificationMethod)
+	expired, err := isControllerExpired(evm,prefixDID)
+	if  err!= nil{
+		return err
+	}
+	if expired {
+		return errors.New(" the VerificationMethod controller is expired")
+	}
+
 	//get  public key getAuthorizatedPublicKey
 	//getDeactivatePublicKey
 	didDoc := lastTXData.Operation.DIDDoc
@@ -1658,6 +1725,14 @@ func checkVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	_, err := time.Parse(time.RFC3339, payload.CredentialDoc.ExpirationDate)
 	if err != nil {
 		return errors.New("invalid ExpirationDate")
+	}
+	didWithPrefix,_ := GetDIDAndCompactSymbolFromUri(payload.CredentialDoc.Proof.VerificationMethod)
+	expired, err := isControllerExpired(evm,didWithPrefix)
+	if  err!= nil{
+		return err
+	}
+	if expired {
+		return errors.New(" the VerificationMethod controller is expired")
 	}
 
 	switch payload.Header.Operation {

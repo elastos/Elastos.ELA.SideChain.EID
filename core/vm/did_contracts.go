@@ -320,10 +320,31 @@ func IsDocProofCtrUnique(Proof interface{})error{
 
 	return nil
 }
+// controller unique
+func IsControllerUnique(controller           interface{} )error{
+	//if is controller array
+	if controllerArray, ok := controller.([]interface{}); ok {
+		contrMgr := make(map[string]struct{}, 0)
+		for _, controller := range controllerArray {
+			if contrl, ok := controller.(string); !ok {
+				return errors.New("IsControllerUnique controller is not string")
+			}else{
+				if _,ok :=  contrMgr[contrl]; ok{
+					return errors.New("controller is duplicated")
+				}
+				contrMgr[contrl] = struct{}{}
+			}
+		}
+	}
+	return nil
+}
 
 func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	//doc := p.DIDDoc
 	if p.DIDDoc != nil {
+		if err := IsControllerUnique(p.DIDDoc.Controller); err != nil {
+			return err
+		}
 		return IsDocProofCtrUnique(p.DIDDoc.Proof)
 	}
 	return nil
