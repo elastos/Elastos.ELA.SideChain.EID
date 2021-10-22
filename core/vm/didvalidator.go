@@ -100,7 +100,10 @@ func sortAuthSlice(authSlice []interface{}) error {
 
 //sort doc slice by id
 func sortDocSlice(verifyDoc *did.DIDDoc) error {
+	log.Error("sortDocSlice verifyDoc.Controller", "Controller",verifyDoc.Controller)
 	sortControllerSlice(verifyDoc.Controller)
+	log.Error("sortDocSlice verifyDoc.Controller", "Controller",verifyDoc.Controller)
+
 	sort.Sort(did.PublicKeysSlice(verifyDoc.PublicKey))
 	sort.Sort(did.VerifiableCredentialSlice(verifyDoc.VerifiableCredential))
 	for _, v := range verifyDoc.VerifiableCredential {
@@ -1207,21 +1210,23 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if err != nil {
 		return err
 	}
-	log.Error("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
 	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs(bestHeader.Height)
 	if err != nil {
 		return err
 	}
-	log.Error("checkCustomizedDIDAvailable ", "receivedCustomIDs ", receivedCustomIDs)
 
 	if reservedCustomIDs == nil || len(reservedCustomIDs) == 0 {
 		return errors.New("Before registe customized did must have reservedCustomIDs")
 	}
 	reservedCustomIDs = ReserveCustomToLower(reservedCustomIDs)
 	receivedCustomIDs = ReceivedCustomToLower(receivedCustomIDs)
+	log.Error("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
+	log.Error("checkCustomizedDIDAvailable ", "receivedCustomIDs ", receivedCustomIDs)
+
 	noPrefixID := did.GetDIDFromUri(cPayload.DIDDoc.ID)
 	//customID is no prefix and lower character
 	customID := strings.ToLower(noPrefixID)
+	log.Error("checkCustomizedDIDAvailable 1", "customID", customID, "noPrefixID", noPrefixID)
 
 	if _, ok := reservedCustomIDs[customID]; ok {
 		if customDID, ok := receivedCustomIDs[customID]; ok {
@@ -1273,6 +1278,8 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 					return errors.New("invalid Proof type")
 				}
 			}
+		}else{
+			return errors.New("customID was already reserved ")
 		}
 	}
 
