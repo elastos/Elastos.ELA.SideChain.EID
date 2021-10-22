@@ -740,25 +740,25 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-	log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
+	//log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
 
-	{
-		if  spv.SpvService == nil{
-			return nil
-		}
-		log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
-		bestHeader,err := spv.SpvService.HeaderStore().GetBest()
-		if err != nil{
-			return err
-		}
-		log.Error("checkCustomizedDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
-			"elaHeight",bestHeader.Height)
-
-		if spv.MainChainIsPowMode(){
-			log.Error("checkCustomizedDID MainChainIsPowMode return")
-			return errors.New("Pow mode can not send customized tx")
-		}
-	}
+	//{
+	//	if  spv.SpvService == nil{
+	//		return nil
+	//	}
+	//	log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
+	//	bestHeader,err := spv.SpvService.HeaderStore().GetBest()
+	//	if err != nil{
+	//		return err
+	//	}
+	//	log.Error("checkCustomizedDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
+	//		"elaHeight",bestHeader.Height)
+	//
+	//	if spv.MainChainIsPowMode(){
+	//		log.Error("checkCustomizedDID MainChainIsPowMode return")
+	//		return errors.New("Pow mode can not send customized tx")
+	//	}
+	//}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
 		return err
@@ -772,9 +772,9 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if !IsLetterOrNumber(idString) {
 		return errors.New("invalid custom ID: only letter and number is allowed")
 	}
-	if err := checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
-		return err
-	}
+	//if err := checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
+	//	return err
+	//}
 
 	//fee := gas * evm.GasPrice.Uint64()
 	//if err := checkCustomizedDIDTxFee(customizedDIDPayload, fee); err != nil {
@@ -867,6 +867,9 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if err = checkVerifiableCredentials(evm,
 		customizedDIDPayload.DIDDoc.ID, customizedDIDPayload.DIDDoc.VerifiableCredential,
 		verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller, false); err != nil {
+		return err
+	}
+	if err = sortDocSlice(verifyDoc); err != nil {
 		return err
 	}
 	//4, proof multisign verify
