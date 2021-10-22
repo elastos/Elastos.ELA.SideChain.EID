@@ -126,7 +126,7 @@ import:
 #- package: github.com/elastos/Elastos.ELA.SideChain
 #  version: v0.1.8
 - package: github.com/elastos/Elastos.ELA.SPV #feature_customID
-  version: 8491d04cb398fd029b3d23b5b37b4f74308f4f2a
+  version: 49367737a3435a89a731f4baa2ebe77bc0e703b6
 - package: github.com/elastos/Elastos.ELA #feature_customID
   version: 67b1f3e274acf6e8d206f944daff9526c6e137ce
 - package: github.com/gorilla/websocket
