@@ -339,10 +339,56 @@ func IsControllerUnique(controller           interface{} )error{
 	return nil
 }
 
+func getCtrlLen(ctrl interface{}) int {
+	if ctrlArray, ok := ctrl.([]interface{}); ok {
+		return len(ctrlArray)
+	}else{
+		return 1
+	}
+}
+
+func isCtrlLenEqual(newCtrl  , oldCtrl interface{}) bool {
+	newLen := getCtrlLen(newCtrl)
+	oldLen := getCtrlLen(oldCtrl)
+	return newLen == oldLen
+}
+
+
+func checkMultSign(p *did.DIDPayload , evm *EVM)error{
+	if p == nil || p.DIDDoc==nil{
+		return errors.New("checkMultSign p == nil || p.DIDDoc==nil")
+	}
+	if p.DIDDoc.MultiSig != "" {
+		M, N, err := GetMultisignMN(p.DIDDoc.MultiSig)
+		if err != nil {
+			return err
+		}
+		if  N > M{
+			return errors.New("checkMultSign N > M")
+		}
+		if M != getCtrlLen(p.DIDDoc.Controller){
+			return errors.New("checkMultSign M != getCtrlLen(p.DIDDoc.Controller")
+		}
+		if p.Header.Operation == did.Update_DID_Operation {
+			verifyDoc, err := getVerifyDocMultisign(evm, p.DIDDoc.ID)
+			if err != nil {
+				return err
+			}
+			if !isCtrlLenEqual(p.DIDDoc.Controller, verifyDoc.Controller) {
+				return errors.New("CtrlLen not Equal")
+			}
+		}
+	}
+	return nil
+}
+
 func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	//doc := p.DIDDoc
 	if p.DIDDoc != nil {
 		if err := IsControllerUnique(p.DIDDoc.Controller); err != nil {
+			return err
+		}
+		if err := checkMultSign(p, evm); err != nil {
 			return err
 		}
 		return IsDocProofCtrUnique(p.DIDDoc.Proof)
