@@ -120,18 +120,18 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 }
 
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
-	log.Error("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
+	log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
 
 	{
 		if  spv.SpvService == nil{
 			return nil
 		}
-		log.Error("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
+		log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
 		bestHeader,err := spv.SpvService.HeaderStore().GetBest()
 		if err != nil{
 			return err
 		}
-		log.Error("checkRegisterDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
+		log.Debug("checkRegisterDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
 			"elaHeight",bestHeader.Height)
 
 		if spv.MainChainIsPowMode(){
@@ -820,9 +820,6 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		return err
 	}
 
-	//todo This custoized did and register did are mutually exclusive
-	//todo check expires
-
 	M := 0
 	multisignStr := verifyDoc.MultiSig
 	if multisignStr != "" {
@@ -1131,6 +1128,15 @@ func checkCustomizedDIDTicketProof(evm *EVM, verifyDoc *did.DIDDoc, Proof interf
 }
 
 func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload, verifyDoc *did.DIDDoc) error {
+
+	prefixedDID,_ := GetDIDAndCompactSymbolFromUri(txPayload.Proof.VerificationMethod)
+	expired, err := isControllerExpired(evm,prefixedDID)
+	if  err!= nil{
+		return err
+	}
+	if expired {
+		return errors.New(" the checkCustomIDOuterProof controller is expired")
+	}
 	//get  public key
 	publicKeyBase58, _ := getAuthenPublicKey(evm, txPayload.Proof.VerificationMethod, false,
 		verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller)
