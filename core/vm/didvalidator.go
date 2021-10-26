@@ -939,14 +939,6 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 	verifyOkCount := 0
 	//3, proof multisign verify
 	for _, CustomizedDIDProof := range DIDProofArray {
-		prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
-		expired, err := isControllerExpired(evm,prefixedDID)
-		if  err!= nil{
-			return err
-		}
-		if expired {
-			return errors.New("one of the controller is expired")
-		}
 		//get  public key
 		publicKeyBase58, _ := getDefaultPublicKey(evm, ID, CustomizedDIDProof.Creator, false, verifyDoc.PublicKey,
 			verifyDoc.Authentication, verifyDoc.Controller)
@@ -1128,15 +1120,6 @@ func checkCustomizedDIDTicketProof(evm *EVM, verifyDoc *did.DIDDoc, Proof interf
 }
 
 func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload, verifyDoc *did.DIDDoc) error {
-
-	prefixedDID,_ := GetDIDAndCompactSymbolFromUri(txPayload.Proof.VerificationMethod)
-	expired, err := isControllerExpired(evm,prefixedDID)
-	if  err!= nil{
-		return err
-	}
-	if expired {
-		return errors.New(" the checkCustomIDOuterProof controller is expired")
-	}
 	//get  public key
 	publicKeyBase58, _ := getAuthenPublicKey(evm, txPayload.Proof.VerificationMethod, false,
 		verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller)
