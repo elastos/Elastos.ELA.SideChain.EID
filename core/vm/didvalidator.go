@@ -741,7 +741,7 @@ func IsLetterOrNumber(s string) bool {
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
 	//log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
-
+	//
 	//{
 	//	if  spv.SpvService == nil{
 	//		return nil
@@ -772,9 +772,9 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if !IsLetterOrNumber(idString) {
 		return errors.New("invalid custom ID: only letter and number is allowed")
 	}
-	//if err := checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
-	//	return err
-	//}
+	if err := checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
+		return err
+	}
 
 	//fee := gas * evm.GasPrice.Uint64()
 	//if err := checkCustomizedDIDTxFee(customizedDIDPayload, fee); err != nil {
