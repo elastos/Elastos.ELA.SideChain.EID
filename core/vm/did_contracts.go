@@ -296,8 +296,8 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	}
 	return nil
 }
-//
-func IsDocProofCtrUnique(Proof interface{})error{
+//proof controller must unique and not expired
+func IsDocProofCtrUnique(Proof interface{}, evm *EVM)error{
 	DIDProofArray := make([]*did.DocProof, 0)
 	CustomizedDIDProof := &did.DocProof{}
 	//var bExist bool
@@ -305,6 +305,14 @@ func IsDocProofCtrUnique(Proof interface{})error{
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, CustomizedDIDProof := range DIDProofArray {
+			prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
+			expired, err := isControllerExpired(evm,prefixedDID)
+			if  err!= nil{
+				return err
+			}
+			if expired {
+				return errors.New("one of the controller is expired")
+			}
 			if _,ok :=  creatorMgr[CustomizedDIDProof.Creator]; ok{
 				return errors.New("Proof creator is duplicated")
 			}
@@ -321,7 +329,7 @@ func IsDocProofCtrUnique(Proof interface{})error{
 	return nil
 }
 // controller unique
-func IsControllerUnique(controller           interface{} )error{
+func IsControllerUnique(controller           interface{}, evm *EVM )error{
 	//if is controller array
 	if controllerArray, ok := controller.([]interface{}); ok {
 		contrMgr := make(map[string]struct{}, 0)
@@ -331,6 +339,14 @@ func IsControllerUnique(controller           interface{} )error{
 			}else{
 				if _,ok :=  contrMgr[contrl]; ok{
 					return errors.New("controller is duplicated")
+				}
+				if !strings.HasPrefix(contrl, did.DID_ELASTOS_PREFIX) {
+					return  errors.New("contrl must have prefix did:elastos:")
+				}
+				isDID, err := evm.StateDB.IsDID(contrl)
+				//all contrller must be did and alreday in the block chain
+				if err != nil || isDID == false {
+					return errors.New("not all the controler is already in the chain")
 				}
 				contrMgr[contrl] = struct{}{}
 			}
@@ -382,18 +398,35 @@ func checkMultSign(p *did.DIDPayload , evm *EVM)error{
 	return nil
 }
 
+func isPayloadCtrlExpired(VerificationMethod string, evm *EVM)error{
+	prefixedDID,_ := GetDIDAndCompactSymbolFromUri(VerificationMethod)
+	expired, err := isControllerExpired(evm,prefixedDID)
+	if  err!= nil{
+		return err
+	}
+	if expired {
+		return errors.New(" isPayloadCtrlExpired VerificationMethod is expired")
+	}
+	return nil
+}
+
+
 func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
+	if p == nil || evm ==nil{
+		return errors.New("checkCustomIDPayloadSyntax p == nil || evm ==nil")
+	}
 	//doc := p.DIDDoc
 	if p.DIDDoc != nil {
-		if err := IsControllerUnique(p.DIDDoc.Controller); err != nil {
+		if err := IsControllerUnique(p.DIDDoc.Controller, evm); err != nil {
 			return err
 		}
 		if err := checkMultSign(p, evm); err != nil {
 			return err
 		}
-		return IsDocProofCtrUnique(p.DIDDoc.Proof)
+		return IsDocProofCtrUnique(p.DIDDoc.Proof, evm)
 	}
-	return nil
+
+	return isPayloadCtrlExpired(p.Proof.VerificationMethod, evm)
 }
 
 func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
