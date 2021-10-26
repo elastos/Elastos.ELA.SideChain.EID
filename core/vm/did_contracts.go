@@ -379,11 +379,11 @@ func checkMultSign(p *did.DIDPayload , evm *EVM)error{
 		if err != nil {
 			return err
 		}
-		if  N > M{
-			return errors.New("checkMultSign N > M")
+		if M  > N{
+			return errors.New("checkMultSign M > N")
 		}
-		if M != getCtrlLen(p.DIDDoc.Controller){
-			return errors.New("checkMultSign M != getCtrlLen(p.DIDDoc.Controller")
+		if N != getCtrlLen(p.DIDDoc.Controller){
+			return errors.New("checkMultSign N != getCtrlLen(p.DIDDoc.Controller")
 		}
 		if p.Header.Operation == did.Update_DID_Operation {
 			verifyDoc, err := getVerifyDocMultisign(evm, p.DIDDoc.ID)
