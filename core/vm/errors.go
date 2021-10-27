@@ -29,4 +29,5 @@ var (
 	ErrNoCompatibleInterpreter  = errors.New("no compatible interpreter")
 	ErrCastCaller                 = errors.New("cast caller error")
 
+	ErrWithdawrefundCallFailed = errors.New("refund withdraw tx call failed")
 )

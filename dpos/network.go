@@ -79,6 +79,9 @@ type NetworkEventListener interface {
 
 	OnBlockReceived(id dpeer.PID, b *dmsg.BlockMsg, confirmed bool)
 	OnConfirmReceived(id dpeer.PID, c *payload.Confirm, height uint64)
+
+	OnSmallCroTxReceived(id dpeer.PID, c *dmsg.SmallCroTx)
+	OnFailedWithdrawTxReceived(id dpeer.PID, c *dmsg.FailedWithdrawTx)
 }
 
 type messageItem struct {
@@ -233,6 +236,16 @@ func (n *Network) processMessage(msgItem *messageItem) {
 		if processed {
 			n.listener.OnConfirmReceived(msgItem.ID, msgConfirm.Confirm, msgConfirm.Height)
 		}
+	case dmsg.CmdSmallCroTx:
+		msgCro, processed := m.(*dmsg.SmallCroTx)
+		if processed {
+			n.listener.OnSmallCroTxReceived(msgItem.ID, msgCro)
+		}
+	case dmsg.CmdFailedWithdrawTx:
+		withdrawTx, processed := m.(*dmsg.FailedWithdrawTx)
+		if processed {
+			n.listener.OnFailedWithdrawTxReceived(msgItem.ID, withdrawTx)
+		}
 	}
 }
 
@@ -284,8 +297,8 @@ func (n *Network) BroadcastMessage(msg elap2p.Message) {
 //
 // This function is safe for concurrent access and is part of the
 // IServer interface implementation.
-func (s *Network) DumpPeersInfo() []*p2p.PeerInfo {
-	return s.p2pServer.DumpPeersInfo()
+func (n *Network) DumpPeersInfo() []*p2p.PeerInfo {
+	return n.p2pServer.DumpPeersInfo()
 }
 
 func NewNetwork(cfg *NetworkConfig) (*Network, error) {
@@ -363,6 +376,10 @@ func makeEmptyMessage(cmd string) (message elap2p.Message, err error) {
 		message = &msg.ResponseInactiveArbitrators{}
 	case dmsg.CmdConfirm:
 		message = &dmsg.ConfirmMsg{}
+	case dmsg.CmdSmallCroTx:
+		message = &dmsg.SmallCroTx{}
+	case dmsg.CmdFailedWithdrawTx:
+		message = &dmsg.FailedWithdrawTx{}
 	default:
 		return nil, errors.New("Received unsupported message, CMD " + cmd)
 	}

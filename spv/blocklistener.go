@@ -30,12 +30,20 @@ type BlockListener struct {
 	blockNumber uint32
 	param       auxParam
 	handle      func(block interface{}) error
+	dynamicArbiterHeight uint64
 }
 
 func (l *BlockListener) NotifyBlock(block *util.Block) {
+	if block.Height <= l.blockNumber {
+		log.Warn("BlockListener handle block ", "height", l.blockNumber)
+		return
+	}
 	l.blockNumber = block.Height
 	l.StoreAuxBlock(block)
-	log.Info("BlockListener handle block ", "height", l.blockNumber)
+	log.Info("BlockListener handle block ", "height", l.blockNumber, "l.dynamicArbiterHeight ", l.dynamicArbiterHeight )
+	if uint64(l.blockNumber) < l.dynamicArbiterHeight {
+		return
+	}
 	l.onBlockHandled(l.param.block)
 	if l.handle != nil {
 		l.handle(l.param.block)
@@ -64,33 +72,33 @@ func (l *BlockListener) onBlockHandled(block interface{}) {
 	isWorkingHeight := SpvIsWorkingHeight()
 	if nextTurnDposInfo == nil {
 		InitNextTurnDposInfo()
-		isWorkingHeight = SpvIsWorkingHeight()
 	} else if !isWorkingHeight {
 		if IsNexturnBlock(block) {
 			log.Info("------------------ force change next turn arbiters-----------")
 			peers := DumpNextDposInfo()
 			events.Notify(dpos.ETNextProducers, peers)
-		} else if consensusMode == spv.POW {
-			SpvService.mux.Post(eevent.InitCurrentProducers{})
+		} else {
 			InitNextTurnDposInfo()
 		}
 	}
-
 	if nextTurnDposInfo == nil {
 		return
 	}
-
-	if len(nextTurnDposInfo.CRPublicKeys) == 0 && len(nextTurnDposInfo.DPOSPublicKeys) == 0 && consensusMode == spv.DPOS {
-		consensusMode = spv.POW
-		log.Info("<----------MainChain turn to POW consensus mode------->")
-	} else if (len(nextTurnDposInfo.CRPublicKeys) > 0 || len(nextTurnDposInfo.DPOSPublicKeys) > 0) &&  consensusMode == spv.POW && isWorkingHeight {
-		log.Info("<----------MainChain turn to DPOS consensus mode------->")
-		consensusMode = spv.DPOS
+	nowConsensus := GetCurrentConsensusMode()
+	if consensusMode == spv.POW && nowConsensus == spv.DPOS {
+		log.Info("----------turn to Dpos mode------------")
+		SpvService.mux.Post(eevent.InitCurrentProducers{})
+		InitNextTurnDposInfo()
+	} else if consensusMode == spv.DPOS && nowConsensus == spv.POW {
+		log.Info("----------turn to POW mode------------")
+		SpvService.mux.Post(eevent.InitCurrentProducers{})
+		InitNextTurnDposInfo()
 	}
-
-	if isWorkingHeight {
+	if SpvIsWorkingHeight() && nowConsensus != spv.POW {
 		SpvService.mux.Post(eevent.InitCurrentProducers{})
 	}
+	consensusMode = nowConsensus
+	log.Info("current consensus mode", "mode", consensusMode)
 }
 
 func IsNexturnBlock(block interface{}) bool {
@@ -135,6 +143,18 @@ func InitNextTurnDposInfo() {
 		normalArbiters = make([][]byte, 0)
 	}
 
+	if GetCurrentConsensusMode() == spv.POW && len(crcArbiters) == 0 && len(normalArbiters) == 0 {
+		log.Info("current consensus is pow and next turn is pow", "consensusMode", consensusMode)
+		if consensusMode == spv.DPOS {
+			DumpNextDposInfo()
+		}
+		return
+	}
+
+	if isSameNexturnArbiters(workingHeight, crcArbiters, normalArbiters) {
+		return
+	}
+
 	nextTurnDposInfo = &payload.NextTurnDPOSInfo{
 		WorkingHeight: workingHeight,
 		CRPublicKeys: crcArbiters,
@@ -144,10 +164,53 @@ func InitNextTurnDposInfo() {
 	events.Notify(dpos.ETNextProducers, peers)
 }
 
+func isSameNexturnArbiters(workingHeight uint32, crcArbiters, normalArbiters [][]byte) bool {
+	if nextTurnDposInfo == nil {
+		return false
+	}
+	if nextTurnDposInfo.WorkingHeight != workingHeight {
+		return false
+	}
+	if len(crcArbiters) != len(nextTurnDposInfo.CRPublicKeys) {
+		return false
+	}
+	if len(normalArbiters) != len(nextTurnDposInfo.DPOSPublicKeys) {
+		return false
+	}
+	for index, v := range crcArbiters {
+		if !bytes.Equal(v, nextTurnDposInfo.CRPublicKeys[index][:]) {
+			return false
+		}
+	}
+	for index, v := range normalArbiters {
+		if !bytes.Equal(v, nextTurnDposInfo.DPOSPublicKeys[index][:]) {
+			return false
+		}
+	}
+	return true
+}
+
+func GetCurrentConsensusMode() spv.ConsensusAlgorithm {
+	if SpvService == nil {
+		log.Error("Spv is not started")
+		return spv.DPOS
+	}
+	spvHeight := uint32(GetSpvHeight())
+	mode , err := SpvService.GetConsensusAlgorithm(spvHeight)
+	log.Info("GetCurrentConsensusMode", "error", err, "spvHeight", spvHeight, "Mode", mode)
+	if err != nil {
+		return spv.DPOS
+	}
+	return mode
+}
+
 func DumpNextDposInfo() []peer.PID {
 	log.Info("-------------------dump next turn aribiters---------------")
 	log.Info("-------------------CRPublicKeys---------------")
 	peers := make([]peer.PID, 0)
+	if nextTurnDposInfo == nil {
+		return peers
+	}
 	for _, arbiter := range nextTurnDposInfo.CRPublicKeys {
 		if len(arbiter) > 0 {
 			var pid peer.PID
