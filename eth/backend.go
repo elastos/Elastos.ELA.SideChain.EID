@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	_interface "github.com/elastos/Elastos.ELA.SPV/interface"
 	"math/big"
 	"runtime"
 	"sync"
@@ -79,6 +80,7 @@ type Ethereum struct {
 
 	// Channel for shutting down the service
 	shutdownChan chan bool
+	stopChan chan bool
 
 	// Handlers
 	txPool          *core.TxPool
@@ -210,7 +212,10 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 		}
 	}
 
-		log.Info("Initialised chain configuration", "config", chainConfig)
+	if config.DynamicArbiterHeight > 0 {
+		chainConfig.DynamicArbiterHeight = config.DynamicArbiterHeight
+	}
+	log.Info("Initialised chain configuration", "config", chainConfig)
 
 	eth := &Ethereum{
 		config:         config,
@@ -219,6 +224,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Ethash, config.Miner.Notify, config.Miner.Noverify, chainDb),
 		shutdownChan:   make(chan bool),
+		stopChan:       make(chan bool),
 		networkID:      config.NetworkId,
 		gasPrice:       config.Miner.GasPrice,
 		etherbase:      config.Miner.Etherbase,
@@ -356,6 +362,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	}
 
 	engine.SetBlockChain(eth.blockchain)
+	spv.PbftEngine = engine
 	dposAccount, err := dpos.GetDposAccount(chainConfig.PbftKeyStore, []byte(chainConfig.PbftKeyStorePassWord))
 	if err != nil {
 		return eth, nil
@@ -413,8 +420,9 @@ func InitCurrentProducers(engine *pbft.Pbft, config *params.ChainConfig, current
 	if !config.IsPBFTFork(currentBlock.Number()) {
 		return
 	}
+	mode := spv.GetCurrentConsensusMode()
 	spvHeight := currentBlock.Nonce()
-	if spvHeight <= 0 {
+	if spvHeight <= 0 && mode == _interface.DPOS && len(engine.GetCurrentProducers()) > 0  {
 		engine.OnInsertBlock(currentBlock)
 		return
 	}
@@ -466,7 +474,6 @@ func SubscriptEvent(eth *Ethereum, engine consensus.Engine) {
 			chainSub.Unsubscribe()
 			initProducersSub.Unsubscribe()
 		}()
-
 		for  {
 			select {
 			case b := <-blockEvent:
@@ -480,6 +487,8 @@ func SubscriptEvent(eth *Ethereum, engine consensus.Engine) {
 				pbftEngine := engine.(*pbft.Pbft)
 				currentHeader := eth.blockchain.CurrentBlock()
 				InitCurrentProducers(pbftEngine, eth.blockchain.Config(), currentHeader)
+			case <-eth.stopChan:
+				return
 			}
 		}
 	}()
@@ -845,6 +854,8 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Ethereum protocol.
 func (s *Ethereum) Stop() error {
+	spv.Close()
+	close(s.stopChan)
 	s.bloomIndexer.Close()
 	s.blockchain.Stop()
 	s.engine.Close()
@@ -857,14 +868,6 @@ func (s *Ethereum) Stop() error {
 	s.eventMux.Stop()
 
 	s.chainDb.Close()
-
-	if nil != spv.MinedBlockSub {
-		spv.MinedBlockSub.Unsubscribe()
-	}
-	spvdb := spv.SpvService.GetDatabase()
-	if spvdb != nil {
-		spvdb.Close()
-	}
 
 	close(s.shutdownChan)
 	return nil

@@ -36,6 +36,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/withdrawfailedtx"
 )
 
 const (
@@ -569,8 +570,14 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		if len(tx.Data()) != 32 || to != addr {
 			// Transactor should have enough funds to cover the costs
 			// cost == V + GP * GL
-			if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
-				return ErrInsufficientFunds
+			isWithdrawRefund := false
+			if to == addr {
+				isWithdrawRefund, _ = withdrawfailedtx.IsWithdawFailedTx(tx.Data(), pool.chainconfig.BlackContractAddr)
+			}
+			if !isWithdrawRefund {
+				if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
+					return ErrInsufficientFunds
+				}
 			}
 		}
 		if to.String() == pool.chainconfig.BlackContractAddr && spv.MainChainIsPowMode() {
@@ -868,23 +875,25 @@ func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) ([]error,
 		if tx.To() != nil {
 			to := *tx.To()
 			var blackAddr common.Address
-			if len(tx.Data()) == 32 && to == blackAddr {
-				txhash :=  hexutil.Encode(tx.Data())
-				fee, addr, output := spv.FindOutputFeeAndaddressByTxHash(txhash)
-				if addr != blackAddr {
-					if fee.Cmp(new(big.Int)) > 0 && output.Cmp(new(big.Int)) > 0 {
-						ethFee := new(big.Int).Mul(new(big.Int).SetUint64(tx.Gas()), tx.GasPrice())
-						completeTxHash := pool.currentState.GetState(blackAddr, common.HexToHash(txhash))
-						if fee.Cmp(ethFee) < 0 {
+			if  to == blackAddr {
+				if len(tx.Data()) == 32 {
+					txhash :=  hexutil.Encode(tx.Data())
+					fee, addr, output := spv.FindOutputFeeAndaddressByTxHash(txhash)
+					if addr != blackAddr {
+						if fee.Cmp(new(big.Int)) > 0 && output.Cmp(new(big.Int)) > 0 {
+							ethFee := new(big.Int).Mul(new(big.Int).SetUint64(tx.Gas()), tx.GasPrice())
+							completeTxHash := pool.currentState.GetState(blackAddr, common.HexToHash(txhash))
+							if fee.Cmp(ethFee) < 0 {
+								errs[i] = ErrGasLimitReached
+							} else if (completeTxHash != common.Hash{}) {
+								errs[i] = ErrMainTxHashPresence
+							}
+						} else {
 							errs[i] = ErrGasLimitReached
-						} else if (completeTxHash != common.Hash{}) {
-							errs[i] = ErrMainTxHashPresence
 						}
 					} else {
-						errs[i] = ErrGasLimitReached
+						errs[i] = ErrElaToEthAddress
 					}
-				} else {
-					errs[i] = ErrElaToEthAddress
 				}
 			}
 		}
