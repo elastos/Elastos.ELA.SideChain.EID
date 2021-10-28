@@ -382,6 +382,12 @@ func checkMultSign(p *did.DIDPayload , evm *EVM)error{
 		if M  > N{
 			return errors.New("checkMultSign M > N")
 		}
+		if N <= 1 {
+			return errors.New("N <= 1")
+		}
+		if M <=0  {
+			return errors.New("M <=0")
+		}
 		if N != getCtrlLen(p.DIDDoc.Controller){
 			return errors.New("checkMultSign N != getCtrlLen(p.DIDDoc.Controller")
 		}
@@ -423,7 +429,10 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		if err := checkMultSign(p, evm); err != nil {
 			return err
 		}
-		return IsDocProofCtrUnique(p.DIDDoc.Proof, evm)
+		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+			return err
+		}
+
 	}
 
 	return isPayloadCtrlExpired(p.Proof.VerificationMethod, evm)
