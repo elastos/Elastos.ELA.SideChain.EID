@@ -878,7 +878,8 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	return nil
 
 }
-
+//
+//is expired
 func isControllerExpired(evm *EVM, did string )(bool, error)  {
 	id1 := []byte(did)
 	expiresHeight, err := evm.StateDB.GetDIDExpiresHeight(id1)
@@ -890,6 +891,21 @@ func isControllerExpired(evm *EVM, did string )(bool, error)  {
 		return true ,nil
 	}
 	return false, nil
+}
+
+//expired or deactived
+func isDIDDeactive(evm *EVM, did string )bool  {
+	return evm.StateDB.IsDIDDeactivated(did)
+}
+
+//expired or deactived
+func isControllerInvalid(evm *EVM, did string )(bool, error)  {
+	result , err := isControllerExpired(evm,did)
+	if result || err != nil {
+		return  result , err
+	}
+	result = isDIDDeactive(evm,did)
+	return  result , nil
 }
 
 //3, proof multisign verify
@@ -1659,12 +1675,12 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	}
 
 	prefixDID,_ := GetDIDAndCompactSymbolFromUri(deactivateDIDOpt.Proof.VerificationMethod)
-	expired, err := isControllerExpired(evm,prefixDID)
+	ctrlInvalid, err := isControllerInvalid(evm,prefixDID)
 	if  err!= nil{
 		return err
 	}
-	if expired {
-		return errors.New(" the VerificationMethod controller is expired")
+	if ctrlInvalid {
+		return errors.New(" the VerificationMethod controller is invalid")
 	}
 
 	//get  public key getAuthorizatedPublicKey
@@ -1726,12 +1742,12 @@ func checkVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 		return errors.New("invalid ExpirationDate")
 	}
 	didWithPrefix,_ := GetDIDAndCompactSymbolFromUri(payload.CredentialDoc.Proof.VerificationMethod)
-	expired, err := isControllerExpired(evm,didWithPrefix)
+	ctrlInvalid, err := isControllerInvalid(evm,didWithPrefix)
 	if  err!= nil{
 		return err
 	}
-	if expired {
-		return errors.New(" the VerificationMethod controller is expired")
+	if ctrlInvalid {
+		return errors.New(" the VerificationMethod controller is invalid")
 	}
 
 	switch payload.Header.Operation {
