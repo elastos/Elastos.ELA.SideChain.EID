@@ -806,7 +806,7 @@ var (
 	DocArraySortHeightFlag = cli.Uint64Flag{
 		Name:  "docarraysortheight",
 		Usage: "after this height DocArraySortHeight doc array need sort",
-		Value: 0,//todo
+		Value: 2400000,
 	}
 	OldDIDMigrateAddrFlag = cli.StringFlag{
 		Name:  "olddidmigrateaddr",
@@ -1584,7 +1584,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "testnet", "geth")
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(1)
+		cfg.DocArraySortHeight =  new(big.Int).SetUint64(2080000)
 
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
@@ -1596,7 +1596,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "rinkeby", "geth")
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		cfg.DocArraySortHeight =  new(big.Int).SetUint64(340000)
 	case ctx.GlobalBool(GoerliFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 25
@@ -1607,7 +1607,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "goerli", "geth")
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		//cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
@@ -1635,7 +1635,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
 		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		//cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 	}
 }
 
