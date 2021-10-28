@@ -297,33 +297,33 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	return nil
 }
 //proof controller must unique and not expired
-func IsDocProofCtrUnique(Proof interface{}, evm *EVM)error{
+func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 	DIDProofArray := make([]*did.DocProof, 0)
 	CustomizedDIDProof := &did.DocProof{}
 	//var bExist bool
-	if err := Unmarshal(Proof, &DIDProofArray); err == nil {
+	if err := Unmarshal(proof, &DIDProofArray); err == nil {
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, CustomizedDIDProof := range DIDProofArray {
 			prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
-			expired, err := isControllerExpired(evm,prefixedDID)
+			ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
 			if  err!= nil{
 				return err
 			}
-			if expired {
-				return errors.New("one of the controller is expired")
+			if ctrlInvalid {
+				return errors.New("one of the controller is ctrlInvalid")
 			}
 			if _,ok :=  creatorMgr[CustomizedDIDProof.Creator]; ok{
-				return errors.New("Proof creator is duplicated")
+				return errors.New("proof creator is duplicated")
 			}
 			creatorMgr[CustomizedDIDProof.Creator] = struct{}{}
 		}
 
-	} else if err := Unmarshal(Proof, CustomizedDIDProof); err == nil {
+	} else if err := Unmarshal(proof, CustomizedDIDProof); err == nil {
 		//if one controller no need check
 	} else {
 		//error
-		return errors.New("isVerificationsMethodsValid Invalid Proof type")
+		return errors.New("isVerificationsMethodsValid Invalid proof type")
 	}
 
 	return nil
@@ -363,6 +363,22 @@ func getCtrlLen(ctrl interface{}) int {
 	}
 }
 
+func getDocProofLen(proof interface{}) int {
+	DIDProofArray := make([]*did.DocProof, 0)
+	CustomizedDIDProof := &did.DocProof{}
+	//var bExist bool
+	if err := Unmarshal(proof, &DIDProofArray); err == nil {
+		return len(DIDProofArray)
+
+	} else if err := Unmarshal(proof, CustomizedDIDProof); err == nil {
+		return 1
+		//if one controller no need check
+	} else {
+		//error
+		return 0
+	}
+}
+
 func isCtrlLenEqual(newCtrl  , oldCtrl interface{}) bool {
 	newLen := getCtrlLen(newCtrl)
 	oldLen := getCtrlLen(oldCtrl)
@@ -399,6 +415,11 @@ func checkMultSign(p *did.DIDPayload , evm *EVM)error{
 			if !isCtrlLenEqual(p.DIDDoc.Controller, verifyDoc.Controller) {
 				return errors.New("CtrlLen not Equal")
 			}
+		}
+	}else{
+		proofLen :=getDocProofLen(p.DIDDoc.Proof)
+		if proofLen > 1 {
+			return errors.New("MultiSig should not empty when doc is multsign")
 		}
 	}
 	return nil
