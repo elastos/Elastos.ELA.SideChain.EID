@@ -328,31 +328,58 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 
 	return nil
 }
-// controller unique
-func IsControllerUnique(controller           interface{}, evm *EVM )error{
+
+/*
+	0. controller must unique
+	1. controller must have did:elastos:  prefix
+	2. controller must did in chain
+*/
+func IsControllerValid(controller           interface{}, evm *EVM)( error){
+	if contrMgr,err := checkControllerUnique(controller, evm); err != nil{
+		return err
+	}else{
+		// every controller must have did:elastos:  prefix and must did in chain
+		for contrl := range contrMgr {
+			if !strings.HasPrefix(contrl, did.DID_ELASTOS_PREFIX) {
+				return   errors.New("contrl must have prefix did:elastos:")
+			}
+			isDID, err := evm.StateDB.IsDID(contrl)
+			//all contrller must be did and alreday in the block chain
+			if err != nil || isDID == false {
+				return  errors.New("not all the controler is already in the chain")
+			}
+		}
+		return nil
+	}
+}
+
+//if controller is unique return  controllers and nil
+//else return nil and error
+func checkControllerUnique(controller           interface{}, evm *EVM )(map[string]struct{},error){
 	//if is controller array
+	contrMgr := make(map[string]struct{}, 0)
 	if controllerArray, ok := controller.([]interface{}); ok {
-		contrMgr := make(map[string]struct{}, 0)
+		if len(controllerArray)  == 1{
+			return  nil, errors.New("controller array must have more than one controller")
+		}
 		for _, controller := range controllerArray {
 			if contrl, ok := controller.(string); !ok {
-				return errors.New("IsControllerUnique controller is not string")
+				return nil, errors.New("checkControllerUnique controller is not string")
 			}else{
 				if _,ok :=  contrMgr[contrl]; ok{
-					return errors.New("controller is duplicated")
-				}
-				if !strings.HasPrefix(contrl, did.DID_ELASTOS_PREFIX) {
-					return  errors.New("contrl must have prefix did:elastos:")
-				}
-				isDID, err := evm.StateDB.IsDID(contrl)
-				//all contrller must be did and alreday in the block chain
-				if err != nil || isDID == false {
-					return errors.New("not all the controler is already in the chain")
+					return nil,errors.New("controller is duplicated")
 				}
 				contrMgr[contrl] = struct{}{}
 			}
 		}
+	}else{
+		if contrl, ok := controller.(string); !ok {
+			return nil, errors.New("checkControllerUnique controller is not string")
+		}else{
+			contrMgr[contrl] = struct{}{}
+		}
 	}
-	return nil
+	return contrMgr,nil
 }
 
 func getCtrlLen(ctrl interface{}) int {
@@ -385,18 +412,29 @@ func isCtrlLenEqual(newCtrl  , oldCtrl interface{}) bool {
 	return newLen == oldLen
 }
 
-
-func checkMultSign(p *did.DIDPayload , evm *EVM)error{
+/*
+	1. if controller len >1 MultiSig != ""
+	2. if controller len =1 multsig == “”
+*/
+func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 	if p == nil || p.DIDDoc==nil{
-		return errors.New("checkMultSign p == nil || p.DIDDoc==nil")
+		return errors.New("checkMultSignController p == nil || p.DIDDoc==nil")
 	}
+	ctrlLen := getCtrlLen(p.DIDDoc.Controller)
+	if ctrlLen > 1 && p.DIDDoc.MultiSig  == ""{
+		return errors.New("ctrlLen > 1 && p.DIDDoc.MultiSig is empty")
+	}
+	if ctrlLen == 1 && p.DIDDoc.MultiSig  != ""{
+		return errors.New("ctrlLen == 1 && p.DIDDoc.MultiSig is not empty")
+	}
+
 	if p.DIDDoc.MultiSig != "" {
 		M, N, err := GetMultisignMN(p.DIDDoc.MultiSig)
 		if err != nil {
 			return err
 		}
 		if M  > N{
-			return errors.New("checkMultSign M > N")
+			return errors.New("checkMultSignController M > N")
 		}
 		if N <= 1 {
 			return errors.New("N <= 1")
@@ -405,7 +443,7 @@ func checkMultSign(p *did.DIDPayload , evm *EVM)error{
 			return errors.New("M <=0")
 		}
 		if N != getCtrlLen(p.DIDDoc.Controller){
-			return errors.New("checkMultSign N != getCtrlLen(p.DIDDoc.Controller")
+			return errors.New("checkMultSignController N != getCtrlLen(p.DIDDoc.Controller")
 		}
 		if p.Header.Operation == did.Update_DID_Operation {
 			verifyDoc, err := getVerifyDocMultisign(evm, p.DIDDoc.ID)
@@ -444,10 +482,10 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	}
 	//doc := p.DIDDoc
 	if p.DIDDoc != nil {
-		if err := IsControllerUnique(p.DIDDoc.Controller, evm); err != nil {
+		if err := IsControllerValid(p.DIDDoc.Controller, evm); err != nil {
 			return err
 		}
-		if err := checkMultSign(p, evm); err != nil {
+		if err := checkMultSignController(p, evm); err != nil {
 			return err
 		}
 		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
