@@ -820,7 +820,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		return err
 	}
 
-	M := 0
+	M := 1
 	multisignStr := verifyDoc.MultiSig
 	if multisignStr != "" {
 		M, _, err = GetMultisignMN(multisignStr)

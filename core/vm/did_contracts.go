@@ -463,14 +463,14 @@ func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 	return nil
 }
 
-func isPayloadCtrlExpired(VerificationMethod string, evm *EVM)error{
+func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM)error{
 	prefixedDID,_ := GetDIDAndCompactSymbolFromUri(VerificationMethod)
-	expired, err := isControllerExpired(evm,prefixedDID)
+	ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
 	if  err!= nil{
 		return err
 	}
-	if expired {
-		return errors.New(" isPayloadCtrlExpired VerificationMethod is expired")
+	if ctrlInvalid {
+		return errors.New(" isPayloadCtrlInvalid VerificationMethod is ctrlInvalid")
 	}
 	return nil
 }
@@ -482,6 +482,7 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	}
 	//doc := p.DIDDoc
 	if p.DIDDoc != nil {
+		log.Debug("checkCustomIDPayloadSyntax","ID", p.DIDDoc.ID)
 		if err := IsControllerValid(p.DIDDoc.Controller, evm); err != nil {
 			return err
 		}
@@ -494,7 +495,7 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 
 	}
 
-	return isPayloadCtrlExpired(p.Proof.VerificationMethod, evm)
+	return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
 }
 
 func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
