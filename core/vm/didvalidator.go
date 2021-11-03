@@ -860,12 +860,13 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		return err
 	}
 
-	//3, Verifiable credential
-	if err = checkVerifiableCredentials(evm,
-		customizedDIDPayload.DIDDoc.ID, customizedDIDPayload.DIDDoc.VerifiableCredential,
-		verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller, false); err != nil {
-		return err
-	}
+	////3, Verifiable credential
+	//if err = checkVerifiableCredentials(evm,
+	//	customizedDIDPayload.DIDDoc.ID, customizedDIDPayload.DIDDoc.VerifiableCredential,
+	//	verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller, false); err != nil {
+	//	return err
+	//}
+
 	if err = sortDocSlice(verifyDoc); err != nil {
 		return err
 	}
