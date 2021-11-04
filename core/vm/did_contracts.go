@@ -242,7 +242,7 @@ func isServiceIDUnique(p *did.DIDPayload) bool {
 	return true
 }
 
-func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
+func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 	// check proof
 	if p.Proof.VerificationMethod == "" {
 		return errors.New("proof Creator is nil")
@@ -263,9 +263,12 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 				return errors.New("doc service id is not unique")
 			}
 		}
-		if err := checkAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
-			return err
+		if isDID {
+			if err := checkAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
+				return err
+			}
 		}
+
 		if err := checkKeyReference(doc.ID, doc.Authentication, doc.Authorization, doc.PublicKey); err != nil {
 			return err
 		}
@@ -293,8 +296,12 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 				return errors.New("proof SignatureValue is null")
 			}
 		}
+		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+			return err
+		}
 	}
-	return nil
+	//todo maybe add one height
+	return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
 }
 //proof controller must unique and not expired
 func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
@@ -480,7 +487,7 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	if p == nil || evm ==nil{
 		return errors.New("checkCustomIDPayloadSyntax p == nil || evm ==nil")
 	}
-	//doc := p.DIDDoc
+	//check cutomized uniqued property
 	if p.DIDDoc != nil {
 		log.Debug("checkCustomIDPayloadSyntax","ID", p.DIDDoc.ID)
 		if err := IsControllerValid(p.DIDDoc.Controller, evm); err != nil {
@@ -489,13 +496,19 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		if err := checkMultSignController(p, evm); err != nil {
 			return err
 		}
-		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
-			return err
+		//if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+		//	return err
+		//}
+		if len(p.DIDDoc.Authorization) != 0{
+			return errors.New("customized did can not have Authorization")
 		}
-
 	}
-
-	return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
+	////ID
+	//if err := checkPayloadSyntax(p, evm, false); err != nil {
+	//	log.Error("checkCustomIDPayloadSyntax  checkPayloadSyntax error", "error", err, "ID", p.DIDDoc.ID)
+	//	return err
+	//}
+	return checkPayloadSyntax(p, evm, false)
 }
 
 func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
