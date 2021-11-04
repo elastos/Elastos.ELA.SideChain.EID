@@ -122,23 +122,6 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
 
-	//{
-	//	if  spv.SpvService == nil{
-	//		return nil
-	//	}
-	//	log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
-	//	bestHeader,err := spv.SpvService.HeaderStore().GetBest()
-	//	if err != nil{
-	//		return err
-	//	}
-	//	log.Debug("checkRegisterDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
-	//		"elaHeight",bestHeader.Height)
-	//
-	//	if spv.MainChainIsPowMode(){
-	//		log.Error("checkCustomizedDID MainChainIsPowMode return")
-	//		return errors.New("Pow mode can not send customized tx")
-	//	}
-	//}
 	idString := did.GetDIDFromUri(p.DIDDoc.ID)
 	// check idstring
 	if !IsLetterOrNumber(idString) {
@@ -740,25 +723,9 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-	//log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
-	//
-	//{
-	//	if  spv.SpvService == nil{
-	//		return nil
-	//	}
-	//	log.Error("checkCustomizedDID begin","evm.BlockNumber", evm.BlockNumber)
-	//	bestHeader,err := spv.SpvService.HeaderStore().GetBest()
-	//	if err != nil{
-	//		return err
-	//	}
-	//	log.Error("checkCustomizedDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
-	//		"elaHeight",bestHeader.Height)
-	//
-	//	if spv.MainChainIsPowMode(){
-	//		log.Error("checkCustomizedDID MainChainIsPowMode return")
-	//		return errors.New("Pow mode can not send customized tx")
-	//	}
-	//}
+	if  spv.SpvService == nil{
+		return nil
+	}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
 		return err
@@ -859,13 +826,6 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if err != nil {
 		return err
 	}
-
-	////3, Verifiable credential
-	//if err = checkVerifiableCredentials(evm,
-	//	customizedDIDPayload.DIDDoc.ID, customizedDIDPayload.DIDDoc.VerifiableCredential,
-	//	verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller, false); err != nil {
-	//	return err
-	//}
 
 	if err = sortDocSlice(verifyDoc); err != nil {
 		return err
