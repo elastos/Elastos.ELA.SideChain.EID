@@ -1368,6 +1368,7 @@ func checkDIDTransaction(didpayload []byte, db *state.StateDB) error {
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
@@ -1596,6 +1597,9 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 	user1TX.Serialize(buf, did.DIDVersion)
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 
 	statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
@@ -1773,6 +1777,9 @@ func TestCustomizedDIDTransferProofs(t *testing.T) {
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 	evm.Time=big.NewInt(0)
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+
 	user1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
 	user1PrivateKeyStr := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
 	user1TX := getPayloadDIDInfo(user1, "create", user1IDDocByts, user1PrivateKeyStr)
@@ -2000,6 +2007,9 @@ func TestNewCustomizedDID(t *testing.T) {
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 	evm.Time=big.NewInt(0)
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 
