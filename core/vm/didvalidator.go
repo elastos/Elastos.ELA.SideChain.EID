@@ -1742,14 +1742,14 @@ func checkVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	if err != nil {
 		return errors.New("invalid ExpirationDate")
 	}
-	didWithPrefix,_ := GetDIDAndCompactSymbolFromUri(payload.CredentialDoc.Proof.VerificationMethod)
-	ctrlInvalid, err := isControllerInvalid(evm,didWithPrefix)
-	if  err!= nil{
-		return err
-	}
-	if ctrlInvalid {
-		return errors.New(" the VerificationMethod controller is invalid")
-	}
+	//didWithPrefix,_ := GetDIDAndCompactSymbolFromUri(payload.CredentialDoc.Proof.VerificationMethod)
+	//ctrlInvalid, err := isControllerInvalid(evm,didWithPrefix)
+	//if  err!= nil{
+	//	return err
+	//}
+	//if ctrlInvalid {
+	//	return errors.New(" the VerificationMethod controller is invalid")
+	//}
 
 	switch payload.Header.Operation {
 	case did.Declare_Verifiable_Credential_Operation:

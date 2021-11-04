@@ -242,6 +242,36 @@ func isServiceIDUnique(p *did.DIDPayload) bool {
 	return true
 }
 
+func getController(verificationMethod string, doc*did.DIDDoc)string {
+	for i := 0; i < len(doc.PublicKey); i++ {
+		//get uri fregment
+		if verificationMethodEqual(verificationMethod, doc.PublicKey[i].ID) {
+			return doc.PublicKey[i].Controller
+		}
+	}
+
+	for _, auth := range doc.Authentication {
+		switch auth.(type) {
+		case map[string]interface{}:
+			data, err := json.Marshal(auth)
+			if err != nil {
+				return ""
+			}
+			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
+			err = json.Unmarshal(data, didPublicKeyInfo)
+			if err != nil {
+				return ""
+			}
+			if verificationMethodEqual(verificationMethod, didPublicKeyInfo.ID) {
+				return didPublicKeyInfo.Controller
+			}
+		default:
+			continue
+		}
+	}
+	return ""
+}
+
 func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 	// check proof
 	if p.Proof.VerificationMethod == "" {
@@ -296,12 +326,29 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 				return errors.New("proof SignatureValue is null")
 			}
 		}
-		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+		if p.Header.Operation != did.Create_DID_Operation{
+			if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
 			return err
+			}
 		}
 	}
-	//todo maybe add one height
-	return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
+	needCheck := false
+	//if VerificationMethod is not my key then
+	if p.Header.Operation == did.Create_DID_Operation {
+		controller := getController(p.Proof.VerificationMethod, p.DIDDoc)
+		if controller == "" {
+			errors.New("VerificationMethod releated controller err")
+		}
+		if controller != p.DIDDoc.ID {
+			needCheck = true
+		}
+	}else{
+		needCheck = true
+	}
+	if needCheck {
+		return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
+	}
+	return nil
 }
 //proof controller must unique and not expired
 func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
@@ -327,7 +374,14 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 		}
 
 	} else if err := Unmarshal(proof, CustomizedDIDProof); err == nil {
-		//if one controller no need check
+		prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
+		ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
+		if  err!= nil{
+			return err
+		}
+		if ctrlInvalid {
+			return errors.New("one of the controller is ctrlInvalid")
+		}
 	} else {
 		//error
 		return errors.New("isVerificationsMethodsValid Invalid proof type")
