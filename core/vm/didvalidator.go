@@ -122,23 +122,23 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
 
-	{
-		if  spv.SpvService == nil{
-			return nil
-		}
-		log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
-		bestHeader,err := spv.SpvService.HeaderStore().GetBest()
-		if err != nil{
-			return err
-		}
-		log.Debug("checkRegisterDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
-			"elaHeight",bestHeader.Height)
-
-		if spv.MainChainIsPowMode(){
-			log.Error("checkCustomizedDID MainChainIsPowMode return")
-			return errors.New("Pow mode can not send customized tx")
-		}
-	}
+	//{
+	//	if  spv.SpvService == nil{
+	//		return nil
+	//	}
+	//	log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
+	//	bestHeader,err := spv.SpvService.HeaderStore().GetBest()
+	//	if err != nil{
+	//		return err
+	//	}
+	//	log.Debug("checkRegisterDID","MainChainIsPowMode ", spv.MainChainIsPowMode(),
+	//		"elaHeight",bestHeader.Height)
+	//
+	//	if spv.MainChainIsPowMode(){
+	//		log.Error("checkCustomizedDID MainChainIsPowMode return")
+	//		return errors.New("Pow mode can not send customized tx")
+	//	}
+	//}
 	idString := did.GetDIDFromUri(p.DIDDoc.ID)
 	// check idstring
 	if !IsLetterOrNumber(idString) {
@@ -155,7 +155,7 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 
 	if configHeight == nil || evm.Context.BlockNumber.Cmp(configHeight) > 0 || senderAddr != configAddr {
 		// abnormal payload check
-		if err := checkPayloadSyntax(p, evm); err != nil {
+		if err := checkPayloadSyntax(p, evm, true); err != nil {
 			log.Error("checkPayloadSyntax error", "error", err, "ID", p.DIDDoc.ID)
 			return err
 		}

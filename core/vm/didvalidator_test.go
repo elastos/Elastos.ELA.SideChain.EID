@@ -532,6 +532,7 @@ func TestIDChainStore_DeactivateDIDTx(t *testing.T) {
 
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.BlockNumber = new(big.Int).SetInt64(0)
 	receipt := getDeactiveDIDReceipt(*payload)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
 	//Deactive did  have no
@@ -553,7 +554,7 @@ func TestIDChainStore_DeactivateDIDTx(t *testing.T) {
 	verifDid = "did:elastos:icJ4z2DULrHEzYSvjKNJpKyhqFDxvYV7pN#master"
 	payload = getPayloadDeactivateDID(didWithPrefix, verifDid)
 	err = checkDeactivateDID(evm, payload)
-	assert.EqualError(t, err, "Not find the publickey of verificationMethod")
+	assert.EqualError(t, err, "not found")
 
 	//deactive one deactivated did
 	statedb.AddDIDLog(id, did.Deactivate_DID_Operation, buf.Bytes())
@@ -615,6 +616,9 @@ func TestCustomizedDID(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+
 	evm.Time=big.NewInt(0)
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
@@ -641,6 +645,7 @@ func TestCustomizedDID(t *testing.T) {
 //issuer.json SelfProclaimedCredential
 func TestCustomizedDIDMultSign(t *testing.T) {
 	didParam.IsTest = true
+
 	defer func() {
 		didParam.IsTest = false
 	}()
@@ -652,6 +657,8 @@ func TestCustomizedDIDMultSign(t *testing.T) {
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 	evm.Time=big.NewInt(0)
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 	statedb.AddDIDLog(idUser1, did.Create_DID_Operation, buf.Bytes())
@@ -813,6 +820,8 @@ func TestRevokeVerifiableCredentialTx(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 
 	privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
 	id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
@@ -925,6 +934,8 @@ func TestRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 
 	verifableCredentialRevokeTx := getIDVerifiableCredentialTx(id2, "revoke", custIDVerifCredDocBytes,
 		privateKey2Str)
@@ -994,6 +1005,9 @@ func TestWrongRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.BlockNumber = new(big.Int).SetInt64(1)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+
 	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
 	verifableCredentialRevokeTx := getIDVerifiableCredentialTx("did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
 		"revoke", custIDVerifCredDocBytes, privateKey1Str)
