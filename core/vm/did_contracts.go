@@ -550,18 +550,13 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		if err := checkMultSignController(p, evm); err != nil {
 			return err
 		}
-		//if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
-		//	return err
-		//}
+		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+			return err
+		}
 		if len(p.DIDDoc.Authorization) != 0{
 			return errors.New("customized did can not have Authorization")
 		}
 	}
-	////ID
-	//if err := checkPayloadSyntax(p, evm, false); err != nil {
-	//	log.Error("checkCustomIDPayloadSyntax  checkPayloadSyntax error", "error", err, "ID", p.DIDDoc.ID)
-	//	return err
-	//}
 	return checkPayloadSyntax(p, evm, false)
 }
 
