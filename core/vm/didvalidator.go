@@ -130,6 +130,10 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	if err := checkExpires(p.DIDDoc.Expires, evm.Time); err != nil {
 		return  err
 	}
+
+	if isDIDDeactive(evm,idString) {
+		return errors.New("DID is already deactivated")
+	}
 	//check txn fee use RequiredGas
 	//fee := evm.GasPrice.Uint64() * gas
 	configHeight := evm.chainConfig.OldDIDMigrateHeight
@@ -175,6 +179,7 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	signature, _ := base64url.DecodeString(p.Proof.Signature)
 
 	var success bool
+	//outter header payload proof verify signature
 	success, err = did.VerifyByVM(p, code, signature)
 	if err != nil {
 		return err
@@ -209,6 +214,7 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 				return err
 			}
 		}
+		//inner doc verify sign
 		if err = checkDIDInnerProof(evm, p.DIDDoc.ID, DIDProofArray, doc.DIDPayloadData, len(DIDProofArray), verifyDoc); err != nil {
 			return err
 		}
@@ -1301,7 +1307,7 @@ func checkCustomizedDIDOperation(evm *EVM, header *did.Header,
 //is VerificationMethod CustomizedID DefaultKey
 func IsVerifMethCustIDDefKey(evm *EVM, VerificationMethod, ID string,
 	publicKey []did.DIDPublicKeyInfo, authentication []interface{}, Controller interface{}) bool {
-	controllerVM, _ := GetDIDAndCompactSymbolFromUri(VerificationMethod)
+	controllerVM, _ := GetDIDAndUri(VerificationMethod)
 
 	//1, check is proofUriSegment public key in authentication. if it is in then check done
 	if controllerVM == "" || controllerVM == ID {
@@ -1328,7 +1334,7 @@ func IsVerifMethCustIDDefKey(evm *EVM, VerificationMethod, ID string,
 // keyType default key / authenKey
 func IsVerifMethCustIDControllerKey(evm *EVM, VerificationMethod, ID string, Controller interface{},
 	isDefaultKey bool) bool {
-	controllerVM, _ := GetDIDAndCompactSymbolFromUri(VerificationMethod)
+	controllerVM, _ := GetDIDAndUri(VerificationMethod)
 	if controllerArray, bControllerArray := Controller.([]interface{}); bControllerArray == true {
 		//2.1 is controller exist
 		for _, controller := range controllerArray {
@@ -1373,7 +1379,7 @@ func IsVerifMethCustIDControllerKey(evm *EVM, VerificationMethod, ID string, Con
 	return false
 }
 
-func GetDIDAndCompactSymbolFromUri(idURI string) (string, string) {
+func GetDIDAndUri(idURI string) (string, string) {
 	index := strings.LastIndex(idURI, "#")
 	if index == -1 {
 		return "", ""
@@ -1430,7 +1436,7 @@ func IsVerifMethCustIDAuthKey(evm *EVM, VerificationMethod, ID string,
 	if IsVerifMethCustIDDefKey(evm, VerificationMethod, ID, publicKey, Authentication, Controller) {
 		return true
 	}
-	controllerVM, _ := GetDIDAndCompactSymbolFromUri(VerificationMethod)
+	controllerVM, _ := GetDIDAndUri(VerificationMethod)
 
 	if controllerVM == "" || controllerVM == ID {
 		//proofUriSegment---PublicKeyBase58 is in Authentication
@@ -1635,7 +1641,7 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 		return errors.New("DID WAS AREADY DEACTIVE")
 	}
 
-	prefixDID,_ := GetDIDAndCompactSymbolFromUri(deactivateDIDOpt.Proof.VerificationMethod)
+	prefixDID,_ := GetDIDAndUri(deactivateDIDOpt.Proof.VerificationMethod)
 	ctrlInvalid, err := isControllerInvalid(evm,prefixDID)
 	if  err!= nil{
 		return err
@@ -1702,7 +1708,7 @@ func checkVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	if err != nil {
 		return errors.New("invalid ExpirationDate")
 	}
-	//didWithPrefix,_ := GetDIDAndCompactSymbolFromUri(payload.CredentialDoc.Proof.VerificationMethod)
+	//didWithPrefix,_ := GetDIDAndUri(payload.CredentialDoc.Proof.VerificationMethod)
 	//ctrlInvalid, err := isControllerInvalid(evm,didWithPrefix)
 	//if  err!= nil{
 	//	return err
@@ -1976,7 +1982,7 @@ func isDIDVerifMethodMatch(verificationMethod, ID string) bool {
 
 //here issuer must be customizdDID
 func isCustomizedVerifMethodMatch(evm *EVM, verificationMethod, issuer string) bool {
-	prefixDid, _ := GetDIDAndCompactSymbolFromUri(verificationMethod)
+	prefixDid, _ := GetDIDAndUri(verificationMethod)
 
 	doc, err := GetIDLastDoc(evm, issuer)
 	if err != nil {

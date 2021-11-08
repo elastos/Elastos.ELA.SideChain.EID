@@ -111,6 +111,57 @@ func checkKeyReference(didWithPrefix string, authen, authorization []interface{}
 	return nil
 }
 
+//didWithPrefix did:elastos:i begin address.
+func isDIDContrlMatched(didWithPrefix, controller string)bool{
+	if controller != "" && controller != didWithPrefix {
+		return false
+	}
+	return true
+}
+
+func checkAuthorization(didWithPrefix string, authorization []interface{}, publicKey []did.DIDPublicKeyInfo) error {
+	for _, auth := range authorization {
+		switch auth.(type) {
+		case string:
+			id := auth.(string)
+			//id must in public key and should be other's key(controller should not didWithPrefix)
+			valid := false
+			//id should be other controller
+			for i := 0; i < len(publicKey); i++ {
+				//if this is  my public key ignore.
+				if isDIDContrlMatched(publicKey[i].Controller, didWithPrefix){
+					continue
+				}
+				//find referenced public key
+				if verificationMethodEqual(publicKey[i].ID, id) {
+					valid = true
+				}
+			}
+			//id is not valid in public or is not didWithPrefix
+			if !valid {
+				return  errors.New("controller in authorization is not valid")
+			}
+		case map[string]interface{}:
+			data, err := json.Marshal(auth)
+			if err != nil {
+				return err
+			}
+			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
+			err = json.Unmarshal(data, didPublicKeyInfo)
+			if err != nil {
+				return err
+			}
+			if isDIDContrlMatched(didPublicKeyInfo.Controller, didWithPrefix){
+				errors.New("map[string]interface controller in authorization is not valid ")
+			}
+		default:
+			return errors.New("[ID checkAuthorization] invalid  auth.(type)")
+		}
+	}
+	return nil
+}
+
+
 func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DIDPublicKeyInfo) error {
 	//auth should not be empty
 	if len(authen) == 0 {
@@ -122,18 +173,25 @@ func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DID
 	for _, auth := range authen {
 		switch auth.(type) {
 		case string:
-			keyString := auth.(string)
+			id := auth.(string)
+			exist := false
 			for i := 0; i < len(publicKey); i++ {
 				//if this is not my public key ignore.
-				if publicKey[i].Controller != "" && publicKey[i].Controller != didWithPrefix {
+				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix){
 					continue
 				}
-				if verificationMethodEqual(publicKey[i].ID, keyString) {
+				if verificationMethodEqual(publicKey[i].ID, id) {
+					exist = true
 					if did.IsPublickDIDMatched(publicKey[i].PublicKeyBase58, didAddress) {
 						masterPubKeyVerifyOk = true
 					}
 				}
 			}
+			//id is not exist in public or is not didWithPrefix
+			if !exist{
+				return  errors.New("controller in auth is not valid")
+			}
+
 		case map[string]interface{}:
 			data, err := json.Marshal(auth)
 			if err != nil {
@@ -147,9 +205,12 @@ func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DID
 			if err := checkPublicKey(didPublicKeyInfo); err != nil {
 				return err
 			}
+			if !isDIDContrlMatched(didPublicKeyInfo.Controller, didWithPrefix) {
+				return errors.New("Other controller can not be in authen")
+			}
 			for i := 0; i < len(publicKey); i++ {
 				//if this is not my public key ignore.
-				if publicKey[i].Controller != "" && publicKey[i].Controller != didWithPrefix {
+				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix) {
 					continue
 				}
 				if verificationMethodEqual(publicKey[i].ID, didPublicKeyInfo.ID) {
@@ -297,6 +358,9 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 			if err := checkAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
 				return err
 			}
+			if err := checkAuthorization(p.DIDDoc.ID, p.DIDDoc.Authorization, p.DIDDoc.PublicKey); err != nil {
+				return err
+			}
 		}
 
 		if err := checkKeyReference(doc.ID, doc.Authentication, doc.Authorization, doc.PublicKey); err != nil {
@@ -326,28 +390,28 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 				return errors.New("proof SignatureValue is null")
 			}
 		}
-		if p.Header.Operation != did.Create_DID_Operation{
-			if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
-			return err
-			}
-		}
+		//if p.Header.Operation != did.Create_DID_Operation{
+		//	if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+		//	return err
+		//	}
+		//}
 	}
-	needCheck := false
-	//if VerificationMethod is not my key then
-	if p.Header.Operation == did.Create_DID_Operation {
-		controller := getController(p.Proof.VerificationMethod, p.DIDDoc)
-		if controller == "" {
-			errors.New("VerificationMethod releated controller err")
-		}
-		if controller != p.DIDDoc.ID {
-			needCheck = true
-		}
-	}else{
-		needCheck = true
-	}
-	if needCheck {
-		return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
-	}
+	//needCheck := false
+	////if VerificationMethod is not my key then
+	//if p.Header.Operation == did.Create_DID_Operation {
+	//	controller := getController(p.Proof.VerificationMethod, p.DIDDoc)
+	//	if controller == "" {
+	//		errors.New("VerificationMethod releated controller err")
+	//	}
+	//	if controller != p.DIDDoc.ID {
+	//		needCheck = true
+	//	}
+	//}else{
+	//	needCheck = true
+	//}
+	//if needCheck {
+	//	return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
+	//}
 	return nil
 }
 //proof controller must unique and not expired
@@ -359,7 +423,7 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, CustomizedDIDProof := range DIDProofArray {
-			prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
+			prefixedDID,_ := GetDIDAndUri(CustomizedDIDProof.Creator)
 			ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
 			if  err!= nil{
 				return err
@@ -374,7 +438,7 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 		}
 
 	} else if err := Unmarshal(proof, CustomizedDIDProof); err == nil {
-		prefixedDID,_ := GetDIDAndCompactSymbolFromUri(CustomizedDIDProof.Creator)
+		prefixedDID,_ := GetDIDAndUri(CustomizedDIDProof.Creator)
 		ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
 		if  err!= nil{
 			return err
@@ -525,7 +589,7 @@ func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 }
 
 func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM)error{
-	prefixedDID,_ := GetDIDAndCompactSymbolFromUri(VerificationMethod)
+	prefixedDID,_ := GetDIDAndUri(VerificationMethod)
 	ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
 	if  err!= nil{
 		return err
