@@ -154,16 +154,15 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	if err := checkDIDOperation(evm, &p.Header, p.DIDDoc.ID); err != nil {
 		return err
 	}
-
+	//payload proof should be default key
 	if err := checkVerificationMethodV1(p.Proof.VerificationMethod,
 		p.DIDDoc); err != nil {
 		return err
 	}
 	// todo checkVerificationMethodVuse2  pubkeyCount++
 
-	//get  public key
-	publicKeyBase58, _ := getAuthenPublicKey(evm, p.Proof.VerificationMethod, true,
-		p.DIDDoc.PublicKey, p.DIDDoc.Authentication, nil)
+	//payload VerificationMethod key should be  authen key
+	publicKeyBase58, _ :=getDIDAutheneKey(p.Proof.VerificationMethod,p.DIDDoc.Authentication,p.DIDDoc.PublicKey)
 	if publicKeyBase58 == "" {
 		return errors.New("Not find proper publicKeyBase58")
 	}
@@ -411,8 +410,92 @@ func getAuthenPublicKey(evm *EVM, verificationMethod string, isDID bool,
 	if isDID {
 		return getDIDAutheneKey(verificationMethod, authentication, publicKey)
 	} else {
-		return getCustomizedIDPublicKey(evm, verificationMethod, publicKey, authentication, controller, AuthPublicKey)
+		return	getCustDIDAuthenKey(evm, verificationMethod, publicKey, authentication, controller)
 	}
+}
+
+//authorization []interface{},
+func getCustDIDDefKey(evm *EVM, verificationMethod string,  controller interface{}) (string, error) {
+	contr, _ := did.GetController(verificationMethod)
+	//2, check is proofUriSegment public key come from controller
+	if controllerArray, bControllerArray := controller.([]interface{}); bControllerArray == true {
+		//2.1 is controller exist
+		for _, controller := range controllerArray {
+			if controller == contr {
+				doc, err := GetIDLastDoc(evm, contr)
+				if err != nil {
+					return "", err
+				}
+				return getDIDDefaultKey(contr, verificationMethod, doc.Authentication, doc.PublicKey)
+			}
+		}
+	} else if controller, bController := controller.(string); bController == true {
+		if controller == contr {
+			doc, err := GetIDLastDoc(evm, contr)
+			if err != nil {
+				return "", err
+			}
+			return getDIDDefaultKey(contr, verificationMethod, doc.Authentication, doc.PublicKey)
+
+		}
+	}
+	return "", nil
+}
+
+func getCustDIDAuthenKey(evm *EVM, verificationMethod string, publicKey []did.DIDPublicKeyInfo,
+	authentication []interface{}, controller interface{}) (string, error) {
+	contr, _ := did.GetController(verificationMethod)
+
+	for _, auth := range authentication {
+		switch auth.(type) {
+		case string:
+			keyString := auth.(string)
+			if verificationMethodEqual(verificationMethod, keyString) {
+				for _, pkInfo := range publicKey {
+					if verificationMethodEqual(verificationMethod, pkInfo.ID) {
+						return pkInfo.PublicKeyBase58, nil
+					}
+				}
+			}
+		case map[string]interface{}:
+			data, err := json.Marshal(auth)
+			if err != nil {
+				return "", err
+			}
+			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
+			err = json.Unmarshal(data, didPublicKeyInfo)
+			if err != nil {
+				return "", err
+			}
+			if verificationMethodEqual(verificationMethod, didPublicKeyInfo.ID) {
+				return didPublicKeyInfo.PublicKeyBase58, nil
+			}
+		}
+	}
+	//contr, _ := id.GetController(verificationMethod)
+	//2, check is proofUriSegment public key come from controller
+	if controllerArray, bControllerArray := controller.([]interface{}); bControllerArray == true {
+		//2.1 is controller exist
+		for _, controller := range controllerArray {
+			if controller == contr {
+				doc, err := GetIDLastDoc(evm, contr)
+				if err != nil {
+					return "", err
+				}
+				return  getDIDAutheneKey(verificationMethod, doc.Authentication, doc.PublicKey)
+
+			}
+		}
+	} else if controller, bController := controller.(string); bController == true {
+		if controller == contr {
+			doc, err := GetIDLastDoc(evm, contr)
+			if err != nil {
+				return "", err
+			}
+			return getDIDAutheneKey(verificationMethod, doc.Authentication, doc.PublicKey)
+		}
+	}
+	return "", nil
 }
 
 //authorization []interface{},
@@ -458,6 +541,7 @@ func getCustomizedIDPublicKey(evm *EVM, verificationMethod string, publicKey []d
 				if err != nil {
 					return "", err
 				}
+				//todo getDIDDefaultKey
 				return getDIDPublicKeyByType(contr, verificationMethod, doc.Authentication, doc.PublicKey,
 					doc.Authorization, keyType)
 			}
@@ -468,6 +552,7 @@ func getCustomizedIDPublicKey(evm *EVM, verificationMethod string, publicKey []d
 			if err != nil {
 				return "", err
 			}
+			//todo getDIDDefaultKey
 			return getDIDPublicKeyByType(contr, verificationMethod, doc.Authentication, doc.PublicKey,
 				doc.Authorization, keyType)
 		}
@@ -619,9 +704,10 @@ func Unmarshal(src, target interface{}) error {
         3, verify credential sign. if ID is compact format must Completion ID
 */
 func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.VerifiableCredential,
-	Authentication []interface{}, PublicKey []did.DIDPublicKeyInfo, controller interface{}, isDID bool) error {
+	Authentication []interface{}, PublicKey []did.DIDPublicKeyInfo, controller interface{}) error {
 	var issuerPublicKey, issuerCode, signature []byte
-	var err error
+	//var err error
+
 	//1，Traverse each credential, if Issuer is an empty string, use the DID in CredentialSubject,
 	//if it is still an empty string, use the outermost DID, indicating that it is a self-declared Credential
 	for _, cridential := range VerifiableCredential {
@@ -638,29 +724,43 @@ func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.
 			if realIssuer == "" {
 				realIssuer = ID
 			}
-			pubKeyStr, _ := getAuthenPublicKey(evm, proof.VerificationMethod, isDID, PublicKey, Authentication, controller)
-			if pubKeyStr == "" {
-				return errors.New("checkVerifiableCredentials NOT FIND PUBLIC KEY OF VerificationMethod")
+		}
+
+		isDID, err := evm.StateDB.IsDID(realIssuer)
+		if err != nil {
+			return err
+		}
+		if isDID {
+			//realIssuer is self and Issuer is not ""
+			if realIssuer == ID {
+				pubKeyStr, _ := getAuthenPublicKey(evm, proof.VerificationMethod, isDID, PublicKey, Authentication, controller)
+				if pubKeyStr == "" {
+					return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
+				}
+				issuerPublicKey = base58.Decode(pubKeyStr)
+			} else {
+				////realIssuer is other  and Issuer is not ""
+				if issuerPublicKey, err = getIssuerAuthenPublicKey(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
+					return err
+				}
 			}
-			issuerPublicKey = base58.Decode(pubKeyStr)
-
-		} else {
-			//2,if Issuer is not empty string, get Issuer public key from db，
-			//if Issuer is not exist  check if realIssuer is DID,
-			//if so get public key from Authentication or PublicKey
-			if issuerPublicKey, err = getIssuerPublicKey(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
-				if realIssuer == ID {
-					pubKeyStr, _ := getAuthenPublicKey(evm, proof.VerificationMethod, isDID, PublicKey, Authentication, controller)
-					if pubKeyStr == "" {
-						return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
-					}
-					issuerPublicKey = base58.Decode(pubKeyStr)
-
-				} else {
+		}else{
+			//customizd id
+			//is self
+			if realIssuer == ID {
+				pubKeyStr, _ :=getCustDIDAuthenKey(evm,proof.VerificationMethod, PublicKey, Authentication, controller)
+				if pubKeyStr == "" {
+					return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
+				}
+				issuerPublicKey = base58.Decode(pubKeyStr)
+			}else{
+				//realIssuer is other  customizdid
+				if issuerPublicKey, err = getIssuerAuthenPublicKey(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
 					return err
 				}
 			}
 		}
+
 		if issuerCode, err = did.GetCodeByPubKey(issuerPublicKey); err != nil {
 			return err
 		}
@@ -702,7 +802,7 @@ func isResiteredDID(evm *EVM, ID string) bool {
 }
 
 // issuerDID can be did or customizeDID
-func getIssuerPublicKey(evm *EVM, issuerID, verificationMethod string, isDID bool) ([]byte, error) {
+func getIssuerAuthenPublicKey(evm *EVM, issuerID, verificationMethod string, isDID bool) ([]byte, error) {
 	var publicKey []byte
 	var txData *did.DIDTransactionData
 	var err error
@@ -716,7 +816,7 @@ func getIssuerPublicKey(evm *EVM, issuerID, verificationMethod string, isDID boo
 		DIDDoc := txData.Operation.DIDDoc
 		pubKeyStr, _ := getAuthenPublicKey(evm, verificationMethod, isDID, DIDDoc.PublicKey, DIDDoc.Authentication, DIDDoc.Controller)
 		if pubKeyStr == "" {
-			return []byte{}, errors.New("getIssuerPublicKey NOT FIND PUBLIC KEY OF VerificationMethod")
+			return []byte{}, errors.New("getIssuerAuthenPublicKey NOT FIND PUBLIC KEY OF VerificationMethod")
 		}
 		publicKey = base58.Decode(pubKeyStr)
 	}
@@ -729,8 +829,8 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-	if  spv.SpvService == nil{
-		return nil
+	if spv.SpvService == nil && didParam.IsTest != true {
+		return errors.New("spv.SpvService == nil && didParam.IsTest != true")
 	}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
@@ -782,11 +882,11 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		}
 	}
 
-	// check payload.proof
-	if IsVerifMethCustIDDefKey(evm,
-		customizedDIDPayload.Proof.VerificationMethod, verifyDoc.ID,
-		verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller) {
-		return errors.New("payload.proof VerificationMethod key not default key")
+	//check payload VerificationMethod
+	publicKey , err := getCustDIDAuthenKey(evm, customizedDIDPayload.Proof.VerificationMethod, verifyDoc.PublicKey,
+		verifyDoc.Authentication, verifyDoc.Controller)
+	if publicKey == "" || err != nil{
+		return err
 	}
 
 	if err := checkCustomIDOuterProof(evm, customizedDIDPayload, verifyDoc); err != nil {
@@ -823,11 +923,6 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	//2,Proof VerificationMethod must be in DIDDoc Authentication or
 	//is come from controller
 	//getDocProof
-
-	if !isVerificationsMethodsValid(evm, verifyDoc, customizedDIDPayload.DIDDoc.Proof) {
-		return errors.New("DIDDoc.Proof verificationMethod is invalid")
-	}
-
 	DIDProofArray, err := getDocProof(customizedDIDPayload.DIDDoc.Proof)
 	if err != nil {
 		return err
@@ -883,8 +978,8 @@ func checkDIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof, iDat
 	//3, proof multisign verify
 	for _, CustomizedDIDProof := range DIDProofArray {
 		//get  public key
-		publicKeyBase58, _ := getDefaultPublicKey(evm, ID, CustomizedDIDProof.Creator, true, verifyDoc.PublicKey,
-			verifyDoc.Authentication, verifyDoc.Controller)
+
+		publicKeyBase58, _ := getDIDDefaultKey(ID, CustomizedDIDProof.Creator, verifyDoc.Authentication, verifyDoc.PublicKey)
 		if publicKeyBase58 == "" {
 			return errors.New("checkDIDInnerProof Not find proper publicKeyBase58")
 		}
@@ -923,8 +1018,7 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 	//3, proof multisign verify
 	for _, CustomizedDIDProof := range DIDProofArray {
 		//get  public key
-		publicKeyBase58, _ := getDefaultPublicKey(evm, ID, CustomizedDIDProof.Creator, false, verifyDoc.PublicKey,
-			verifyDoc.Authentication, verifyDoc.Controller)
+		publicKeyBase58, _ :=getCustDIDDefKey(evm, CustomizedDIDProof.Creator,  verifyDoc.Controller)
 		if publicKeyBase58 == "" {
 			return errors.New("checkCustomIDInnerProof Not find proper publicKeyBase58")
 		}
@@ -960,7 +1054,7 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 }
 
 func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
-	customID string, lastTxHash string, N int, verifyDoc *did.DIDDoc) error {
+	customID string, lastTxHash string, M int, verifyDoc *did.DIDDoc) error {
 	if cPayload.Ticket.CustomID != customID {
 		return errors.New("invalid ID in ticket")
 	}
@@ -1010,7 +1104,7 @@ func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 	}
 
 	// check proof
-	if err := checkTicketProof(evm, cPayload.Ticket, N, verifyDoc, cPayload.Ticket.Proof); err != nil {
+	if err := checkTicketProof(evm, cPayload.Ticket, M, verifyDoc, cPayload.Ticket.Proof); err != nil {
 		return errors.New("invalid proof of ticket")
 	}
 
@@ -1018,13 +1112,18 @@ func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 }
 
 func checkTicketProof(evm *EVM, ticket *did.CustomIDTicket, N int,
-	verifyDoc *did.DIDDoc, Proof interface{}) error {
-	ticketProofArray, err := checkCustomizedDIDTicketProof(evm, verifyDoc, Proof)
+	lastDocCtrl , ticketProof interface{}) error {
+	//isCustomDocVerifMethodDefKey
+	if !isCustomDocVerifMethodDefKey(evm, lastDocCtrl, ticketProof) {
+		return errors.New("DIDDoc.ticketProof verificationMethod is invalid")
+	}
+
+	ticketProofArray, err := getTicketProof(ticketProof)
 	if err != nil {
 		return err
 	}
 
-	err = checkCustomIDTicketProof(evm, ticketProofArray, ticket.CustomIDTicketData, N, verifyDoc)
+	err = checkCustomIDTicketProof(evm, ticketProofArray, ticket.CustomIDTicketData, N, lastDocCtrl)
 	if err != nil {
 		return err
 	}
@@ -1033,18 +1132,17 @@ func checkTicketProof(evm *EVM, ticket *did.CustomIDTicket, N int,
 }
 
 func checkCustomIDTicketProof(evm *EVM, ticketProofArray []*did.TicketProof, iDateContainer interfaces.IDataContainer,
-	M int, verifyDoc *did.DIDDoc) error {
-	isDID := did.IsDID(verifyDoc.ID, verifyDoc.PublicKey)
+	M int, lastDocCtrl interface{}) error {
+	//isDID := did.IsDID(verifyDoc.ID, verifyDoc.PublicKey)
 	verifyOkCount := 0
 	//3, proof multisign verify
 	for _, ticketProof := range ticketProofArray {
-		//get  public key
-		publicKeyBase58, _ := getAuthenPublicKey(evm, ticketProof.VerificationMethod, isDID,
-			verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller)
-
-		if publicKeyBase58 == "" {
+		//todo can be a customizdid
+		publicKeyBase58 , err := getCustDIDDefKey(evm, ticketProof.VerificationMethod, lastDocCtrl)
+		if publicKeyBase58 == "" || err != nil{
 			return errors.New("checkCustomIDTicketProof Not find proper publicKeyBase58")
 		}
+
 		//get code
 		//var publicKeyByte []byte
 		publicKeyByte := base58.Decode(publicKeyBase58)
@@ -1093,7 +1191,7 @@ func checkCustomizedDIDTicketProof(evm *EVM, verifyDoc *did.DIDDoc, Proof interf
 		}
 	} else {
 		//error
-		return nil, errors.New("isVerificationsMethodsValid Invalid Proof type")
+		return nil, errors.New("isCustomDocVerifMethodDefKey Invalid Proof type")
 	}
 	//proof object
 	if bDIDProofArray == false {
@@ -1104,10 +1202,10 @@ func checkCustomizedDIDTicketProof(evm *EVM, verifyDoc *did.DIDDoc, Proof interf
 
 func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload, verifyDoc *did.DIDDoc) error {
 	//get  public key
-	publicKeyBase58, _ := getAuthenPublicKey(evm, txPayload.Proof.VerificationMethod, false,
-		verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller)
-	if publicKeyBase58 == "" {
-		return errors.New("checkCustomIDOuterProof not find proper publicKeyBase58")
+	publicKeyBase58 , err := getCustDIDAuthenKey(evm, txPayload.Proof.VerificationMethod, verifyDoc.PublicKey,
+		verifyDoc.Authentication, verifyDoc.Controller)
+	if publicKeyBase58 == "" || err != nil{
+		return err
 	}
 	//get code
 	//var publicKeyByte []byte
@@ -1148,7 +1246,7 @@ func getDefaultPublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 	if isDID {
 		return getDIDDefaultKey(ID, verificationMethod, authentication, publicKey)
 	} else {
-		return getCustomizedIDPublicKey(evm, verificationMethod, nil, nil, controller, DefaultPublicKey)
+		return getCustDIDDefKey(evm, verificationMethod,  controller)
 	}
 }
 
@@ -1387,6 +1485,22 @@ func GetDIDAndUri(idURI string) (string, string) {
 	return idURI[:index], idURI[index:]
 }
 
+func getTicketProof(Proof interface{}) ([]*did.TicketProof, error) {
+	DIDProofArray := make([]*did.TicketProof, 0)
+
+	//var CustomizedDIDProof id.DocProof
+	CustomizedDIDProof := &did.TicketProof{}
+	//var bExist bool
+	if err := Unmarshal(Proof, &DIDProofArray); err == nil {
+	} else if err := Unmarshal(Proof, CustomizedDIDProof); err == nil {
+		DIDProofArray = append(DIDProofArray, CustomizedDIDProof)
+	} else {
+		//error
+		return nil, errors.New("isCustomDocVerifMethodDefKey Invalid Proof type")
+	}
+	return DIDProofArray, nil
+}
+
 func getDocProof(Proof interface{}) ([]*did.DocProof, error) {
 	DIDProofArray := make([]*did.DocProof, 0)
 
@@ -1398,12 +1512,14 @@ func getDocProof(Proof interface{}) ([]*did.DocProof, error) {
 		DIDProofArray = append(DIDProofArray, CustomizedDIDProof)
 	} else {
 		//error
-		return nil, errors.New("isVerificationsMethodsValid Invalid Proof type")
+		return nil, errors.New("isCustomDocVerifMethodDefKey Invalid Proof type")
 	}
 	return DIDProofArray, nil
 }
 
-func isVerificationsMethodsValid(evm *EVM, verifyDoc *did.DIDDoc, Proof interface{}) bool {
+
+//is doc proof customizedid Creator default key
+func isCustomDocVerifMethodDefKey(evm *EVM, lastDocCtrl, Proof interface{}) bool {
 	//2,Proof VerificationMethod must be in DIDDoc Authentication or
 	//is come from controller
 	//var DIDProofArray []*id.DocProof
@@ -1414,14 +1530,14 @@ func isVerificationsMethodsValid(evm *EVM, verifyDoc *did.DIDDoc, Proof interfac
 
 	if err := Unmarshal(Proof, &DIDProofArray); err == nil {
 		for _, CustomizedDIDProof = range DIDProofArray {
-			if !IsVerifMethCustIDAuthKey(evm, CustomizedDIDProof.Creator, verifyDoc.ID,
-				verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller) {
+			publicKey , err := getCustDIDDefKey(evm, CustomizedDIDProof.Creator, lastDocCtrl)
+			if publicKey == "" || err != nil{
 				return false
 			}
 		}
 	} else if err := Unmarshal(Proof, CustomizedDIDProof); err == nil {
-		if !IsVerifMethCustIDAuthKey(evm, CustomizedDIDProof.Creator, verifyDoc.ID,
-			verifyDoc.PublicKey, verifyDoc.Authentication, verifyDoc.Controller) {
+		publicKey , err :=getCustDIDDefKey(evm, CustomizedDIDProof.Creator, lastDocCtrl)
+		if publicKey == "" || err != nil{
 			return false
 		}
 	} else {
@@ -1431,42 +1547,6 @@ func isVerificationsMethodsValid(evm *EVM, verifyDoc *did.DIDDoc, Proof interfac
 	return true
 }
 
-func IsVerifMethCustIDAuthKey(evm *EVM, VerificationMethod, ID string,
-	publicKey []did.DIDPublicKeyInfo, Authentication []interface{}, Controller interface{}) bool {
-	if IsVerifMethCustIDDefKey(evm, VerificationMethod, ID, publicKey, Authentication, Controller) {
-		return true
-	}
-	controllerVM, _ := GetDIDAndUri(VerificationMethod)
-
-	if controllerVM == "" || controllerVM == ID {
-		//proofUriSegment---PublicKeyBase58 is in Authentication
-		for _, auth := range Authentication {
-			switch auth.(type) {
-			case string:
-				keyString := auth.(string)
-				if verificationMethodEqual(VerificationMethod, keyString) {
-					return true
-				}
-			case map[string]interface{}:
-				data, err := json.Marshal(auth)
-				if err != nil {
-					return false
-				}
-				didPublicKeyInfo := new(did.DIDPublicKeyInfo)
-				err = json.Unmarshal(data, didPublicKeyInfo)
-				if err != nil {
-					return false
-				}
-				if verificationMethodEqual(VerificationMethod, didPublicKeyInfo.ID) {
-					return true
-				}
-			}
-		}
-	} else {
-		return IsVerifMethCustIDControllerKey(evm, VerificationMethod, ID, Controller, false)
-	}
-	return false
-}
 
 func GetMultisignMN(mulstiSign string) (int, int, error) {
 	index := strings.LastIndex(mulstiSign, ":")
@@ -1636,6 +1716,7 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	if err != nil {
 		return err
 	}
+	//todo verify everycontroller must valid
 	//do not deactivage a did who was already deactivate
 	if evm.StateDB.IsDIDDeactivated(ID) {
 		return errors.New("DID WAS AREADY DEACTIVE")
@@ -1670,6 +1751,7 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	signature, _ := base64url.DecodeString(deactivateDIDOpt.Proof.Signature)
 
 	var success bool
+	//paylaod proof
 	success, err = did.VerifyByVM(deactivateDIDOpt, code, signature)
 	if err != nil {
 		return err
@@ -1820,7 +1902,7 @@ func checkCustomizedDIDVerifiableCredential(evm *EVM, signer string, payload *di
 	}
 	//4, Verifiable credential
 	if err = checkVerifiableCredentials(evm, verifyDoc.ID, []did.VerifiableCredential{*payload.CredentialDoc.VerifiableCredential},
-		verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller, false); err != nil {
+		verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller); err != nil {
 		return err
 	}
 	return nil
@@ -1914,16 +1996,26 @@ func checkDIDVerifiableCredential(evm *EVM, signer string,
 	if proof, err = checkDIDAllMethod(evm, signer, credPayload); err != nil {
 		return err
 	}
-	//get  public key
-	ok, err := evm.StateDB.IsDID(signer)
+	//signer may customdid or did
+	isDID, err := evm.StateDB.IsDID(signer)
 	if err != nil {
 		return err
 	}
-	publicKeyBase58, _ := getAuthenPublicKey(evm, proof.VerificationMethod, ok,
-		verifyDIDDoc.PublicKey, verifyDIDDoc.Authentication, nil)
+	publicKeyBase58 := ""
+	//todo test this
+	//if is did
+	if isDID {
+		publicKeyBase58, err = getDIDAutheneKey(proof.VerificationMethod, verifyDIDDoc.Authentication, verifyDIDDoc.PublicKey)
+	}else{
+		//customized did
+		publicKeyBase58, err = getCustDIDAuthenKey(evm,proof.VerificationMethod,verifyDIDDoc.PublicKey,
+			verifyDIDDoc.Authentication, verifyDIDDoc.Controller)
+	}
 	if publicKeyBase58 == "" {
 		return errors.New("checkDIDVerifiableCredential Not find proper publicKeyBase58")
 	}
+
+
 	//get code
 	//var publicKeyByte []byte
 	publicKeyByte := base58.Decode(publicKeyBase58)
@@ -1936,7 +2028,7 @@ func checkDIDVerifiableCredential(evm *EVM, signer string,
 	signature, _ := base64url.DecodeString(proof.Signature)
 
 	var success bool
-
+	//VerifiableCredentials outter(payload) proof
 	success, err = did.VerifyByVM(credPayload, code, signature)
 
 	if err != nil {
@@ -1945,9 +2037,9 @@ func checkDIDVerifiableCredential(evm *EVM, signer string,
 	if !success {
 		return errors.New("[VM] Check Sig FALSE")
 	}
-
+	//VerifiableCredentials inner(doc) proof
 	if err = checkVerifiableCredentials(evm, signer, []did.VerifiableCredential{*credPayload.CredentialDoc.VerifiableCredential},
-		verifyDIDDoc.Authentication, verifyDIDDoc.PublicKey, nil, true); err != nil {
+		verifyDIDDoc.Authentication, verifyDIDDoc.PublicKey, nil); err != nil {
 		return err
 	}
 	return nil
