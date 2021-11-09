@@ -390,28 +390,7 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 				return errors.New("proof SignatureValue is null")
 			}
 		}
-		//if p.Header.Operation != did.Create_DID_Operation{
-		//	if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
-		//	return err
-		//	}
-		//}
 	}
-	//needCheck := false
-	////if VerificationMethod is not my key then
-	//if p.Header.Operation == did.Create_DID_Operation {
-	//	controller := getController(p.Proof.VerificationMethod, p.DIDDoc)
-	//	if controller == "" {
-	//		errors.New("VerificationMethod releated controller err")
-	//	}
-	//	if controller != p.DIDDoc.ID {
-	//		needCheck = true
-	//	}
-	//}else{
-	//	needCheck = true
-	//}
-	//if needCheck {
-	//	return isPayloadCtrlInvalid(p.Proof.VerificationMethod, evm)
-	//}
 	return nil
 }
 //proof controller must unique and not expired
@@ -448,7 +427,7 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 		}
 	} else {
 		//error
-		return errors.New("isVerificationsMethodsValid Invalid proof type")
+		return errors.New("isCustomDocVerifMethodDefKey Invalid proof type")
 	}
 
 	return nil
@@ -458,6 +437,7 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 	0. controller must unique
 	1. controller must have did:elastos:  prefix
 	2. controller must did in chain
+	3. controller must valid
 */
 func IsControllerValid(controller           interface{}, evm *EVM)( error){
 	if contrMgr,err := checkControllerUnique(controller, evm); err != nil{
@@ -472,6 +452,13 @@ func IsControllerValid(controller           interface{}, evm *EVM)( error){
 			//all contrller must be did and alreday in the block chain
 			if err != nil || isDID == false {
 				return  errors.New("not all the controler is already in the chain")
+			}
+			ctrlInvalid, err := isControllerInvalid(evm,contrl)
+			if  err!= nil{
+				return err
+			}
+			if ctrlInvalid {
+				return errors.New("one of the controller is  Invalid")
 			}
 		}
 		return nil
@@ -537,6 +524,29 @@ func isCtrlLenEqual(newCtrl  , oldCtrl interface{}) bool {
 	return newLen == oldLen
 }
 
+
+func isCtrlEqual(newCtrl  , oldCtrl interface{})bool{
+	var newCtrlArray, oldCtrlArray []interface{}
+	var ok bool
+	if newCtrlArray, ok = newCtrl.([]interface{}); ok {
+		if oldCtrlArray, ok = oldCtrl.([]interface{}); !ok {
+			return false
+		}
+		if len(newCtrlArray) != len(oldCtrlArray) {
+			return false
+		}
+		for i, controller := range newCtrlArray {
+			if controller != oldCtrlArray[i] {
+				return false
+			}
+		}
+		return true
+
+	}else{
+		return newCtrl == oldCtrl
+	}
+}
+
 /*
 	1. if controller len >1 MultiSig != ""
 	2. if controller len =1 multsig == “”
@@ -575,8 +585,11 @@ func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 			if err != nil {
 				return err
 			}
-			if !isCtrlLenEqual(p.DIDDoc.Controller, verifyDoc.Controller) {
-				return errors.New("CtrlLen not Equal")
+			if !isCtrlEqual(p.DIDDoc.Controller, verifyDoc.Controller) {
+				return errors.New("Ctrl not Equal")
+			}
+			if p.DIDDoc.MultiSig  != verifyDoc.MultiSig{
+				return errors.New("update can not change MultiSig")
 			}
 		}
 	}else{
