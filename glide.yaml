@@ -125,8 +125,8 @@ import:
 - package: github.com/AlexpanXX/fsnotify
 #- package: github.com/elastos/Elastos.ELA.SideChain
 #  version: v0.1.8
-- package: github.com/elastos/Elastos.ELA.SPV #feature_customID
-  version: 81057fe896ad4d46463f9e345c0ce1ad9a124825
+- package: github.com/elastos/Elastos.ELA.SPV #zehua feature_customID
+  version: 260c32e0b912c81c8cb4e62b79191c7dbccc43e0
 - package: github.com/elastos/Elastos.ELA #feature_customID
   version: 67b1f3e274acf6e8d206f944daff9526c6e137ce
 - package: github.com/gorilla/websocket
