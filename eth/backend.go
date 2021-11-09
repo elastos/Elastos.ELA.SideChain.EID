@@ -437,8 +437,6 @@ func InitCurrentProducers(engine *pbft.Pbft, config *params.ChainConfig, current
 		return
 	}
 	if mode == _interface.POW {
-		producers = make([][]byte, 0)
-		totalProducers = 0
 		spvHeight = spv.GetSpvHeight()
 	}
 	blocksigner.SelfIsProducer = false
