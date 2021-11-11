@@ -24,6 +24,20 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 	buf := bytes.NewBuffer(b)
 	buf.WriteRune('{')
 
+	//context
+	contextCount := len(p.Context)
+	if contextCount != 0 {
+		err := writeKey(buf, "@context")
+		if err != nil {
+			return nil, err
+		}
+		pks, err := json.Marshal(p.Context)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(pks)
+		buf.WriteRune(',')
+	}
 	// ID
 	err := writeKey(buf, "id")
 	if err != nil {
@@ -179,7 +193,20 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 
 func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) error {
 	buf.WriteRune('{')
-
+	//context
+	contextCount := len(p.Context)
+	if contextCount != 0 {
+		err := writeKey(buf, "@context")
+		if err != nil {
+			return  err
+		}
+		pks, err := json.Marshal(p.Context)
+		if err != nil {
+			return err
+		}
+		buf.Write(pks)
+		buf.WriteRune(',')
+	}
 	// ID
 	err := writeKey(buf, "id")
 	if err != nil {
@@ -273,7 +300,20 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 
 func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buffer) error {
 	buf.WriteRune('{')
-
+	//context
+	contextCount := len(p.Context)
+	if contextCount != 0 {
+		err := writeKey(buf, "@context")
+		if err != nil {
+			return  err
+		}
+		pks, err := json.Marshal(p.Context)
+		if err != nil {
+			return err
+		}
+		buf.Write(pks)
+		buf.WriteRune(',')
+	}
 	// ID
 	err := writeKey(buf, "id")
 	if err != nil {
