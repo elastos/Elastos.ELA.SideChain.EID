@@ -112,7 +112,7 @@ func checkKeyReference(didWithPrefix string, authen, authorization []interface{}
 }
 
 //didWithPrefix did:elastos:i begin address.
-func isDIDContrlMatched(didWithPrefix, controller string)bool{
+func isDIDContrlMatched(controller, didWithPrefix  string)bool{
 	if controller != "" && controller != didWithPrefix {
 		return false
 	}
@@ -227,6 +227,44 @@ func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DID
 	}
 	return nil
 }
+
+func isAuthUnique(auth       []interface{}  )bool{
+	// New empty IDSet
+	IDSet := make(map[string]bool)
+	for _, auth := range auth {
+		switch auth.(type) {
+		case string:
+			id := auth.(string)
+			_, uriFregment := did.GetController(id)
+			if _, ok := IDSet[uriFregment]; ok {
+				return false
+			}
+			IDSet[uriFregment] = true
+		case map[string]interface{}:
+			data, err := json.Marshal(auth)
+			if err != nil {
+				return false
+			}
+			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
+			err = json.Unmarshal(data, didPublicKeyInfo)
+			if err != nil {
+				return false
+			}
+			//get uri fregment
+			_, uriFregment := did.GetController(didPublicKeyInfo.ID)
+			//
+			if _, ok := IDSet[uriFregment]; ok {
+				return false
+			}
+			IDSet[uriFregment] = true
+		default:
+			continue
+		}
+	}
+	return true
+}
+
+
 
 func isPublicKeyIDUnique(p *did.DIDPayload) bool {
 	// New empty IDSet
@@ -345,6 +383,12 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 	if p.DIDDoc != nil {
 		if !isPublicKeyIDUnique(p) {
 			return errors.New("doc public key id is not unique")
+		}
+		if !isAuthUnique(p.DIDDoc.Authentication){
+			return errors.New("doc Authentication  is not unique")
+		}
+		if !isAuthUnique(p.DIDDoc.Authorization){
+			return errors.New("doc Authorization is not unique")
 		}
 		if evm.Context.BlockNumber.Cmp(evm.chainConfig.DocArraySortHeight) > 0 {
 			if !isVerifiCreIDUnique(p) {
