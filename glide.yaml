@@ -126,7 +126,7 @@ import:
 #- package: github.com/elastos/Elastos.ELA.SideChain
 #  version: v0.1.8
 - package: github.com/elastos/Elastos.ELA.SPV #zehua feature_customID
-  version: 260c32e0b912c81c8cb4e62b79191c7dbccc43e0
+  version: e9c0ede974e9565c6236d67cdb37bb0d4565d020
 - package: github.com/elastos/Elastos.ELA #feature_customID
   version: 67b1f3e274acf6e8d206f944daff9526c6e137ce
 - package: github.com/gorilla/websocket
