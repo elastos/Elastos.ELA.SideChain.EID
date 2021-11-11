@@ -466,6 +466,20 @@ func TestCheckRegisterDID(t *testing.T) {
 
 }
 
+//did doc and vc with context
+func TestCheckRegisterDIDWithContext(t *testing.T) {
+
+	id1 := "did:elastos:idwuEMccSpsTH4ZqrhuHqg6y8XMVQAsY5g"
+	privateKey1Str := "AqBB8Uur4QwwBtFPeA2Yd5yF2Ni45gyz2osfFcMcuP7J"
+	tx1 := getPayloadDIDInfo(id1, "create", user2IDDocByts, privateKey1Str)
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	docBytes, err := json.Marshal(tx1)
+	assert.NoError(t, err)
+	err3 := checkDIDTransactionWithPayloadSyntax(docBytes, statedb)
+	assert.NoError(t, err3)
+
+}
+
 func getPayloadDIDInfo(id string, didOperation string, docBytes []byte, privateKeyStr string) *did.DIDPayload {
 	//pBytes := getDIDPayloadBytes(id)
 	info := new(did.DIDDoc)

@@ -57,6 +57,7 @@ func (p *VerifiableCredential) CompleteCompact(did string) {
 }
 
 type VerifiableCredentialData struct {
+	Context 		  []string    `json:"@context,omitempty"`
 	ID                string      `json:"id"`
 	Type              []string    `json:"type,omitempty"`
 	Issuer            string      `json:"issuer,omitempty"`
@@ -81,6 +82,7 @@ type Service struct {
 }
 
 type DIDPayloadData struct {
+	Context 			 []string               `json:"@context,omitempty"`
 	ID                   string                 `json:"id"`
 	Controller           interface{}            `json:"controller,omitempty"`
 	MultiSig             string                 `json:"multisig,omitempty"`
