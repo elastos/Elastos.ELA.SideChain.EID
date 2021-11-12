@@ -160,9 +160,9 @@ func checkAuthorization(didWithPrefix string, authorization []interface{}, publi
 	}
 	return nil
 }
-
-
-func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DIDPublicKeyInfo) error {
+//did's Authen can not be empty
+//Authen at least have one default key.
+func checkDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DIDPublicKeyInfo) error {
 	//auth should not be empty
 	if len(authen) == 0 {
 		return errors.New("did doc Authentication is nil")
@@ -189,18 +189,18 @@ func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DID
 			}
 			//id is not exist in public or is not didWithPrefix
 			if !exist{
-				return  errors.New("controller in auth is not valid")
+				return  errors.New("controller in auth is invalid")
 			}
 
 		case map[string]interface{}:
 			data, err := json.Marshal(auth)
 			if err != nil {
-				return errors.New("checkAuthen Marshal auth error")
+				return errors.New("checkAuthenID Marshal auth error")
 			}
 			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
 			err = json.Unmarshal(data, didPublicKeyInfo)
 			if err != nil {
-				return errors.New("checkAuthen Unmarshal DIDPublicKeyInfo error")
+				return errors.New("checkAuthenID Unmarshal DIDPublicKeyInfo error")
 			}
 			if err := checkPublicKey(didPublicKeyInfo); err != nil {
 				return err
@@ -224,6 +224,49 @@ func checkAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DID
 	if !masterPubKeyVerifyOk {
 		return errors.New("authen at least have one master public key")
 
+	}
+	return nil
+}
+
+// cust id  need check  authen can not have this key who's controller is not myself
+func checkCustDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DIDPublicKeyInfo) error {
+	//auth embed public must accord with checkPublicKey
+	for _, auth := range authen {
+		switch auth.(type) {
+		case string:
+			id := auth.(string)
+			exist := false
+			for i := 0; i < len(publicKey); i++ {
+				//if this is not my public key ignore.
+				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix){
+					continue
+				}
+				if verificationMethodEqual(publicKey[i].ID, id) {
+					exist = true
+				}
+			}
+			//id is not exist in public or is not didWithPrefix
+			if !exist{
+				return  errors.New("controller in auth is not valid")
+			}
+
+		case map[string]interface{}:
+			data, err := json.Marshal(auth)
+			if err != nil {
+				return errors.New("checkAuthenID Marshal auth error")
+			}
+			didPublicKeyInfo := new(did.DIDPublicKeyInfo)
+			err = json.Unmarshal(data, didPublicKeyInfo)
+			if err != nil {
+				return errors.New("checkAuthenID Unmarshal DIDPublicKeyInfo error")
+			}
+			if err := checkPublicKey(didPublicKeyInfo); err != nil {
+				return err
+			}
+			if !isDIDContrlMatched(didPublicKeyInfo.Controller, didWithPrefix) {
+				return errors.New("Other controller can not be in authen")
+			}
+		}
 	}
 	return nil
 }
@@ -399,7 +442,7 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 			}
 		}
 		if isDID {
-			if err := checkAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
+			if err := checkDIDAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
 				return err
 			}
 			if err := checkAuthorization(p.DIDDoc.ID, p.DIDDoc.Authorization, p.DIDDoc.PublicKey); err != nil {
@@ -665,6 +708,10 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	//check cutomized uniqued property
 	if p.DIDDoc != nil {
 		log.Debug("checkCustomIDPayloadSyntax","ID", p.DIDDoc.ID)
+		//
+		if err := checkCustDIDAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
+			return err
+		}
 		if err := IsControllerValid(p.DIDDoc.Controller, evm); err != nil {
 			return err
 		}
