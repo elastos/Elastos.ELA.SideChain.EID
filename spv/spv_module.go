@@ -23,6 +23,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/elastos/Elastos.ELA.SideChain/types"
+	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 	"golang.org/x/net/context"
 
 	"github.com/elastos/Elastos.ELA/common"
@@ -292,8 +293,105 @@ func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx core.Tr
 	l.service.SubmitTransactionReceipt(id, tx.Hash())// give spv service a receipt, Indicates receipt of notice
 }
 
+func OnReceivedRechargeTx(tx core.Transaction) error {
+	output := make([]*core.Output, 0)
+	for _, v := range tx.Outputs {
+		if v.Type != core.OTCrossChain {
+			continue
+		}
+		op, ok := v.Payload.(*outputpayload.CrossChainOutput)
+		if !ok {
+			return errors.New("invalid cross chain output payload")
+		}
+		err := op.Validate()
+		if err != nil {
+			return err
+		}
+		output = append(output, v)
+	}
+	if len(output) > 0 {
+		err := saveOutputPayload(output, tx.Hash().String())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func saveOutputPayload(outputs []*core.Output, txHash string) error {
+	var fees []string
+	var address []string
+	var amounts []string
+	var memos [][]byte
+	for _, output := range outputs {
+		op, ok := output.Payload.(*outputpayload.CrossChainOutput)
+		if !ok {
+			return errors.New("invalid cross chain output payload")
+		}
+		fees = append(fees, (output.Value -op.TargetAmount).String())
+		amounts = append(amounts, output.Value.String())
+		address = append(address, op.TargetAddress)
+		memos = append(memos, op.TargetData)
+	}
+	addr := strings.Join(address, ",")
+	fee := strings.Join(fees, ",")
+	output := strings.Join(amounts, ",")
+	if spvTxhash == txHash {
+		return nil
+	}
+	spvTxhash = txHash
+	err := spvTransactiondb.Put([]byte(txHash + "Fee"), []byte(fee))
+	if err != nil {
+		log.Error("saveOutputPayload Put Fee: ", "err", err, "elaHash", txHash)
+	}
+
+	err = spvTransactiondb.Put([]byte(txHash + "Address"), []byte(addr))
+	if err != nil {
+		log.Error("saveOutputPayload Put Address: ", "err", err, "elaHash", txHash)
+	}
+	err = spvTransactiondb.Put([]byte(txHash + "Output"), []byte(output))
+	if err != nil {
+		log.Error("saveOutputPayload Put Output: ", "err", err, "elaHash", txHash)
+	}
+
+	input  := memos[0]
+	err = spvTransactiondb.Put([]byte(txHash + "Input"), input)
+	if err != nil {
+		log.Error("saveOutputPayload Put Input: ", "err", err, "elaHash", txHash)
+	}
+	if atomic.LoadInt32(&candSend) == 1 {
+		from := GetDefaultSingerAddr()
+		IteratorUnTransaction(from)
+		f, err := common.StringToFixed64(fees[0])
+		if err != nil {
+			log.Error("saveOutputPayload Fee StringToFixed64: ", "err", err, "elaHash", txHash)
+			return err
+
+		}
+		fe := new(big.Int).SetInt64(f.IntValue())
+		y := new(big.Int).SetInt64(rate)
+		feeValue := new(big.Int).Mul(fe, y)
+		err, _ = SendTransaction(from, txHash, feeValue)
+		if err != nil {
+			log.Info("SendTransaction failed", "error", err.Error())
+		}
+
+	} else {
+		UpTransactionIndex(txHash)
+	}
+
+	return nil
+}
+
 //savePayloadInfo save and send spv perception
 func savePayloadInfo(elaTx core.Transaction, l *listener) {
+	if elaTx.PayloadVersion >= payload.TransferCrossChainVersionV1 {
+		err := OnReceivedRechargeTx(elaTx)
+		if err != nil {
+			log.Error("new recharge tx resolve error", "error", err)
+		}
+		return
+	}
 	nr := bytes.NewReader(elaTx.Payload.Data(elaTx.PayloadVersion))
 	p := new(payload.TransferCrossChainAsset)
 	p.Deserialize(nr, elaTx.PayloadVersion)
