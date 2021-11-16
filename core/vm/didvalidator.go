@@ -829,9 +829,9 @@ func IsLetterOrNumber(s string) bool {
 }
 
 func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-	if spv.SpvService == nil && didParam.IsTest != true {
-		return errors.New("spv.SpvService == nil && didParam.IsTest != true")
-	}
+	//if spv.SpvService == nil && didParam.IsTest != true {
+	//	return errors.New("spv.SpvService == nil && didParam.IsTest != true")
+	//}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
 		return err
@@ -1037,18 +1037,20 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 		fmt.Println("checkDIDInnerProof publicKeyBase58 ", publicKeyBase58)
 		fmt.Println("checkDIDInnerProof signature ", CustomizedDIDProof.SignatureValue)
 		fmt.Println("checkDIDInnerProof data ", string(iDateContainer.GetData()))
+		fmt.Println("checkDIDInnerProof before VerifyByVM")
+
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
 
 		if err != nil {
 			return err
 		}
 		if !success {
-			return errors.New("[VM] Check Sig FALSE")
+			return errors.New("checkCustomIDInnerProof Check Sig FALSE")
 		}
 		verifyOkCount++
 	}
 	if verifyOkCount < M {
-		return errors.New("[VM] Check Sig FALSE verifyOkCount < M")
+		return errors.New("checkCustomIDInnerProof Check Sig FALSE verifyOkCount < M")
 	}
 	return nil
 }
@@ -1155,18 +1157,21 @@ func checkCustomIDTicketProof(evm *EVM, ticketProofArray []*did.TicketProof, iDa
 		signature, _ := base64url.DecodeString(ticketProof.Signature)
 
 		var success bool
+		fmt.Println("checkCustomIDTicketProof before VerifyByVM")
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
-
+		fmt.Println("checkCustomIDTicketProof publicKeyBase58 ", publicKeyBase58)
+		fmt.Println("checkCustomIDTicketProof signature ", ticketProof.Signature)
+		fmt.Println("checkCustomIDTicketProof data ", string(iDateContainer.GetData()))
 		if err != nil {
 			return err
 		}
 		if !success {
-			return errors.New("[VM] Check Sig FALSE")
+			return errors.New("checkCustomIDTicketProof Check Sig FALSE")
 		}
 		verifyOkCount++
 	}
 	if verifyOkCount < M {
-		return errors.New("[VM] Check Sig FALSE verifyOkCount < M")
+		return errors.New("checkCustomIDTicketProof Check Sig FALSE verifyOkCount < M")
 	}
 	return nil
 }
@@ -1219,6 +1224,10 @@ func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload, verifyDoc *did
 	signature, _ := base64url.DecodeString(txPayload.Proof.Signature)
 
 	var success bool
+	fmt.Println("checkCustomIDOuterProof before VerifyByVM")
+	fmt.Println("checkCustomIDOuterProof publicKeyBase58 ", publicKeyBase58)
+	fmt.Println("checkCustomIDOuterProof signature ", txPayload.Proof.Signature)
+	fmt.Println("checkCustomIDOuterProof data ", string(txPayload.GetData()))
 	success, err = did.VerifyByVM(txPayload, code, signature)
 	if err != nil {
 		return err
