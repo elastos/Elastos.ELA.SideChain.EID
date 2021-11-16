@@ -700,6 +700,17 @@ func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM)error{
 	return nil
 }
 
+//customized did public key cotroller should be itself
+func checkCustomPublicKeyController(didWithPrefix string ,  publicKey []did.DIDPublicKeyInfo)error{
+	for i := 0; i < len(publicKey); i++ {
+		//get uri fregment
+		controller, _ := did.GetController(publicKey[i].ID)
+		if controller != "" && controller != didWithPrefix {
+			return errors.New("customizedid public key all controller must itself")
+		}
+	}
+	return nil
+}
 
 func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	if p == nil || evm ==nil{
@@ -708,6 +719,10 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 	//check cutomized uniqued property
 	if p.DIDDoc != nil {
 		log.Debug("checkCustomIDPayloadSyntax","ID", p.DIDDoc.ID)
+
+		if err:= checkCustomPublicKeyController(p.DIDDoc.ID, p.DIDDoc.PublicKey) ; err != nil{
+			return err
+		}
 		//
 		if err := checkCustDIDAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
 			return err
@@ -849,6 +864,15 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 			return false32Byte, errors.New("createDIDVerify Payload is error")
 		}
 		p.DIDDoc = payloadInfo
+		////////////////////////
+		ticketBase64data, _ := base64url.DecodeString(p.Header.Ticket)
+		ticket := new(did.CustomIDTicket)
+		if err := json.Unmarshal(ticketBase64data, ticket); err != nil {
+			return false32Byte, errors.New("createDIDVerify Payload is error")
+		}
+		p.DIDDoc = payloadInfo
+		p.Ticket= ticket
+		////////////////////////
 		if err := checkCustomizedDID(evm, p, gas); err != nil {
 			log.Error("checkCustomizedDID error", "error", err)
 			return false32Byte, err

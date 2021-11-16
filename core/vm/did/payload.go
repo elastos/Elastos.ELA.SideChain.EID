@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/elastos/Elastos.ELA/common"
@@ -189,7 +190,7 @@ func (p *DIDPayload) Deserialize(r io.Reader, version byte) error {
 	if err := p.Proof.Deserialize(r, version); err != nil {
 		return errors.New("[DIDPayload], Proof deserialize failed")
 	}
-
+	fmt.Println("p.Header.Operation", p.Header.Operation)
 	// get ticket from header.ticket
 	switch p.Header.Operation {
 	//, Deactivate_DID_Operation payload is only id string
