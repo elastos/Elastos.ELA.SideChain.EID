@@ -1096,7 +1096,8 @@ func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 	existInProof := false
 	if err := Unmarshal(cPayload.DIDDoc.Proof, &dIDProofArray); err == nil {
 		for _, proof := range dIDProofArray {
-			if proof.Creator == to {
+			contrID, _ := did.GetController(proof.Creator) // check customID
+			if contrID == to {
 				existInProof = true
 			}
 		}
@@ -1117,7 +1118,8 @@ func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 	}
 
 	// check proof
-	if err := checkTicketProof(evm, cPayload.Ticket, M, verifyDoc, cPayload.Ticket.Proof); err != nil {
+	if err := checkTicketProof(evm, cPayload.Ticket, M, verifyDoc.Controller, cPayload.Ticket.Proof); err != nil {
+		fmt.Println("err", err)
 		return errors.New("invalid proof of ticket")
 	}
 
@@ -1127,9 +1129,12 @@ func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 func checkTicketProof(evm *EVM, ticket *did.CustomIDTicket, N int,
 	lastDocCtrl , ticketProof interface{}) error {
 	//isCustomDocVerifMethodDefKey
-	if !isCustomDocVerifMethodDefKey(evm, lastDocCtrl, ticketProof) {
-		return errors.New("DIDDoc.ticketProof verificationMethod is invalid")
-	}
+	fmt.Println("lastDocCtrl", lastDocCtrl)
+	fmt.Println("ticketProof", ticketProof)
+
+	//if !isCustomDocVerifMethodDefKey(evm, lastDocCtrl, ticketProof) {
+	//	return errors.New("DIDDoc.ticketProof verificationMethod is invalid")
+	//}
 
 	ticketProofArray, err := getTicketProof(ticketProof)
 	if err != nil {
