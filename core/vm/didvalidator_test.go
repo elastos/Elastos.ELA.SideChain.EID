@@ -1865,7 +1865,7 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 	user4TX := getPayloadDIDInfo(user4, "create", user4IDDocByts, user4PrivateKeyStr)
 	buf = new(bytes.Buffer)
 	user4TX.Serialize(buf, did.DIDVersion)
-	statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
+	statedb.AddDIDLog(user4TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
 	receipt = getCreateDIDReceipt(*user4TX)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash3, 0, types.Receipts{receipt})
 	user4Err := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash3), 0, 0)
@@ -1924,6 +1924,7 @@ func getCustomizedDIDTransferTx(id string, operation string, docBytes []byte, ti
 		Header: did.Header{
 			Specification: "elastos/did/1.0",
 			Operation:     operation,
+			Ticket: base64url.EncodeToString(ticketBytes),
 		},
 		Payload: base64url.EncodeToString(docBytes),
 		Proof: did.Proof{
