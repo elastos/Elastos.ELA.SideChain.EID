@@ -238,8 +238,9 @@ func (p *DIDPayload) GetData() []byte {
 		dataString = p.Header.Specification + p.Header.Operation + p.Header.
 			PreviousTxid + p.Payload
 	case Transfer_DID_Operation:
+		//string(p.Ticket.GetData())
 		dataString = p.Header.Specification + p.Header.Operation + p.Header.
-			PreviousTxid + string(p.Ticket.GetData()) + p.Payload
+			PreviousTxid + p.Header.Ticket + p.Payload
 	case Create_DID_Operation, Deactivate_DID_Operation:
 		dataString = p.Header.Specification + p.Header.Operation + p.Header.
 			PreviousTxid + p.Payload

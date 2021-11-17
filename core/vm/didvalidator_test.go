@@ -129,9 +129,12 @@ var (
 	jianbinCtrl1PubKeyTest          []byte
 	jianbinCtrl2PubKeyTest          []byte
 	jianbinCtrl3PubKeyTest          []byte
+	jianbinCtrl4PubKeyTest          []byte
 
 	custmizeDIDSingleCtrlTest          []byte
 	custmizeDIDMultyCtrlTest          []byte
+	custmizeDIDMultyCtrlTestJB          []byte
+
 
 	custIDSingleSignDocBytes1 []byte
 	custIDVerifCredDocBytes   []byte
@@ -183,9 +186,13 @@ func init() {
 	jianbinCtrl1PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl1.json")
 	jianbinCtrl2PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl2.json")
 	jianbinCtrl3PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl3.json")
+	jianbinCtrl4PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl4.json")
+
+
 
 	custmizeDIDSingleCtrlTest, _ = LoadJsonData("./testdata/custmizedidsinglectrltest.json")
 	custmizeDIDMultyCtrlTest, _ = LoadJsonData("./testdata/custdidmultyctrltest.json")
+	custmizeDIDMultyCtrlTestJB, _ = LoadJsonData("./testdata/Lindalittlefish07.json")
 
 
 
@@ -608,6 +615,88 @@ func TestIDChainStore_DeactivateDIDTx(t *testing.T) {
 
 }
 
+func TestDeactivateCustomizeDIDTx(t *testing.T) {
+	{
+		didParam.IsTest = true
+		defer func() {
+			didParam.IsTest = false
+		}()
+		//save ctr1 doc to db
+		idUser1 := "did:elastos:ijb8oNP3ZMKP6N5swJCoiYtoUbomAK13Xy"
+		privateKeyUser1Str := "78cQWUwaqVHnn7JLE7xNjmDcEYyU4fnMuq6jPTUYsdi"
+		tx1 := getPayloadDIDInfo(idUser1, "create", jianbinCtrl1PubKeyTest, privateKeyUser1Str)
+		statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+		evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+		evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+		evm.Time=big.NewInt(0)
+		evm.BlockNumber = new(big.Int).SetInt64(3)
+		evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+		buf := new(bytes.Buffer)
+		tx1.Serialize(buf, did.DIDVersion)
+		statedb.AddDIDLog(idUser1, did.Create_DID_Operation, buf.Bytes())
+		receipt := getCreateDIDReceipt(*tx1)
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
+		err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}), 100, 123456)
+		assert.NoError(t, err1)
+		statedb.RemoveDIDLog(common.Hash{})
+
+		//save ctr2 doc to db
+		privateKeyUser2Str := "4fDnYELy1um12fQPA7V6U953tdMwoUVTsAM5Lp5RF1AU"
+		idUser2 := "did:elastos:iidhLBRtSLMzsAuK3uHveLccTfZtCwRreh"
+		tx2 := getPayloadDIDInfo(idUser2, "create", jianbinCtrl2PubKeyTest, privateKeyUser2Str)
+		hash1 := common.HexToHash("0x1234")
+		buf = new(bytes.Buffer)
+		tx2.Serialize(buf, did.DIDVersion)
+		statedb.Prepare(hash1, hash1, 1)
+		statedb.AddDIDLog(idUser2, did.Create_DID_Operation, buf.Bytes())
+		receipt = getCreateDIDReceipt(*tx2)
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash1, 0, types.Receipts{receipt})
+		err2 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash1), 100, 123456)
+		assert.NoError(t, err2)
+		statedb.RemoveDIDLog(hash1)
+
+		//save ctr3 doc to db
+		privateKeyUser3Str := "4fDnYELy1um12fQPA7V6U953tdMwoUVTsAM5Lp5RF1AU"
+		idUser3 := "did:elastos:iidhLBRtSLMzsAuK3uHveLccTfZtCwRreh"
+		tx3 := getPayloadDIDInfo(idUser3, "create", jianbinCtrl3PubKeyTest, privateKeyUser3Str)
+		hash3 := common.HexToHash("0x1234567")
+		buf = new(bytes.Buffer)
+		tx3.Serialize(buf, did.DIDVersion)
+		statedb.Prepare(hash3, hash3, 1)
+		statedb.AddDIDLog(idUser3, did.Create_DID_Operation, buf.Bytes())
+		receipt = getCreateDIDReceipt(*tx3)
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash3, 0, types.Receipts{receipt})
+		err3 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash3), 100, 123456)
+		assert.NoError(t, err3)
+		statedb.RemoveDIDLog(hash3)
+
+		//save customized did  did:elastos:Lindalittlefish05
+		privateKeyUser4Str := "4fDnYELy1um12fQPA7V6U953tdMwoUVTsAM5Lp5RF1AU"
+		idUser4 := "did:elastos:Lindalittlefish05"
+		tx4 := getPayloadDIDInfo(idUser4, "create", custmizeDIDMultyCtrlTest, privateKeyUser4Str)
+		hash4 := common.HexToHash("0x123456789")
+		buf = new(bytes.Buffer)
+		tx4.Serialize(buf, did.DIDVersion)
+		statedb.Prepare(hash4, hash4, 1)
+		statedb.AddDIDLog(idUser4, did.Create_DID_Operation, buf.Bytes())
+		receipt = getCreateDIDReceipt(*tx4)
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash4, 0, types.Receipts{receipt})
+		err4 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash4), 100, 123456)
+		assert.NoError(t, err4)
+		statedb.RemoveDIDLog(hash4)
+
+		customizedid := idUser4
+		//customized deactive use controller1 primarykey
+		{
+			verifDid := idUser1+"#primary"
+			payload := getPayloadDeactivateDIDFin(customizedid, verifDid, privateKeyUser1Str)
+			err := checkDeactivateDID(evm, payload)
+			assert.NoError(t, err)
+		}
+	}
+
+}
+
 func getPayloadDeactivateDID(id, verifDid string) *did.DIDPayload {
 	info := new(did.DIDDoc)
 	json.Unmarshal(didPayloadBytes, info)
@@ -626,6 +715,39 @@ func getPayloadDeactivateDID(id, verifDid string) *did.DIDPayload {
 	privateKey1 := common.Hex2Bytes(PayloadPrivateKey)
 	sign, _ := elaCrypto.Sign(privateKey1, p.GetData())
 	p.Proof.Signature = base64url.EncodeToString(sign)
+	return p
+}
+
+func getPayloadDeactivateDIDFin(id, PayloadVMPubKeyURI,PayloadVMPriKey  string) *did.DIDPayload {
+	info := new(did.DIDDoc)
+	json.Unmarshal(didPayloadBytes, info)
+
+	p := &did.DIDPayload{
+		Header: did.Header{
+			Specification: "elastos/did/1.0",
+			Operation:     did.Deactivate_DID_Operation,
+		},
+		Payload: id,
+		Proof: did.Proof{
+			Type:               "ECDSAsecp256r1",
+			VerificationMethod: PayloadVMPubKeyURI,
+		},
+	}
+	//
+	privateKey1 := base58.Decode(PayloadVMPriKey)
+	sign, _ := elaCrypto.Sign(privateKey1, p.GetData())
+	p.Proof.Signature = base64url.EncodeToString(sign)
+	fmt.Println("getPayloadDeactivateDIDFin PayloadVMPubKeyURI", PayloadVMPubKeyURI)
+
+	fmt.Println("getPayloadDeactivateDIDFin PayloadVMPriKey", PayloadVMPriKey)
+	fmt.Println("getPayloadDeactivateDIDFin GetData", string(p.GetData()))
+	fmt.Println("getPayloadDeactivateDIDFin Signature", p.Proof.Signature)
+
+	// error pubkey i1HcDgXEZD4xHhHffEkuqLbCRQkRvKTNUdVSmgns8UyB private
+	//publickey := base58.Decode("i1HcDgXEZD4xHhHffEkuqLbCRQkRvKTNUdVSmgns8UyB")
+	//pubkey, err := elaCrypto.DecodePoint(publickey)
+	//err = elaCrypto.Verify(*pubkey, p.GetData(), sign)
+	//fmt.Println("Verify err ",err)
 	return p
 }
 
@@ -2238,8 +2360,9 @@ func TestCustomizeDIDSingleCtrlPublicKeyUse(t *testing.T) {
 	}
 	//payload use customizdid Lindalittlefish02 authen key #append
 	{
+
 		privateKeyappendStr := "6PjyiCxx71fMF5WvercSRoDySDTHWZXsTLGPYYZsYmfX"
-		tx2 := getPayloadDIDInfoWithPayloadURI(id1, "create", custmizeDIDSingleCtrlTest, privateKeyappendStr,"#append")
+		tx2 := getPayloadDIDInfoWithPayloadURI("did:elastos:Lindalittlefish02", "create", custmizeDIDSingleCtrlTest, privateKeyappendStr,"#append")
 		docBytes, err := json.Marshal(tx2)
 		assert.NoError(t, err)
 		err = checkDIDTransactionWithPayloadSyntax(docBytes, statedb)
@@ -2331,6 +2454,70 @@ func TestCustomizeDIDMultiCtrlPublicKeyUse(t *testing.T) {
 	}
 }
 
+
+func TestJianBinCustomizeDIDMultiCtrlPublicKeyUse(t *testing.T) {
+
+	didParam.IsTest = true
+	defer func() {
+		didParam.IsTest = false
+	}()
+	idUser1 := "did:elastos:iqKXrBRrv1vqnaCiHy2kP1LDcmDZmG6hEy"
+	privateKeyUser1Str := "3zEQ9H14Edkm7nRqeCopS7xT8ccsSh9pMxdyW4LnYdRv"
+	tx1 := getPayloadDIDInfo(idUser1, "create", jianbinCtrl4PubKeyTest, privateKeyUser1Str)
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+	evm.Time=big.NewInt(0)
+	evm.BlockNumber = new(big.Int).SetInt64(3)
+	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+	buf := new(bytes.Buffer)
+	tx1.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog(idUser1, did.Create_DID_Operation, buf.Bytes())
+	receipt := getCreateDIDReceipt(*tx1)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
+	err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}), 100, 123456)
+	assert.NoError(t, err1)
+	statedb.RemoveDIDLog(common.Hash{})
+
+
+	privateKeyUser2Str := "4fDnYELy1um12fQPA7V6U953tdMwoUVTsAM5Lp5RF1AU"
+	idUser2 := "did:elastos:iidhLBRtSLMzsAuK3uHveLccTfZtCwRreh"
+	tx2 := getPayloadDIDInfo(idUser2, "create", jianbinCtrl2PubKeyTest, privateKeyUser2Str)
+	hash1 := common.HexToHash("0x1234")
+	buf = new(bytes.Buffer)
+	tx2.Serialize(buf, did.DIDVersion)
+	statedb.Prepare(hash1, hash1, 1)
+	statedb.AddDIDLog(idUser2, did.Create_DID_Operation, buf.Bytes())
+	receipt = getCreateDIDReceipt(*tx2)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash1, 0, types.Receipts{receipt})
+	err2 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash1), 100, 123456)
+	assert.NoError(t, err2)
+	statedb.RemoveDIDLog(hash1)
+
+	privateKeyUser3Str := "BreRiS8SegmJ9pRaxPrLEZvrtiqtdAg7ghqyDQyQ3tun"
+	idUser3 := "did:elastos:ibTPLrp758SGtLCzLoiF4VQqCpT7cNCAdh"
+	tx3 := getPayloadDIDInfo(idUser3, "create", jianbinCtrl3PubKeyTest, privateKeyUser3Str)
+	hash3 := common.HexToHash("0x1234567")
+	buf = new(bytes.Buffer)
+	tx3.Serialize(buf, did.DIDVersion)
+	statedb.Prepare(hash3, hash3, 1)
+	statedb.AddDIDLog(idUser3, did.Create_DID_Operation, buf.Bytes())
+	receipt = getCreateDIDReceipt(*tx3)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash3, 0, types.Receipts{receipt})
+	err3 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash3), 100, 123456)
+	assert.NoError(t, err3)
+	statedb.RemoveDIDLog(hash3)
+
+	//customized did use controller3 primarykey
+	{
+		CustomizedDIDTx2 := getCustomizedDIDDocMultiSignFinal("did:elastos:Lindalittlefish07" +"#appendfour", "create",
+			privateKeyUser3Str, custmizeDIDMultyCtrlTestJB )
+		didParam.CustomIDFeeRate = 0
+		err := checkCustomizedDID(evm, CustomizedDIDTx2, 20000)
+		assert.Equal(t, err.Error(),"not find propoer publickey for payload proof")
+	}
+
+}
 
 func outputPayloadToFile(payload types2.Payload, filename string) {
 	b11, err := json.Marshal(payload)

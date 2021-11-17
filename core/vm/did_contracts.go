@@ -868,7 +868,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		ticketBase64data, _ := base64url.DecodeString(p.Header.Ticket)
 		ticket := new(did.CustomIDTicket)
 		if err := json.Unmarshal(ticketBase64data, ticket); err != nil {
-			return false32Byte, errors.New("createDIDVerify Payload is error")
+			return false32Byte, errors.New("transfer ticket to CustomIDTicket is error")
 		}
 		p.DIDDoc = payloadInfo
 		p.Ticket= ticket
