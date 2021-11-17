@@ -908,9 +908,13 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	// check ticket when operation is 'Transfer'
 	if customizedDIDPayload.Header.Operation == did.Transfer_DID_Operation {
 		buf := new(bytes.Buffer)
-		buf.WriteString(verifyDoc.ID)
+		lowerID := strings.ToLower(verifyDoc.ID)
+		buf.WriteString(lowerID)
+		fmt.Println("lowerID ########")
 		lastTx, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 		if err != nil {
+			fmt.Println("lowerID ######## not find")
+
 			return err
 		}
 		M, _, err := GetMultisignMN(lastTx.Operation.DIDDoc.MultiSig)
@@ -940,6 +944,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if err != nil {
 		return err
 	}
+	fmt.Println("checkCustomizedDID all done")
 	return nil
 
 }
@@ -1060,6 +1065,9 @@ func checkCustomIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof,
 
 func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 	customID string, lastTxHash string, M int, verifyDoc *did.DIDDoc) error {
+	fmt.Println("cPayload.Ticket.CustomID", cPayload.Ticket.CustomID)
+	fmt.Println("customID", customID)
+
 	if cPayload.Ticket.CustomID != customID {
 		return errors.New("invalid ID in ticket")
 	}
