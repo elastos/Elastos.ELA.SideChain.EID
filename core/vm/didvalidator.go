@@ -885,8 +885,11 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	//check payload VerificationMethod
 	publicKey , err := getCustDIDAuthenKey(evm, customizedDIDPayload.Proof.VerificationMethod, verifyDoc.PublicKey,
 		verifyDoc.Authentication, verifyDoc.Controller)
-	if publicKey == "" || err != nil{
+	if err != nil {
 		return err
+	}
+	if publicKey == ""{
+		return errors.New("not find propoer publickey for payload proof")
 	}
 
 	if err := checkCustomIDOuterProof(evm, customizedDIDPayload, verifyDoc); err != nil {
@@ -1712,12 +1715,37 @@ func getControllerFactor(controller interface{}) float64 {
 
 }
 
+func isCustomizeDIDExist(evm *EVM,ID string)(bool,error){
+	lowerID := strings.ToLower(ID)
+	isDID, err := evm.StateDB.IsDID(lowerID)
+	if err != nil {
+		return false, err
+	}
+	return !isDID, nil
+}
+
 func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	ID := deactivateDIDOpt.Payload
+
 	isDID, err := evm.StateDB.IsDID(ID)
-	if err != nil {
-		return err
+	if err!= nil {
+		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
+			//custDID
+			_, err := isCustomizeDIDExist(evm, ID)
+			if err != nil {
+				return err
+			}
+			//this isDID is always false or  !custDID
+			isDID = false
+		}else{
+			return err
+		}
 	}
+
+	if !isDID {
+		ID = strings.ToLower(ID)
+	}
+
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(ID)
@@ -1743,8 +1771,14 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	//get  public key getAuthorizatedPublicKey
 	//getDeactivatePublicKey
 	didDoc := lastTXData.Operation.DIDDoc
-	publicKeyBase58, err := getDeactivatePublicKey(evm, didDoc.ID, deactivateDIDOpt.Proof.VerificationMethod, isDID,
-		didDoc.PublicKey, didDoc.Authentication, didDoc.Authorization, didDoc.Controller)
+	publicKeyBase58 := ""
+	if isDID {
+		publicKeyBase58, _ = getDIDDeactivateKey(ID, deactivateDIDOpt.Proof.VerificationMethod,  didDoc.Authentication,
+		 	didDoc.PublicKey,didDoc.Authorization)
+	} else {
+		// customizedid use default key not authorization key
+		publicKeyBase58, _ =getCustDIDDefKey(evm, deactivateDIDOpt.Proof.VerificationMethod,  didDoc.Controller)
+	}
 	if publicKeyBase58 == "" {
 		return errors.New("Not find the publickey of verificationMethod")
 	}
@@ -1761,12 +1795,16 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 
 	var success bool
 	//paylaod proof
+	fmt.Println("checkDeactivateDID before VerifyByVM")
+	fmt.Println("checkDeactivateDID publicKeyBase58 ", publicKeyBase58)
+	fmt.Println("checkDeactivateDID signature ", deactivateDIDOpt.Proof.Signature)
+	fmt.Println("checkDeactivateDID data ", string(deactivateDIDOpt.GetData()))
 	success, err = did.VerifyByVM(deactivateDIDOpt, code, signature)
 	if err != nil {
 		return err
 	}
 	if !success {
-		return errors.New("[VM] Check Sig FALSE")
+		return errors.New("checkDeactivateDID Check Sig FALSE")
 	}
 	return nil
 }
