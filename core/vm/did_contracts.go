@@ -704,8 +704,7 @@ func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM)error{
 func checkCustomPublicKeyController(didWithPrefix string ,  publicKey []did.DIDPublicKeyInfo)error{
 	for i := 0; i < len(publicKey); i++ {
 		//get uri fregment
-		controller, _ := did.GetController(publicKey[i].ID)
-		if controller != "" && controller != didWithPrefix {
+		if publicKey[i].Controller != "" && publicKey[i].Controller != didWithPrefix {
 			return errors.New("customizedid public key all controller must itself")
 		}
 	}
