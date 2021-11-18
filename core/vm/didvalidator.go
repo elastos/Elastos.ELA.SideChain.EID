@@ -787,21 +787,22 @@ func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.
 	return nil
 }
 
-func isResiteredDID(evm *EVM, ID string) bool {
-	TranasactionData, err := GetLastDIDTxData(evm, ID)
-	// err  not registerd
-	if err != nil {
-		return false
-	}
-	//not find 	  not registerd
-	if TranasactionData == nil {
-		return false
-	}
-	// registered
-	return true
-}
+//func isResiteredDID(evm *EVM, ID string) bool {
+//	TranasactionData, err := GetLastDIDTxData(evm, ID)
+//	// err  not registerd
+//	if err != nil {
+//		return false
+//	}
+//	//not find 	  not registerd
+//	if TranasactionData == nil {
+//		return false
+//	}
+//	// registered
+//	return true
+//}
 
 // issuerDID can be did or customizeDID
+//todo if Issuer is customized id  issuerID need tolower
 func getIssuerAuthenPublicKey(evm *EVM, issuerID, verificationMethod string, isDID bool) ([]byte, error) {
 	var publicKey []byte
 	var txData *did.DIDTransactionData
@@ -1261,6 +1262,7 @@ func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload, verifyDoc *did
 //	if operation is "create" use now m/n and public key otherwise use last time m/n and public key
 func getVerifyDocMultisign(evm *EVM, customizedID string) (*did.DIDDoc, error) {
 	buf := new(bytes.Buffer)
+	customizedID = strings.ToLower(customizedID)
 	buf.WriteString(customizedID)
 	transactionData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 	if err != nil {
@@ -2063,6 +2065,7 @@ func checkDeclareCustomizedDIDVerifiableCredential(evm *EVM, owner string, issue
 //VerificationMethod should be did
 func checkDIDVerifiableCredential(evm *EVM, signer string,
 	credPayload *did.DIDPayload) error {
+	//todo if this signer is customized this will be error
 	verifyDIDDoc, err := GetIDLastDoc(evm, signer)
 	if err != nil {
 		return err
@@ -2150,7 +2153,7 @@ func isDIDVerifMethodMatch(verificationMethod, ID string) bool {
 //here issuer must be customizdDID
 func isCustomizedVerifMethodMatch(evm *EVM, verificationMethod, issuer string) bool {
 	prefixDid, _ := GetDIDAndUri(verificationMethod)
-
+	//todo maybe this id is custom so tolower
 	doc, err := GetIDLastDoc(evm, issuer)
 	if err != nil {
 		return false
