@@ -1872,7 +1872,8 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 	assert.NoError(t, user4Err)
 	statedb.RemoveDIDLog(hash3)
 
-	hash4 := common.HexToHash("0x4567")
+	//hash4 := common.HexToHash("0x4567")
+	hash4 := common.HexToHash( "e71e0aee28c8119c4e8069fb9faa22c0")
 	statedb.Prepare(hash4, hash4, 1)
 	bazPrivateKeyStr := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ"
 	CustomizedDIDTx1 := getCustomizedDIDTx("did:elastos:baz", "create", barzIDDocByts, bazPrivateKeyStr)
@@ -1890,7 +1891,7 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 	//doc baz.new.id.json
 	//transfer baz.tt.json
 	txhash := hash4.String()[2:]
-	transferTx := getCustomizedDIDTransferTx(user4, "transfer", barzIDDocByts, batTTDocByts, user4PrivateKeyStr, user2PrivateKeyStr, txhash)
+	transferTx := getCustomizedDIDTransferTx(user4, "transfer", bazNewIDDocByts, batTTDocByts, user4PrivateKeyStr, user2PrivateKeyStr, txhash)
 
 	didParam.CustomIDFeeRate = 0
 	didParam.IsTest = true
@@ -1903,12 +1904,14 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 }
 
 func getCustomizedDIDTransferTx(id string, operation string, docBytes []byte, ticketBytes []byte,
-	privateKeyStr, ticketPrivateKeyStr, lastTxStr string) *did.DIDPayload {
+	payloadPrivateKeyStr, ticketPrivateKeyStr, lastTxStr string) *did.DIDPayload {
 	info := new(did.DIDDoc)
 	json.Unmarshal(docBytes, info)
 
 	ticket := new(did.CustomIDTicket)
 	json.Unmarshal(ticketBytes, ticket)
+	fmt.Println("ticket.GetData()", ticket.GetData())
+
 	ticket.TransactionID = lastTxStr
 	CustomizedDIDProof := &did.TicketProof{}
 	if err := Unmarshal(ticket.Proof, CustomizedDIDProof); err != nil {
@@ -1919,12 +1922,21 @@ func getCustomizedDIDTransferTx(id string, operation string, docBytes []byte, ti
 	sign, _ := elaCrypto.Sign(ticketPrivateKey, ticket.CustomIDTicketData.GetData())
 	CustomizedDIDProof.Signature = base64url.EncodeToString(sign)
 	ticket.Proof = CustomizedDIDProof
+	fmt.Println("after sign ticket.GetData()", ticket.GetData())
+
+
+
+	data, err := json.Marshal(ticket)
+	if err != nil {
+		fmt.Println("Marshal err", data)
+	}
 
 	p := &did.DIDPayload{
 		Header: did.Header{
 			Specification: "elastos/did/1.0",
 			Operation:     operation,
-			Ticket: base64url.EncodeToString(ticketBytes),
+			PreviousTxid:lastTxStr,
+			Ticket: base64url.EncodeToString(data),
 		},
 		Payload: base64url.EncodeToString(docBytes),
 		Proof: did.Proof{
@@ -1934,7 +1946,14 @@ func getCustomizedDIDTransferTx(id string, operation string, docBytes []byte, ti
 		DIDDoc: info,
 		Ticket: ticket,
 	}
-	privateKey1 := base58.Decode(privateKeyStr)
+	///////////////////
+	//ticketBase64data, _ := base64url.DecodeString(p.Header.Ticket)
+	//ticket2 := new(did.CustomIDTicket)
+	//if err := json.Unmarshal(ticketBase64data, ticket2); err != nil {
+	//	fmt.Println("error ", err)
+	//}
+	/////////////////////
+	privateKey1 := base58.Decode(payloadPrivateKeyStr)
 	signTicket, _ := elaCrypto.Sign(privateKey1, p.GetData())
 	p.Proof.Signature = base64url.EncodeToString(signTicket)
 	return p
@@ -1965,10 +1984,17 @@ func getMultiContrCustomizedDIDTransferTx(id string, operation string, docBytes 
 	}
 	ticket.Proof = DIDProofArray
 
+	data, err := json.Marshal(ticket)
+	if err != nil {
+		fmt.Println("Marshal err", data)
+	}
+
 	p := &did.DIDPayload{
 		Header: did.Header{
 			Specification: "elastos/did/1.0",
 			Operation:     operation,
+			PreviousTxid:lastTxStr,
+			Ticket: base64url.EncodeToString(data),
 		},
 		Payload: base64url.EncodeToString(docBytes),
 		Proof: did.Proof{
@@ -2073,7 +2099,7 @@ func TestCustomizedDIDTransferProofs(t *testing.T) {
 
 	txhash := hash5.String()[2:]
 	//getMultiContrCustomizedDIDTransferTx getMulContrCustomizedDIDTransferDoc
-	transferTx := getMultiContrCustomizedDIDTransferTx(user4, "transfer", fooBarIDDocBytes, fooBarTTIDDocBytes,
+	transferTx := getMultiContrCustomizedDIDTransferTx(user4, "transfer", fooBarNewIDDocBytes, fooBarTTIDDocBytes,
 		user4PrivateKeyStr, user1PrivateKeyStr, user3PrivateKeyStr, txhash)
 	didParam.CustomIDFeeRate = 0
 	didParam.IsTest = true

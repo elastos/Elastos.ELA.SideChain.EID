@@ -366,6 +366,7 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.C
 }
 
 func IsDIDDeactivated(db ethdb.KeyValueStore, did string) bool {
+	//did = strings.ToLower(did)
 	idKey := new(bytes.Buffer)
 	idKey.WriteString(did)
 
