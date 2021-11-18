@@ -951,9 +951,13 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 //
 //is expired
 func isControllerExpired(evm *EVM, did string )(bool, error)  {
+	//did = strings.ToLower(did)
 	id1 := []byte(did)
 	expiresHeight, err := evm.StateDB.GetDIDExpiresHeight(id1)
 	if err != nil {
+		fmt.Println("isControllerExpired did ", did)
+
+		fmt.Println("isControllerExpired", err)
 		return true ,err
 	}
 	expiresHeightInt :=new(big.Int).SetUint64(uint64(expiresHeight))
@@ -1730,6 +1734,7 @@ func getControllerFactor(controller interface{}) float64 {
 
 func isCustomizeDIDExist(evm *EVM,ID string)(bool,error){
 	lowerID := strings.ToLower(ID)
+	fmt.Println("lowerID", lowerID)
 	isDID, err := evm.StateDB.IsDID(lowerID)
 	if err != nil {
 		return false, err
@@ -1741,10 +1746,12 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	ID := deactivateDIDOpt.Payload
 
 	isDID, err := evm.StateDB.IsDID(ID)
+	//fmt.Println("checkDeactivateDID ID", ID)
 	if err!= nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
 			//custDID
 			_, err := isCustomizeDIDExist(evm, ID)
+			//fmt.Println("isCustomizeDIDExist err", err)
 			if err != nil {
 				return err
 			}
@@ -1766,20 +1773,26 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	if err != nil {
 		return err
 	}
+	//fmt.Println("before GetLastDIDTxData 2")
+
 	//todo verify everycontroller must valid
 	//do not deactivage a did who was already deactivate
 	if evm.StateDB.IsDIDDeactivated(ID) {
 		return errors.New("DID WAS AREADY DEACTIVE")
 	}
+	//fmt.Println("before GetLastDIDTxData 21")
 
 	prefixDID,_ := GetDIDAndUri(deactivateDIDOpt.Proof.VerificationMethod)
 	ctrlInvalid, err := isControllerInvalid(evm,prefixDID)
 	if  err!= nil{
 		return err
 	}
+	//fmt.Println("before GetLastDIDTxData 22")
+
 	if ctrlInvalid {
 		return errors.New(" the VerificationMethod controller is invalid")
 	}
+	//fmt.Println("before GetLastDIDTxData 3")
 
 	//get  public key getAuthorizatedPublicKey
 	//getDeactivatePublicKey
@@ -1795,6 +1808,8 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	if publicKeyBase58 == "" {
 		return errors.New("Not find the publickey of verificationMethod")
 	}
+	//fmt.Println("before GetLastDIDTxData 4")
+
 	//get code
 	//var publicKeyByte []byte
 	publicKeyByte := base58.Decode(publicKeyBase58)
