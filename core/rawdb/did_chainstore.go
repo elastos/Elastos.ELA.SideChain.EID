@@ -487,9 +487,40 @@ func IsURIHasPrefix(id string) bool {
 	return strings.HasPrefix(id, did.DID_ELASTOS_PREFIX)
 }
 
+func isCustomizeDIDExist(db ethdb.KeyValueStore,ID string)(bool,error){
+	lowerID := strings.ToLower(ID)
+	fmt.Println("lowerID", lowerID)
+	isDID, err := IsDID(db, lowerID)
+	if err != nil {
+		return false, err
+	}
+	return !isDID, nil
+}
+
 func PersistDeactivateDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, thash common.Hash) error {
+	ok, err :=IsDID(db, log.DID)
+	fmt.Println("PersistDeactivateDIDTx","DID" ,log.DID, "ok", ok, "err", err)
+	if err != nil{
+		if err.Error() == ERR_LEVELDB_NOT_FOUND.Error() || err.Error() == ERR_NOT_FOUND.Error()  {
+			//custDID
+			_, err := isCustomizeDIDExist(db, log.DID)
+			fmt.Println("PersistDeactivateDIDTx isCustomizeDIDExist err", err)
+			if err != nil {
+				return err
+			}
+			ok = false
+		}else{
+			return err
+		}
+	}
+	id := log.DID
+	if !ok{
+		id = strings.ToLower(log.DID)
+	}
+	fmt.Println("PersistDeactivateDIDTx","id" ,id)
+
 	key := []byte{byte(IX_DIDDeactivate)}
-	idKey := []byte(log.DID)
+	idKey := []byte(id)
 	key = append(key, idKey...)
 
 	buf := new(bytes.Buffer)
