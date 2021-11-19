@@ -185,17 +185,21 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	}
 
 	var rpcPayloadDid didapi.RpcPayloadDIDInfo
+	//////////
+	//buftest := new(bytes.Buffer)
+	//buftest.WriteString("did:elastos:lindalittlefish04")
+	//////////
+
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(idWithPrefix)
 	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
-		//try customized lower character
-		id := did.GetDIDFromUri(idWithPrefix)
-		lowerID := strings.ToLower(id)
-		lowerPrefixID := did.DID_ELASTOS_PREFIX +lowerID
+
+		idWithPrefix= strings.ToLower(idWithPrefix)
 		buf.Reset()
-		buf.WriteString(lowerPrefixID)
+		//buf = new(bytes.Buffer)
+		buf.WriteString(idWithPrefix)
 		//try customized id
 		txData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 		if err != nil {
@@ -213,7 +217,6 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 			return nil, http.NewError(int(service.InternalError),
 				"get did transaction failed")
 		}
-
 	} else {
 		if txData != nil {
 			txsData = append(txsData, *txData)

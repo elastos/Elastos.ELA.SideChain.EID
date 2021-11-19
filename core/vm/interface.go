@@ -68,7 +68,7 @@ type StateDB interface {
 	AddPreimage(common.Hash, []byte)
 
 	ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error
-
+	//todo IsIDDeactivated
 	IsDIDDeactivated(did string) bool
 
 	GetLastDIDTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
