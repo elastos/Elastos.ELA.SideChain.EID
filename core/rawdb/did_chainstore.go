@@ -48,6 +48,7 @@ var (
 
 func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight uint64,
 	blockTimeStamp uint64) error {
+	fmt.Println("PersistRegisterDIDTx begin")
 	var err error
 	var buffer *bytes.Reader
 	operation := new(did.DIDPayload)
@@ -94,6 +95,8 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	if err := persistIsDID(db, idKey, isDID); err != nil {
 		return err
 	}
+	fmt.Println("PersistRegisterDIDTx end")
+
 	return nil
 }
 

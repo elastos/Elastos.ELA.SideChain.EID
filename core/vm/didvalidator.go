@@ -1161,6 +1161,9 @@ func checkCustomIDTicketProof(evm *EVM, ticketProofArray []*did.TicketProof, iDa
 	//3, proof multisign verify
 	for _, ticketProof := range ticketProofArray {
 		//todo can be a customizdid
+		fmt.Println("VerificationMethod", ticketProof.VerificationMethod)
+		fmt.Println("lastDocCtrl", lastDocCtrl)
+
 		publicKeyBase58 , err := getCustDIDDefKey(evm, ticketProof.VerificationMethod, lastDocCtrl)
 		if publicKeyBase58 == "" || err != nil{
 			return errors.New("checkCustomIDTicketProof Not find proper publicKeyBase58")
@@ -1744,6 +1747,27 @@ func isCustomizeDIDExist(evm *EVM,ID string)(bool,error){
 	return !isDID, nil
 }
 
+//if controller is unique return  controllers and nil
+//else return nil and error
+func checkDeactivePayloadVM(controller           interface{}, verificationMethod string )error{
+	prefixDID,_ := GetDIDAndUri(verificationMethod)
+	//if is controller array
+	if controllerArray, ok := controller.([]interface{}); ok {
+		for _, controller := range controllerArray {
+			contrl := controller.(string)
+			if contrl == prefixDID{
+				return nil
+			}
+		}
+	}else{
+		contrl := controller.(string)
+		if contrl == prefixDID{
+			return nil
+		}
+	}
+	return errors.New("checkDeactivePayloadVM verificationMethod is not belong to controller")
+}
+
 func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	ID := deactivateDIDOpt.Payload
 
@@ -1763,9 +1787,12 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 			return err
 		}
 	}
+	prefixDID,_ := GetDIDAndUri(deactivateDIDOpt.Proof.VerificationMethod)
 
+	//customizedid
 	if !isDID {
 		ID = strings.ToLower(ID)
+
 	}
 
 
@@ -1775,7 +1802,15 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Println("before GetLastDIDTxData 2")
+	//customizedid
+	if!isDID{
+		//check deactivateDIDOpt.Proof.VerificationMethod must one of the controller
+		ctrl := lastTXData.Operation.DIDDoc.Controller
+		if err := checkDeactivePayloadVM(ctrl,deactivateDIDOpt.Proof.VerificationMethod); err != nil{
+			return err
+		}
+	}
+
 
 	//todo verify everycontroller must valid
 	//do not deactivage a did who was already deactivate
@@ -1784,7 +1819,6 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	}
 	//fmt.Println("before GetLastDIDTxData 21")
 
-	prefixDID,_ := GetDIDAndUri(deactivateDIDOpt.Proof.VerificationMethod)
 	ctrlInvalid, err := isControllerInvalid(evm,prefixDID)
 	if  err!= nil{
 		return err
