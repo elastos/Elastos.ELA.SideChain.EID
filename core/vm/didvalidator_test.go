@@ -1184,7 +1184,7 @@ func TestRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 	data, err := json.Marshal(verifableCredentialTx)
 	assert.NoError(t, err)
 	err = checkDIDTransaction(data, statedb)
-	assert.EqualError(t, err, "VerifiableCredential WRONG OPERATION ALREADY Revoked")
+	assert.EqualError(t, err, "VerifiableCredential WRONG OPERATION")
 }
 
 // declare after wrong revoke
