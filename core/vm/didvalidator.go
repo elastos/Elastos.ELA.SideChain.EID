@@ -1901,6 +1901,7 @@ func checkVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	if err != nil {
 		return errors.New("invalid ExpirationDate")
 	}
+	//todo check valid
 	//didWithPrefix,_ := GetDIDAndUri(payload.CredentialDoc.Proof.VerificationMethod)
 	//ctrlInvalid, err := isControllerInvalid(evm,didWithPrefix)
 	//if  err!= nil{
@@ -1952,7 +1953,7 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(CredentialID)
-	tx, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
+	_, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
 	dbExist := true
 	if err != nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error() {
@@ -1961,17 +1962,9 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 			return err
 		}
 	}
-	if dbExist && tx.Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation {
-		return errors.New("VerifiableCredential WRONG OPERATION ALREADY Declare")
+	if dbExist  {
+		return errors.New("VerifiableCredential WRONG OPERATION")
 	}
-	if dbExist && tx.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation {
-		receiverID := GetVerifiableCredentialID(tx.Operation.CredentialDoc)
-		issuer := getCredentialIssuer(receiverID, tx.Operation.CredentialDoc)
-		if err := checkRevokeCustomizedDIDVerifiableCredential(evm, receiverID, issuer, &tx.Operation); err == nil {
-			return errors.New("VerifiableCredential WRONG OPERATION ALREADY Revoked")
-		}
-	}
-
 	return nil
 }
 

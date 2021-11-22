@@ -933,6 +933,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	if err != nil {
 		return err
 	}
+	//todo check is ID is customized or did
 	id := payload.CredentialDoc.ID
 	idKey := []byte(id)
 
@@ -957,7 +958,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	//	return err
 	//}
 	//only declare credentials will be stored
-
+	//reocrd owner's credential id
 	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation{
 		owner := getCredentialOwner(payload.CredentialDoc.CredentialSubject)
 		if err := persistDIDVerifCredentials(db, []byte(owner), verifyCred.ID); err != nil {
