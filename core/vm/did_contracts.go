@@ -520,13 +520,55 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 	return nil
 }
 
+//1. proof VerificationMethod must be unique
+//2. proof controller must not deactive
+//3. proof controller must not expired
+func IsTicketProofCtrInvalid(proof interface{}, evm *EVM)error{
+	ticketProofArray := make([]*did.TicketProof, 0)
+	ticketProof := &did.TicketProof{}
+	//var bExist bool
+	if err := Unmarshal(proof, &ticketProofArray); err == nil {
+		//check unique
+		creatorMgr := make(map[string]struct{}, 0)
+		for _, proof := range ticketProofArray {
+			prefixedDID,_ := GetDIDAndUri(proof.VerificationMethod)
+			ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
+			if  err!= nil{
+				return err
+			}
+			if ctrlInvalid {
+				return errors.New("one of the controller is ctrlInvalid")
+			}
+			if _,ok :=  creatorMgr[proof.VerificationMethod]; ok{
+				return errors.New("proof creator is duplicated")
+			}
+			creatorMgr[proof.VerificationMethod] = struct{}{}
+		}
+
+	} else if err := Unmarshal(proof, ticketProof); err == nil {
+		prefixedDID,_ := GetDIDAndUri(ticketProof.VerificationMethod)
+		ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
+		if  err!= nil{
+			return err
+		}
+		if ctrlInvalid {
+			return errors.New("one of the controller is ctrlInvalid")
+		}
+	} else {
+		//error
+		return errors.New("isCustomDocVerifMethodDefKey Invalid proof type")
+	}
+
+	return nil
+}
+
 /*
 	0. controller must unique
 	1. controller must have did:elastos:  prefix
 	2. controller must did in chain
 	3. controller must valid
 */
-func IsControllerValid(controller           interface{}, evm *EVM)( error){
+func IsControllerInvalid(controller           interface{}, evm *EVM)( error){
 	if contrMgr,err := checkControllerUnique(controller, evm); err != nil{
 		return err
 	}else{
@@ -726,7 +768,7 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		if err := checkCustDIDAuthen(p.DIDDoc.ID, p.DIDDoc.Authentication, p.DIDDoc.PublicKey); err != nil {
 			return err
 		}
-		if err := IsControllerValid(p.DIDDoc.Controller, evm); err != nil {
+		if err := IsControllerInvalid(p.DIDDoc.Controller, evm); err != nil {
 			return err
 		}
 		if err := checkMultSignController(p, evm); err != nil {
@@ -737,6 +779,17 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		}
 		if len(p.DIDDoc.Authorization) != 0{
 			return errors.New("customized did can not have Authorization")
+		}
+
+		if p.Header.Operation == did.Transfer_DID_Operation {
+			//customized deactive or expires
+			if err:= isCustomizedidInvalid(evm, p.DIDDoc.ID) ; err != nil{
+				return err
+			}
+			//check ticket proof controller deactive or expires
+			if err := IsTicketProofCtrInvalid(p.Ticket.Proof,evm); err != nil {
+				return err
+			}
 		}
 	}
 	return checkPayloadSyntax(p, evm, false)

@@ -119,6 +119,21 @@ func sortDocSlice(verifyDoc *did.DIDDoc) error {
 	return nil
 }
 
+//Is customizdid deactive or expired
+func isCustomizedidInvalid(evm *EVM, idString string)error{
+	idString= strings.ToLower(idString)
+	deactived := isDIDDeactive(evm,idString)
+	if deactived {
+		return errors.New("isCustomizedidInvalid customizedid deactived")
+	}
+	result , err := isControllerExpired(evm,idString)
+	if result || err != nil {
+		return  errors.New("isCustomizedidInvalid customized expired check fail")
+	}
+	return  nil
+
+}
+
 func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	log.Debug("checkRegisterDID begin","evm.BlockNumber", evm.BlockNumber)
 
@@ -855,11 +870,8 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	//	return err
 	//}
 	var err error
-	//check Expires must be  format RFC3339
-	//_, err := time.Parse(time.RFC3339, customizedDIDPayload.DIDDoc.Expires)
-	//if err != nil {
-	//	return errors.New("invalid Expires")
-	//}
+
+	//DIDDoc.Expires less than block time
 	if err := checkExpires(customizedDIDPayload.DIDDoc.Expires, evm.Time); err != nil {
 		return  err
 	}
