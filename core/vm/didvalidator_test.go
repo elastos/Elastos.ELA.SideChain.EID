@@ -1187,7 +1187,7 @@ func TestRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 	assert.EqualError(t, err, "VerifiableCredential WRONG OPERATION")
 }
 
-// declare after wrong revoke
+// declare after  revoke
 func TestWrongRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
@@ -1258,7 +1258,8 @@ func TestWrongRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 	verifableCredentialTx := getIDVerifiableCredentialTx("did:elastos:iWFAUYhTa35c1fPe3iCJvihZHx6quumnym",
 		"declare", custIDVerifCredDocBytes, privateKey1Str)
 	err = checkCredentialTX(evm, verifableCredentialTx)
-	assert.NoError(t, err)
+	//VerifiableCredential WRONG OPERATION
+	assert.EqualError(t, err, "VerifiableCredential WRONG OPERATION")
 }
 
 // revoke again

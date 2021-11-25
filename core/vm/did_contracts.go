@@ -690,12 +690,12 @@ func haveCtrl(docCtrl interface{}, controller string)bool{
 	var newCtrlArray []interface{}
 	var ok bool
 	if newCtrlArray, ok = docCtrl.([]interface{}); ok {
-		for _, controller := range newCtrlArray {
-			if controller != controller {
-				return false
+		for _, ctrl := range newCtrlArray {
+			if ctrl == controller {
+				return true
 			}
 		}
-		return true
+		return false
 
 	}else{
 		return docCtrl == controller
