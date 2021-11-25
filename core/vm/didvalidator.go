@@ -707,100 +707,179 @@ func Unmarshal(src, target interface{}) error {
 	return nil
 }
 
-/*
-	Brief introduction:
-		1, get public from Issuer2, verify credential sign
-	Details:
-		1，Traverse each credential, if Issuer is an empty string, use the ID in CredentialSubject,
-			if it is still an empty string, use the outermost DID, indicating that it is a self-declared Credential
-		2, if Issuer is not empty string, get Issuer public key from db，
-	       if Issuer is not exist  check if realIssuer is ID,
-           if so get public key from Authentication or PublicKey
-        3, verify credential sign. if ID is compact format must Completion ID
-*/
-func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.VerifiableCredential,
-	Authentication []interface{}, PublicKey []did.DIDPublicKeyInfo, controller interface{}) error {
+///*
+//	Brief introduction:
+//		1, get public from Issuer2, verify credential sign
+//	Details:
+//		1，Traverse each credential, if Issuer is an empty string, use the ID in CredentialSubject,
+//			if it is still an empty string, use the outermost DID, indicating that it is a self-declared Credential
+//		2, if Issuer is not empty string, get Issuer public key from db，
+//	       if Issuer is not exist  check if realIssuer is ID,
+//           if so get public key from Authentication or PublicKey
+//        3, verify credential sign. if ID is compact format must Completion ID
+//*/
+//func checkVerifiableCredentials(evm *EVM, owner string, VerifiableCredential []did.VerifiableCredential,
+//	Authentication []interface{}, PublicKey []did.DIDPublicKeyInfo, controller interface{}) error {
+//	var issuerPublicKey, issuerCode, signature []byte
+//	//var err error
+//
+//	//1，Traverse each credential, if Issuer is an empty string, use the DID in CredentialSubject,
+//	//if it is still an empty string, use the outermost DID, indicating that it is a self-declared Credential
+//	for _, cridential := range VerifiableCredential {
+//		proof := cridential.GetDIDProofInfo()
+//		realIssuer := getCredentialIssuer(owner, &cridential)
+//		//realIssuer := cridential.Issuer
+//		//if cridential.Issuer == "" {
+//		//	creSub := cridential.CredentialSubject.(map[string]interface{})
+//		//	for k, v := range creSub {
+//		//		if k == did.ID_STRING {
+//		//			realIssuer = v.(string)
+//		//			break
+//		//		}
+//		//	}
+//		//	if realIssuer == "" {
+//		//		realIssuer = owner
+//		//	}
+//		//}
+//
+//		isDID, err := evm.StateDB.IsDID(realIssuer)
+//		if err != nil {
+//			return err
+//		}
+//		if isDID {
+//			//realIssuer is self and Issuer is not ""
+//			if realIssuer == owner {
+//				pubKeyStr, _ := getAuthenPublicKey(evm, proof.VerificationMethod, isDID, PublicKey, Authentication, controller)
+//				if pubKeyStr == "" {
+//					return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
+//				}
+//				issuerPublicKey = base58.Decode(pubKeyStr)
+//			} else {
+//				////realIssuer is other  and Issuer is not ""
+//				if issuerPublicKey, err = getAuthenPublicKeyByID(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
+//					return err
+//				}
+//			}
+//		}else{
+//			//customizd id
+//			//is self
+//			if realIssuer == owner {
+//				pubKeyStr, _ :=getCustDIDAuthenKey(evm,proof.VerificationMethod, PublicKey, Authentication, controller)
+//				if pubKeyStr == "" {
+//					return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
+//				}
+//				issuerPublicKey = base58.Decode(pubKeyStr)
+//			}else{
+//				//realIssuer is other  customizdid
+//				if issuerPublicKey, err = getAuthenPublicKeyByID(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
+//					return err
+//				}
+//			}
+//		}
+//
+//		if issuerCode, err = did.GetCodeByPubKey(issuerPublicKey); err != nil {
+//			return err
+//		}
+//		//get signature
+//		if signature, err = base64url.DecodeString(proof.Signature); err != nil {
+//			return err
+//		}
+//		//if DID is compact format must Completion DID
+//		cridential.CompleteCompact(owner)
+//		// verify proof
+//		var success bool
+//
+//		fmt.Println("VerifiableCredentialData:", string(cridential.VerifiableCredentialData.GetData()))
+//		fmt.Println("issuerCode:", common.BytesToHexString(issuerCode))
+//		fmt.Println("signature:", common.BytesToHexString(signature))
+//		success, err = did.VerifyByVM(cridential.VerifiableCredentialData, issuerCode, signature)
+//		if err != nil {
+//			return err
+//		}
+//		if !success {
+//			return errors.New("[VM] Check Sig FALSE")
+//		}
+//	}
+//	return nil
+//}
+
+func checkCredential(evm *EVM, credential *did.VerifiableCredential, doc *did.DIDDoc) error {
+
 	var issuerPublicKey, issuerCode, signature []byte
 	//var err error
 
 	//1，Traverse each credential, if Issuer is an empty string, use the DID in CredentialSubject,
 	//if it is still an empty string, use the outermost DID, indicating that it is a self-declared Credential
-	for _, cridential := range VerifiableCredential {
-		realIssuer := cridential.Issuer
-		proof := cridential.GetDIDProofInfo()
-		if cridential.Issuer == "" {
-			creSub := cridential.CredentialSubject.(map[string]interface{})
-			for k, v := range creSub {
-				if k == did.ID_STRING {
-					realIssuer = v.(string)
-					break
-				}
-			}
-			if realIssuer == "" {
-				realIssuer = ID
-			}
-		}
+	//for _, cridential := range VerifiableCredential {
+	owner := doc.ID
+	proof := credential.Proof
+	realIssuer := getCredentialIssuer(doc.ID, credential)
 
-		isDID, err := evm.StateDB.IsDID(realIssuer)
-		if err != nil {
-			return err
-		}
-		if isDID {
-			//realIssuer is self and Issuer is not ""
-			if realIssuer == ID {
-				pubKeyStr, _ := getAuthenPublicKey(evm, proof.VerificationMethod, isDID, PublicKey, Authentication, controller)
-				if pubKeyStr == "" {
-					return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
-				}
-				issuerPublicKey = base58.Decode(pubKeyStr)
-			} else {
-				////realIssuer is other  and Issuer is not ""
-				if issuerPublicKey, err = getIssuerAuthenPublicKey(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
-					return err
-				}
+
+	isDID, err := evm.StateDB.IsDID(realIssuer)
+	if err != nil {
+		return err
+	}
+	if isDID {
+		//realIssuer is self and Issuer is not ""
+		if realIssuer == owner {
+			//pubKeyStr, _ := getAuthenPublicKey(evm, proof.VerificationMethod, isDID, doc.PublicKey, doc.Authentication, doc.Controller)
+			//if pubKeyStr == "" {
+			//	return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
+			//}
+			pubKeyStr, _ := getDIDAutheneKey(proof.VerificationMethod, doc.Authentication, doc.PublicKey)
+			if pubKeyStr == "" {
+				return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
 			}
+			issuerPublicKey = base58.Decode(pubKeyStr)
+		} else {
+			////realIssuer is other  and Issuer is not ""
+			if issuerPublicKey, err = getAuthenPublicKeyByID(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
+				return err
+			}
+		}
+	}else{
+		//customizd id
+		//is self
+		if realIssuer == owner {
+			pubKeyStr, _ :=getCustDIDAuthenKey(evm,proof.VerificationMethod, doc.PublicKey, doc.Authentication, doc.Controller)
+			if pubKeyStr == "" {
+				return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
+			}
+			issuerPublicKey = base58.Decode(pubKeyStr)
 		}else{
-			//customizd id
-			//is self
-			if realIssuer == ID {
-				pubKeyStr, _ :=getCustDIDAuthenKey(evm,proof.VerificationMethod, PublicKey, Authentication, controller)
-				if pubKeyStr == "" {
-					return errors.New("DID NOT FIND PUBLIC KEY OF VerificationMethod")
-				}
-				issuerPublicKey = base58.Decode(pubKeyStr)
-			}else{
-				//realIssuer is other  customizdid
-				if issuerPublicKey, err = getIssuerAuthenPublicKey(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
-					return err
-				}
+			//realIssuer is other  customizdid
+			if issuerPublicKey, err = getAuthenPublicKeyByID(evm, realIssuer, proof.VerificationMethod, isDID); err != nil {
+				return err
 			}
 		}
+	}
 
-		if issuerCode, err = did.GetCodeByPubKey(issuerPublicKey); err != nil {
-			return err
-		}
-		//get signature
-		if signature, err = base64url.DecodeString(proof.Signature); err != nil {
-			return err
-		}
-		//if DID is compact format must Completion DID
-		cridential.CompleteCompact(ID)
-		// verify proof
-		var success bool
+	if issuerCode, err = did.GetCodeByPubKey(issuerPublicKey); err != nil {
+		return err
+	}
+	//get signature
+	if signature, err = base64url.DecodeString(proof.Signature); err != nil {
+		return err
+	}
+	//if DID is compact format must Completion DID
+	credential.CompleteCompact(owner)
+	// verify proof
+	var success bool
 
-		fmt.Println("VerifiableCredentialData:", string(cridential.VerifiableCredentialData.GetData()))
-		fmt.Println("issuerCode:", common.BytesToHexString(issuerCode))
-		fmt.Println("signature:", common.BytesToHexString(signature))
-		success, err = did.VerifyByVM(cridential.VerifiableCredentialData, issuerCode, signature)
-		if err != nil {
-			return err
-		}
-		if !success {
-			return errors.New("[VM] Check Sig FALSE")
-		}
+	fmt.Println("VerifiableCredentialData:", string(credential.VerifiableCredentialData.GetData()))
+	fmt.Println("issuerCode:", common.BytesToHexString(issuerCode))
+	fmt.Println("signature:", common.BytesToHexString(signature))
+	success, err = did.VerifyByVM(credential.VerifiableCredentialData, issuerCode, signature)
+	if err != nil {
+		return err
+	}
+	if !success {
+		return errors.New("[VM] Check Sig FALSE")
 	}
 	return nil
 }
+
 
 //func isResiteredDID(evm *EVM, ID string) bool {
 //	TranasactionData, err := GetLastDIDTxData(evm, ID)
@@ -817,11 +896,13 @@ func checkVerifiableCredentials(evm *EVM, ID string, VerifiableCredential []did.
 //}
 
 // issuerDID can be did or customizeDID
-//todo if Issuer is customized id  issuerID need tolower
-func getIssuerAuthenPublicKey(evm *EVM, issuerID, verificationMethod string, isDID bool) ([]byte, error) {
+func getAuthenPublicKeyByID(evm *EVM, issuerID, verificationMethod string, isDID bool) ([]byte, error) {
 	var publicKey []byte
 	var txData *did.DIDTransactionData
 	var err error
+	if !isDID{
+		issuerID = strings.ToLower(issuerID)
+	}
 	if txData, err = GetLastDIDTxData(evm, issuerID); err != nil {
 		return nil, err
 	}
@@ -829,10 +910,12 @@ func getIssuerAuthenPublicKey(evm *EVM, issuerID, verificationMethod string, isD
 	if txData == nil {
 		return []byte{}, errors.New("issuerID is not registered")
 	} else {
-		DIDDoc := txData.Operation.DIDDoc
-		pubKeyStr, _ := getAuthenPublicKey(evm, verificationMethod, isDID, DIDDoc.PublicKey, DIDDoc.Authentication, DIDDoc.Controller)
-		if pubKeyStr == "" {
-			return []byte{}, errors.New("getIssuerAuthenPublicKey NOT FIND PUBLIC KEY OF VerificationMethod")
+		Doc := txData.Operation.DIDDoc
+		pubKeyStr := ""
+		if isDID {
+			pubKeyStr, _ = getDIDAutheneKey(verificationMethod, Doc.Authentication, Doc.PublicKey)
+		} else {
+			pubKeyStr, _ =	getCustDIDAuthenKey(evm, verificationMethod, Doc.PublicKey, Doc.Authentication, Doc.Controller)
 		}
 		publicKey = base58.Decode(pubKeyStr)
 	}
@@ -917,7 +1000,6 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 			return err
 		}
 	}
-
 	// check ticket when operation is 'Transfer'
 	if customizedDIDPayload.Header.Operation == did.Transfer_DID_Operation {
 		buf := new(bytes.Buffer)
@@ -930,12 +1012,15 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 
 			return err
 		}
-		M, _, err := GetMultisignMN(lastTx.Operation.DIDDoc.MultiSig)
-		if err != nil {
-			return err
+		m := 1
+		if lastTx.Operation.DIDDoc.MultiSig != "" {
+			m, _, err = GetMultisignMN(lastTx.Operation.DIDDoc.MultiSig)
+			if err != nil {
+				return err
+			}
 		}
 		if err := checkTicketAvailable(evm, customizedDIDPayload,
-			verifyDoc.ID, lastTx.TXID, M, lastTx.Operation.DIDDoc); err != nil {
+			verifyDoc.ID, lastTx.TXID, m, lastTx.Operation.DIDDoc); err != nil {
 			return err
 		}
 	}
@@ -1782,24 +1867,21 @@ func checkDeactivePayloadVM(controller           interface{}, verificationMethod
 
 func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	ID := deactivateDIDOpt.Payload
-
+	// Who wants to be deactived did or customizedid
 	isDID, err := evm.StateDB.IsDID(ID)
 	//fmt.Println("checkDeactivateDID ID", ID)
 	if err!= nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
 			//custDID
 			_, err := isCustomizeDIDExist(evm, ID)
-			//fmt.Println("isCustomizeDIDExist err", err)
 			if err != nil {
 				return err
 			}
-			//this isDID is always false or  !custDID
 			isDID = false
 		}else{
 			return err
 		}
 	}
-	prefixDID,_ := GetDIDAndUri(deactivateDIDOpt.Proof.VerificationMethod)
 
 	//customizedid
 	if !isDID {
@@ -1829,18 +1911,16 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	if evm.StateDB.IsDIDDeactivated(ID) {
 		return errors.New("DID WAS AREADY DEACTIVE")
 	}
-	//fmt.Println("before GetLastDIDTxData 21")
 
+	prefixDID,_ := GetDIDAndUri(deactivateDIDOpt.Proof.VerificationMethod)
 	ctrlInvalid, err := isControllerInvalid(evm,prefixDID)
 	if  err!= nil{
 		return err
 	}
-	//fmt.Println("before GetLastDIDTxData 22")
 
 	if ctrlInvalid {
 		return errors.New(" the VerificationMethod controller is invalid")
 	}
-	//fmt.Println("before GetLastDIDTxData 3")
 
 	//get  public key getAuthorizatedPublicKey
 	//getDeactivatePublicKey
@@ -1856,7 +1936,6 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	if publicKeyBase58 == "" {
 		return errors.New("Not find the publickey of verificationMethod")
 	}
-	//fmt.Println("before GetLastDIDTxData 4")
 
 	//get code
 	//var publicKeyByte []byte
@@ -1908,7 +1987,7 @@ func getDeactivatePublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 	}
 }
 
-func checkVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
+func checkCredentialTX(evm *EVM, payload *did.DIDPayload) error {
 	_, err := time.Parse(time.RFC3339, payload.CredentialDoc.ExpirationDate)
 	if err != nil {
 		return errors.New("invalid ExpirationDate")
@@ -1937,24 +2016,26 @@ func checkDeclareVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	//1, if one credential is declear can not be declear again
 	//if one credential is revoke  can not be decalre or revoke again
 	// this is the receiver id  todo
-	receiverID := GetVerifiableCredentialID(payload.CredentialDoc)
+	owner := GetCredentialOwner(payload.CredentialDoc)
 	credentialID := payload.CredentialDoc.ID
-	issuer := getCredentialIssuer(receiverID, payload.CredentialDoc)
+	//issuer := getCredentialIssuer(receiverID, payload.CredentialDoc)
 	if err := checkVerifiableCredentialOperation(evm, &payload.Header, credentialID); err != nil {
 		return err
 	}
 
 	////todo check expires
-	ok, err := evm.StateDB.IsDID(receiverID)
+	isDID, err := evm.StateDB.IsDID(owner)
 	if err != nil {
 		return err
 	}
-	if ok {
-		return checkDeclareCustomizedDIDVerifiableCredential(evm, receiverID, issuer, payload)
-	} else {
-		return checkCustomizedDIDVerifiableCredential(evm, receiverID, payload)
-	}
+	//if isDID {
+	//	return checkDIDVerifiableCredential(evm, receiverID, payload)
+	//} else {
+	//	return checkCustomizedDIDVerifiableCredential(evm, receiverID, payload)
+	//}
+	return checkIDVerifiableCredential(evm, owner, payload,isDID)
 }
+
 
 //1, if one credential is declear can not be declear again
 //if one credential is revoke  can not be decalre or revoke again
@@ -1983,11 +2064,18 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 func checkRevokeCustomizedDIDVerifiableCredential(evm *EVM, owner string, issuer string, payload *did.DIDPayload) error {
 	//1, if it is "create" use now m/n and public key otherwise use last time m/n and public key
 	//var verifyDoc *id.DIDDoc
-	if err := checkCustomizedDIDVerifiableCredential(evm, owner, payload); err == nil {
+	isDID, err := evm.StateDB.IsDID(owner)
+	if err != nil {
+		return err
+	}
+	if err := checkIDVerifiableCredential(evm, owner,payload, isDID); err == nil {
 		return nil
 	}
-
-	if err := checkCustomizedDIDVerifiableCredential(evm, issuer, payload); err == nil {
+	isDID, err = evm.StateDB.IsDID(issuer)
+	if err != nil {
+		return err
+	}
+	if err := checkIDVerifiableCredential(evm, issuer, payload,isDID); err == nil {
 		return nil
 	}
 
@@ -2017,8 +2105,8 @@ func checkCustomizedDIDVerifiableCredential(evm *EVM, signer string, payload *di
 		return err
 	}
 	//4, Verifiable credential
-	if err = checkVerifiableCredentials(evm, verifyDoc.ID, []did.VerifiableCredential{*payload.CredentialDoc.VerifiableCredential},
-		verifyDoc.Authentication, verifyDoc.PublicKey, verifyDoc.Controller); err != nil {
+
+	if err = checkCredential(evm, payload.CredentialDoc.VerifiableCredential, verifyDoc); err != nil {
 		return err
 	}
 	return nil
@@ -2048,15 +2136,15 @@ func checkRevokeVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 		}
 
 		// check if owner or issuer send this transaction
-		owner := GetVerifiableCredentialID(lastTXData.Operation.CredentialDoc)
-		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc)
+		owner := GetCredentialOwner(lastTXData.Operation.CredentialDoc)
+		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc.VerifiableCredential)
 		return checkRevokeCustomizedDIDVerifiableCredential(evm, owner, issuer, payload)
 	}
 
 	return nil
 }
-
-func getCredentialIssuer(DID string, cridential *did.VerifiableCredentialDoc) string {
+//owner can be DID or custid
+func getCredentialIssuer(owner string, cridential *did.VerifiableCredential) string {
 	realIssuer := cridential.Issuer
 	if cridential.Issuer == "" {
 		creSub := cridential.CredentialSubject.(map[string]interface{})
@@ -2067,13 +2155,13 @@ func getCredentialIssuer(DID string, cridential *did.VerifiableCredentialDoc) st
 			}
 		}
 		if realIssuer == "" {
-			realIssuer = DID
+			realIssuer = owner
 		}
 	}
 	return realIssuer
 }
 
-func GetVerifiableCredentialID(cridential *did.VerifiableCredentialDoc) string {
+func GetCredentialOwner(cridential *did.VerifiableCredentialDoc) string {
 	creSub := cridential.CredentialSubject.(map[string]interface{})
 	ID := ""
 	for k, v := range creSub {
@@ -2087,13 +2175,11 @@ func GetVerifiableCredentialID(cridential *did.VerifiableCredentialDoc) string {
 
 func checkDeclareCustomizedDIDVerifiableCredential(evm *EVM, owner string, issuer string, payload *did.DIDPayload) error {
 
+	//verifiable credential payload proof must be owner
 	if err := checkDIDVerifiableCredential(evm, owner, payload); err == nil {
 		return nil
 	}
 
-	if err := checkDIDVerifiableCredential(evm, issuer, payload); err == nil {
-		return nil
-	}
 
 	return errors.New("invalid credential signature")
 }
@@ -2155,8 +2241,62 @@ func checkDIDVerifiableCredential(evm *EVM, signer string,
 		return errors.New("[VM] Check Sig FALSE")
 	}
 	//VerifiableCredentials inner(doc) proof
-	if err = checkVerifiableCredentials(evm, signer, []did.VerifiableCredential{*credPayload.CredentialDoc.VerifiableCredential},
-		verifyDIDDoc.Authentication, verifyDIDDoc.PublicKey, nil); err != nil {
+	if err = checkCredential(evm,  credPayload.CredentialDoc.VerifiableCredential, verifyDIDDoc); err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkIDVerifiableCredential(evm *EVM, owner string,
+	credPayload *did.DIDPayload, isDID bool) error {
+	//todo if this owner is customized this will be error
+
+	IDOwner := owner
+	if !isDID {
+		IDOwner = strings.ToLower(owner)
+	}
+	verifyDIDDoc, err := GetIDLastDoc(evm, IDOwner)
+	if err != nil {
+		return err
+	}
+	publicKeyBase58 := ""
+	//todo test this
+	//if is did
+	if isDID {
+		publicKeyBase58, err = getDIDAutheneKey(credPayload.Proof.VerificationMethod, verifyDIDDoc.Authentication, verifyDIDDoc.PublicKey)
+	}else{
+		//customized did
+		publicKeyBase58, err = getCustDIDAuthenKey(evm,credPayload.Proof.VerificationMethod,verifyDIDDoc.PublicKey,
+			verifyDIDDoc.Authentication, verifyDIDDoc.Controller)
+	}
+	if publicKeyBase58 == "" {
+		return errors.New("checkDIDVerifiableCredential Not find proper publicKeyBase58")
+	}
+
+
+	//get code
+	//var publicKeyByte []byte
+	publicKeyByte := base58.Decode(publicKeyBase58)
+
+	//var code []byte
+	code, err := did.GetCodeByPubKey(publicKeyByte)
+	if err != nil {
+		return err
+	}
+	signature, _ := base64url.DecodeString(credPayload.Proof.Signature)
+
+	var success bool
+	//VerifiableCredentials outter(payload) proof
+	success, err = did.VerifyByVM(credPayload, code, signature)
+
+	if err != nil {
+		return err
+	}
+	if !success {
+		return errors.New("[VM] Check Sig FALSE")
+	}
+	//VerifiableCredentials inner(doc) proof
+	if err = checkCredential(evm, credPayload.CredentialDoc.VerifiableCredential, verifyDIDDoc); err != nil {
 		return err
 	}
 	return nil
