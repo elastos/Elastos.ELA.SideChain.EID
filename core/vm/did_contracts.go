@@ -523,22 +523,19 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 //1. proof VerificationMethod must be unique
 //2. proof controller must not deactive
 //3. proof controller must not expired
-func IsTicketProofCtrInvalid(proof interface{}, evm *EVM)error{
+//4. proof controller must from controller
+func IsTicketProofCtrInvalid(proof interface{}, evm *EVM,ID string)error{
+	verifyDoc, err := getVerifyDocMultisign(evm, ID)
+	if err != nil {
+		return err
+	}
 	ticketProofArray := make([]*did.TicketProof, 0)
 	ticketProof := &did.TicketProof{}
-	//var bExist bool
+	//check proof array VerificationMethod unique
 	if err := Unmarshal(proof, &ticketProofArray); err == nil {
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, proof := range ticketProofArray {
-			prefixedDID,_ := GetDIDAndUri(proof.VerificationMethod)
-			ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
-			if  err!= nil{
-				return err
-			}
-			if ctrlInvalid {
-				return errors.New("one of the controller is ctrlInvalid")
-			}
 			if _,ok :=  creatorMgr[proof.VerificationMethod]; ok{
 				return errors.New("proof creator is duplicated")
 			}
@@ -546,17 +543,30 @@ func IsTicketProofCtrInvalid(proof interface{}, evm *EVM)error{
 		}
 
 	} else if err := Unmarshal(proof, ticketProof); err == nil {
-		prefixedDID,_ := GetDIDAndUri(ticketProof.VerificationMethod)
-		ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
+		ticketProofArray = append(ticketProofArray, ticketProof)
+	} else {
+		//error
+		return errors.New("isCustomDocVerifMethodDefKey Invalid proof type")
+	}
+	
+	//
+	
+	//check every controller is not deactive or expired
+	for _, proof := range ticketProofArray {
+		//controller is  customizedid's controller 
+		controller,_ := GetDIDAndUri(proof.VerificationMethod)
+
+		if !haveCtrl(verifyDoc.Controller, controller) {
+			return  errors.New("doc not have this controller")
+		}
+		// controller must  valid
+		ctrlInvalid, err := isControllerInvalid(evm,controller)
 		if  err!= nil{
 			return err
 		}
 		if ctrlInvalid {
 			return errors.New("one of the controller is ctrlInvalid")
 		}
-	} else {
-		//error
-		return errors.New("isCustomDocVerifMethodDefKey Invalid proof type")
 	}
 
 	return nil
@@ -676,6 +686,22 @@ func isCtrlEqual(newCtrl  , oldCtrl interface{})bool{
 	}
 }
 
+func haveCtrl(docCtrl interface{}, controller string)bool{
+	var newCtrlArray []interface{}
+	var ok bool
+	if newCtrlArray, ok = docCtrl.([]interface{}); ok {
+		for _, controller := range newCtrlArray {
+			if controller != controller {
+				return false
+			}
+		}
+		return true
+
+	}else{
+		return docCtrl == controller
+	}
+}
+
 /*
 	1. if controller len >1 MultiSig != ""
 	2. if controller len =1 multsig == “”
@@ -787,9 +813,10 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 				return err
 			}
 			//check ticket proof controller deactive or expires
-			if err := IsTicketProofCtrInvalid(p.Ticket.Proof,evm); err != nil {
+			if err := IsTicketProofCtrInvalid(p.Ticket.Proof,evm, p.DIDDoc.ID); err != nil {
 				return err
 			}
+
 		}
 	}
 	return checkPayloadSyntax(p, evm, false)
@@ -948,8 +975,8 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 			return false32Byte, errors.New("createDIDVerify Payload is error")
 		}
 		p.CredentialDoc = credentialDoc
-		if err := checkVerifiableCredential(evm, p); err != nil {
-			log.Error("checkVerifiableCredential error", "error", err)
+		if err := checkCredentialTX(evm, p); err != nil {
+			log.Error("checkCredentialTX error", "error", err)
 			return false32Byte, err
 		}
 		buf := new(bytes.Buffer)

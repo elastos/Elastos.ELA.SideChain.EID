@@ -1028,7 +1028,7 @@ func TestRevokeVerifiableCredentialTx(t *testing.T) {
 		"declare",
 		didVerifCred, privateKey2Str)
 	fmt.Println(verifableCredentialTx)
-	err := checkVerifiableCredential(evm, verifableCredentialTx)
+	err := checkCredentialTX(evm, verifableCredentialTx)
 	assert.NoError(t, err)
 
 }
@@ -1126,7 +1126,7 @@ func TestRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 
 	verifableCredentialRevokeTx := getIDVerifiableCredentialTx(id2, "revoke", custIDVerifCredDocBytes,
 		privateKey2Str)
-	err := checkVerifiableCredential(evm, verifableCredentialRevokeTx)
+	err := checkCredentialTX(evm, verifableCredentialRevokeTx)
 	assert.NoError(t, err)
 
 	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
@@ -1198,7 +1198,7 @@ func TestWrongRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
 	verifableCredentialRevokeTx := getIDVerifiableCredentialTx("did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y",
 		"revoke", custIDVerifCredDocBytes, privateKey1Str)
-	err5 := checkVerifiableCredential(evm, verifableCredentialRevokeTx)
+	err5 := checkCredentialTX(evm, verifableCredentialRevokeTx)
 	assert.NoError(t, err5)
 
 	hash := common.Hash{}
@@ -1257,7 +1257,7 @@ func TestWrongRevokeBeforeRegisterVerifiableCredentialTx(t *testing.T) {
 
 	verifableCredentialTx := getIDVerifiableCredentialTx("did:elastos:iWFAUYhTa35c1fPe3iCJvihZHx6quumnym",
 		"declare", custIDVerifCredDocBytes, privateKey1Str)
-	err = checkVerifiableCredential(evm, verifableCredentialTx)
+	err = checkCredentialTX(evm, verifableCredentialTx)
 	assert.NoError(t, err)
 }
 
@@ -1361,7 +1361,7 @@ func TestCustomizedDIDVerifiableCredentialTx2(t *testing.T) {
 
 	verifableCredentialTx := getCustomizedDIDVerifiableCredPayloadContollers(idUser1, idUser2, "declare",
 		custIDVerifyCredContrl, privateKeyUser1Str, privateKeyUser2Str)
-	err := checkVerifiableCredential(evm, verifableCredentialTx)
+	err := checkCredentialTX(evm, verifableCredentialTx)
 	assert.NoError(t, err)
 }
 
@@ -2597,4 +2597,5 @@ func TestIsLetterOrNumber(t *testing.T) {
 	assert.False(t, IsLetterOrNumber("/"))
 	assert.False(t, IsLetterOrNumber(" "))
 }
+
 
