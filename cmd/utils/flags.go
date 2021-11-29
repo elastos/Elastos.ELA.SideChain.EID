@@ -816,7 +816,7 @@ var (
 	DynamicArbiter = cli.Uint64Flag{
 		Name:  "spv.arbiter.height",
 		Usage: "configue the offset blocks to pre-connect to switch to pbft consensus",
-		Value: 0,
+		Value: 1034900,
 	}
 )
 
@@ -1589,8 +1589,14 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "testnet", "geth")
 		}
-		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(1)
+
+		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
+			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
+		}
+
+		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
+			cfg.DocArraySortHeight =  new(big.Int).SetUint64(1)
+		}
 
 		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
 			cfg.DynamicArbiterHeight = 1
@@ -1604,8 +1610,13 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "rinkeby", "geth")
 		}
-		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
+			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+		}
+
+		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
+			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		}
 		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
 			cfg.DynamicArbiterHeight = 2
 		}
@@ -1618,8 +1629,13 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "goerli", "geth")
 		}
-		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
+			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+		}
+
+		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
+			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		}
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
@@ -1649,8 +1665,13 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(MinerGasPriceFlag.Name) && !ctx.GlobalIsSet(MinerLegacyGasPriceFlag.Name) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
-		cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
-		cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
+			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+		}
+
+		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
+			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		}
 	}
 }
 

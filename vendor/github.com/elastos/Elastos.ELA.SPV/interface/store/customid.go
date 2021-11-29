@@ -389,7 +389,8 @@ func (c *customID) getReservedCustomIDs(height uint32, info []RevertInfo) (map[s
 
 	results := make(map[string]struct{})
 	for k, v := range c.reservedCustomIDs {
-		if !isProposalConfirmed(height, v, info) {
+		confirmCount := getConfirmCount(height, v, info)
+		if confirmCount < DefaultConfirmations {
 			continue
 		}
 		results[k] = struct{}{}
@@ -397,13 +398,14 @@ func (c *customID) getReservedCustomIDs(height uint32, info []RevertInfo) (map[s
 	return results, nil
 }
 
-func isProposalConfirmed(currentHeight, proposalHeight uint32, info []RevertInfo) bool {
+func getConfirmCount(currentHeight, proposalHeight uint32, info []RevertInfo) uint32 {
 	if currentHeight <= proposalHeight {
-		return false
+		return 0
 	}
 
 	var lastMode byte
 	var lastWorkingHeight uint32
+	var confirmCount uint32
 	var reachedTheEnd bool
 	var beganFromStartHeight bool
 	for _, r := range info {
@@ -418,15 +420,9 @@ func isProposalConfirmed(currentHeight, proposalHeight uint32, info []RevertInfo
 
 			if lastMode == byte(state.DPOS) {
 				if proposalHeight > lastWorkingHeight {
-					confirmCount := calculateHeight - proposalHeight
-					if confirmCount >= DefaultConfirmations {
-						return true
-					}
+					confirmCount += calculateHeight - proposalHeight
 				} else {
-					confirmCount := calculateHeight - lastWorkingHeight
-					if confirmCount >= DefaultConfirmations {
-						return true
-					}
+					confirmCount += calculateHeight - lastWorkingHeight
 				}
 			}
 			beganFromStartHeight = true
@@ -442,19 +438,13 @@ func isProposalConfirmed(currentHeight, proposalHeight uint32, info []RevertInfo
 
 	if lastMode == byte(state.DPOS) {
 		if !beganFromStartHeight {
-			confirmCount := currentHeight - proposalHeight
-			if confirmCount >= DefaultConfirmations {
-				return true
-			}
+			confirmCount += currentHeight - proposalHeight
 		} else if !reachedTheEnd {
-			confirmCount := currentHeight - lastWorkingHeight
-			if confirmCount >= DefaultConfirmations {
-				return true
-			}
+			confirmCount += currentHeight - lastWorkingHeight
 		}
 	}
 
-	return false
+	return confirmCount
 }
 
 func maxUint32(first, second uint32) uint32 {
@@ -603,7 +593,8 @@ func (c *customID) getReceivedCustomIDs(height uint32, info []RevertInfo) (map[s
 
 	results := make(map[string]common.Uint168)
 	for k, v := range c.receivedCustomIDs {
-		if !isProposalConfirmed(height, v.Height, info) {
+		confirmCount := getConfirmCount(height, v.Height, info)
+		if confirmCount < DefaultConfirmations {
 			continue
 		}
 		results[k] = v.DID

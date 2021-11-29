@@ -30,6 +30,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common/prque"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crosschain"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
@@ -571,10 +572,15 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 			// Transactor should have enough funds to cover the costs
 			// cost == V + GP * GL
 			isWithdrawRefund := false
+			isSmallCrossTx := false
 			if to == addr {
 				isWithdrawRefund, _ = withdrawfailedtx.IsWithdawFailedTx(tx.Data(), pool.chainconfig.BlackContractAddr)
+				if !isWithdrawRefund && len(tx.Data()) > 32 {
+					rawTxID, _, _, _ := spv.IsSmallCrossTxByData(tx.Data())
+					isSmallCrossTx = rawTxID != ""
+				}
 			}
-			if !isWithdrawRefund {
+			if !isWithdrawRefund && !isSmallCrossTx {
 				if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
 					return ErrInsufficientFunds
 				}
@@ -876,8 +882,13 @@ func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) ([]error,
 			to := *tx.To()
 			var blackAddr common.Address
 			if  to == blackAddr {
-				if len(tx.Data()) == 32 {
-					txhash :=  hexutil.Encode(tx.Data())
+				if crosschain.IsRechargeTx(tx) {
+					txhash := ""
+					if len(tx.Data()) == 32 {
+						txhash =  hexutil.Encode(tx.Data())
+					} else {
+						txhash, _, _, _ = spv.IsSmallCrossTxByData(tx.Data())
+					}
 					fee, addr, output := spv.FindOutputFeeAndaddressByTxHash(txhash)
 					if addr != blackAddr {
 						if fee.Cmp(new(big.Int)) > 0 && output.Cmp(new(big.Int)) > 0 {
@@ -981,8 +992,7 @@ func RemoveLocalTx(pool *TxPool, hash common.Hash, outofbound bool, removetx boo
 	if future := pool.queue[addr]; future != nil {
 		queuetxs := future.Flatten()
 		for _, queue := range queuetxs {
-			var blackaddr common.Address
-			if len(queue.Data()) == 32 && *queue.To() == blackaddr {
+			if crosschain.IsRechargeTx(queue) {
 				UptxhashIndex(pool, queue)
 				future.Remove(queue)
 			}
@@ -996,10 +1006,14 @@ func RemoveLocalTx(pool *TxPool, hash common.Hash, outofbound bool, removetx boo
 
 func UptxhashIndex(pool *TxPool, tx *types.Transaction) bool {
 	if tx.To() != nil {
-		to := *tx.To()
 		var blackaddr common.Address
-		if len(tx.Data()) == 32 && to == blackaddr {
-			txhash := hexutil.Encode(tx.Data())
+		if crosschain.IsRechargeTx(tx) {
+			txhash := ""
+			if len(tx.Data()) == 32{
+				txhash = hexutil.Encode(tx.Data())
+			} else {
+				txhash, _, _, _ = spv.IsSmallCrossTxByData(tx.Data())
+			}
 			completetxhash := pool.currentState.GetState(blackaddr, common.HexToHash(txhash))
 			if (completetxhash == common.Hash{}) {
 				spv.UpTransactionIndex(string(txhash))

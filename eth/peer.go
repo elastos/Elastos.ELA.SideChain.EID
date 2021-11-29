@@ -25,13 +25,11 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/forkid"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
 )
 
 var (
@@ -156,28 +154,6 @@ func (p *peer) Disconnect() {
 func (p *peer) SendELAMessage(msg *dpos.ElaMsg) {
 	if err := p2p.Send(p.rw, ELAMSG, msg); err != nil {
 		p.Log().Warn("Send ELA message failed, ", "error", err, "msg", msg.Type)
-	}
-}
-
-func (p *peer) SendGetCrossTxMsg(evt *core.GetSmallCrossTxEvent) {
-	if err := p2p.Send(p.rw, GetSmallCrossTxmsg, evt); err != nil {
-		p.Log().Warn("Send GetSmallCrossTxmsg message failed, ", "error", err)
-	}
-}
-
-func (p *peer) SendSmallCrossTxMsg(evt *core.SmallCrossTxEvent) {
-	if err := p2p.Send(p.rw, SmallCrossTxmsg, evt); err != nil {
-		p.Log().Warn("Send GetSmallCrossTxmsg message failed, ", "error", err)
-	}
-}
-
-func (p *peer) SendCrossTxMsg(smallCroTx *smallcrosstx.SmallCrossTx) {
-	p.knownSmallCroTxs.Add(smallCroTx.RawTxID)
-	for p.knownSmallCroTxs.Cardinality() >= maxKnownTxs {
-		p.knownSmallCroTxs.Pop()
-	}
-	if err := p2p.Send(p.rw, SmallCrossTxmsg, smallCroTx); err != nil {
-		p.Log().Warn("Send SendCrossTxMsg message failed, ", "error", err)
 	}
 }
 
