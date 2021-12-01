@@ -73,7 +73,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(12),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(6307200),//todo set it before online
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		DynamicArbiterHeight: 0,
@@ -144,7 +144,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(12),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(6307201),//todo set it before online
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
@@ -214,7 +214,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(12),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(6307200),//todo set it before online
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
@@ -282,7 +282,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(12),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(6307200),//todo set it before online
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
@@ -336,16 +336,16 @@ var (
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllEthashProtocolChanges = &ChainConfig{OldChainID: big.NewInt(1337), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0),ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(0), EWASMBlock: nil, PBFTBlock: big.NewInt(0),CustomizeDIDHeight: big.NewInt(0), MaxExpiredHeight: big.NewInt(6307200),Ethash: new(EthashConfig), Clique: nil, Pbft: nil, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "", PreConnectOffset: 0, PbftKeyStore: "", PbftKeyStorePassWord: ""}
+	AllEthashProtocolChanges = &ChainConfig{OldChainID: big.NewInt(1337), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0),ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(0), EWASMBlock: nil, PBFTBlock: big.NewInt(0),CustomizeDIDHeight: big.NewInt(12), MaxExpiredHeight: big.NewInt(6307200),Ethash: new(EthashConfig), Clique: nil, Pbft: nil, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "", PreConnectOffset: 0, PbftKeyStore: "", PbftKeyStorePassWord: ""}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Clique consensus.
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllCliqueProtocolChanges = &ChainConfig{OldChainID:big.NewInt(1337), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0), ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(0), EWASMBlock: nil, PBFTBlock: big.NewInt(0),CustomizeDIDHeight: big.NewInt(0), MaxExpiredHeight: big.NewInt(6307200), Ethash: nil, Clique: &CliqueConfig{Period: 0, Epoch: 30000}, Pbft: nil, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "",PreConnectOffset: 0, PbftKeyStore: "", PbftKeyStorePassWord: ""}
+	AllCliqueProtocolChanges = &ChainConfig{OldChainID:big.NewInt(1337), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0), ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(0), EWASMBlock: nil, PBFTBlock: big.NewInt(0),CustomizeDIDHeight: big.NewInt(13), MaxExpiredHeight: big.NewInt(6307200), Ethash: nil, Clique: &CliqueConfig{Period: 0, Epoch: 30000}, Pbft: nil, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "",PreConnectOffset: 0, PbftKeyStore: "", PbftKeyStorePassWord: ""}
 
-	TestChainConfig = &ChainConfig{OldChainID: big.NewInt(1), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0), ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(0), EWASMBlock: nil, PBFTBlock: big.NewInt(0),CustomizeDIDHeight: big.NewInt(0), MaxExpiredHeight: big.NewInt(6307200), Ethash: new(EthashConfig), Clique: nil, Pbft: nil, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "", PreConnectOffset: 0, PbftKeyStore: "", PbftKeyStorePassWord: ""}
+	TestChainConfig = &ChainConfig{OldChainID: big.NewInt(1), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0), ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(0), EWASMBlock: nil, PBFTBlock: big.NewInt(0),CustomizeDIDHeight: big.NewInt(14), MaxExpiredHeight: big.NewInt(6307200), Ethash: new(EthashConfig), Clique: nil, Pbft: nil, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "", PreConnectOffset: 0, PbftKeyStore: "", PbftKeyStorePassWord: ""}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
@@ -435,6 +435,8 @@ type ChainConfig struct {
 	OldDIDMigrateAddr     string `json:"oldDIDMigrateAddr,omitempty"`
 	OldDIDMigrateHeight   *big.Int `json:"oldDIDMigrateHeight,omitempty"`
 	DocArraySortHeight	  *big.Int `json:"docArraySortHeight,omitempty"`
+	//CustomDIDHeight	  *big.Int `json:"customDIDHeight,omitempty"`
+
 	DynamicArbiterHeight  uint64 `json:"dynamicArbiterHeight,omitempty"`
 	//customizedid start height
 	CustomizeDIDHeight  *big.Int `json:"customizeDIDHeight,omitempty"`

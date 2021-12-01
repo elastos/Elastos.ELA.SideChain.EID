@@ -179,7 +179,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	chainConfig.OldDIDMigrateHeight = config.OldDIDMigrateHeight
 	chainConfig.OldDIDMigrateAddr = config.OldDIDMigrateAddr
 	chainConfig.DocArraySortHeight = config.DocArraySortHeight
-	log.Info("New", "chainConfig.DocArraySortHeight ",chainConfig.DocArraySortHeight)
+	log.Info("New", "chainConfig ",chainConfig)
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir
 	if len(chainConfig.PbftKeyStore) > 0 {
 		config.PbftKeyStore = chainConfig.PbftKeyStore
