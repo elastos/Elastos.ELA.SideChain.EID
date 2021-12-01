@@ -144,8 +144,11 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	if !IsLetterOrNumber(idString) {
 		return errors.New("invalid  DID: only letter and number is allowed")
 	}
-	if err := checkExpires(p.DIDDoc.Expires, evm.Time); err != nil {
-		return  err
+	//todo add config height
+	if evm.Context.BlockNumber.Cmp(evm.chainConfig.CustomizeDIDHeight) > 0  {
+		if err := checkExpires(p.DIDDoc.Expires, evm.Time); err != nil {
+			return  err
+		}
 	}
 
 	if isIDDeactive(evm,idString) {
@@ -817,11 +820,18 @@ func checkCredential(evm *EVM, credential *did.VerifiableCredential, doc *did.DI
 	proof := credential.Proof
 	realIssuer := getCredentialIssuer(doc.ID, credential)
 
-
-	isDID, err := evm.StateDB.IsDID(realIssuer)
-	if err != nil {
+	//issuser can be customizedid
+	//isDID, err := evm.StateDB.IsDID(realIssuer)
+	//if err != nil {
+	//	return err
+	//}
+	////////////////
+	isDID , err := isDID(evm, realIssuer)
+	if err!= nil {
 		return err
 	}
+	////////////////
+
 	if isDID {
 		//realIssuer is self and Issuer is not ""
 		if realIssuer == owner {
@@ -915,9 +925,15 @@ func getAuthenPublicKeyByID(evm *EVM, issuerID, verificationMethod string, isDID
 		Doc := txData.Operation.DIDDoc
 		pubKeyStr := ""
 		if isDID {
-			pubKeyStr, _ = getDIDAutheneKey(verificationMethod, Doc.Authentication, Doc.PublicKey)
+			pubKeyStr, err = getDIDAutheneKey(verificationMethod, Doc.Authentication, Doc.PublicKey)
 		} else {
-			pubKeyStr, _ =	getCustDIDAuthenKey(evm, verificationMethod, Doc.PublicKey, Doc.Authentication, Doc.Controller)
+			pubKeyStr, err =	getCustDIDAuthenKey(evm, verificationMethod, Doc.PublicKey, Doc.Authentication, Doc.Controller)
+		}
+		if err != nil {
+			return []byte{}, err
+		}
+		if pubKeyStr == "" {
+			return []byte{}, errors.New("getAuthenPublicKeyByID pubKeyStr is empty")
 		}
 		publicKey = base58.Decode(pubKeyStr)
 	}
@@ -965,7 +981,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if err := checkExpires(customizedDIDPayload.DIDDoc.Expires, evm.Time); err != nil {
 		return  err
 	}
-	//if this customized did is already exist operation should not be create
+	//if this customized did is already exist and not expired more than 1 year operation should not be create
 	//if this customized did is not exist operation should not be update
 	if err := checkCustomizedDIDOperation(evm, &customizedDIDPayload.Header,
 		customizedDIDPayload.DIDDoc.ID); err != nil {
@@ -1518,7 +1534,18 @@ func checkCustomizedDIDOperation(evm *EVM, header *did.Header,
 	}
 	if dbExist {
 		if header.Operation == did.Create_DID_Operation {
-			return errors.New("Customized DID WRONG OPERATION ALREADY EXIST")
+			id1 := []byte(lowCustomDID)
+			expiresHeight, err := evm.StateDB.GetDIDExpiresHeight(id1)
+			if err != nil{
+				return err
+			}
+			configHeight := big.NewInt( 0)
+			targetHeight := configHeight.Add(configHeight, big.NewInt(int64(expiresHeight)))
+			if evm.Context.BlockNumber.Cmp(targetHeight) < 0 {
+				//check if this customized id is expired over 1 year
+				return errors.New("Customized DID WRONG OPERATION ALREADY EXIST")
+			}
+
 		} else if header.Operation == did.Update_DID_Operation {
 			//check PreviousTxid
 			hash, err := common.Uint256FromHexString(header.PreviousTxid)

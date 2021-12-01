@@ -467,15 +467,22 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 			return err
 		}
 		for _, proof := range DIDProofArray {
-			if proof.Creator == "" {
-				return errors.New("proof Creator is null")
+			if evm.Context.BlockNumber.Cmp(evm.chainConfig.CustomizeDIDHeight) > 0  {
+				if proof.Creator == "" {
+					return errors.New("proof Creator is null")
+				}
+				if proof.Type != "ECDSAsecp256r1" {
+					return errors.New("Type != ECDSAsecp256r1")
+				}
 			}
+
 			if proof.Created == "" {
 				return errors.New("proof Created is null")
 			}
 			if proof.SignatureValue == "" {
 				return errors.New("proof SignatureValue is null")
 			}
+
 		}
 	}
 	return nil
