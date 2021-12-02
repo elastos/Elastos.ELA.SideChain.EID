@@ -967,20 +967,21 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 
 	//1, if it is "create" use now m/n and public key otherwise use last time m/n and public key
 	//var verifyDoc *id.DIDDoc
-	var verifyDoc *did.DIDDoc
-	if customizedDIDPayload.Header.Operation == did.Create_DID_Operation ||
-		customizedDIDPayload.Header.Operation == did.Transfer_DID_Operation {
-		verifyDoc = customizedDIDPayload.DIDDoc
-	} else {
-		verifyDoc, err = getVerifyDocMultisign(evm, customizedDIDPayload.DIDDoc.ID)
-		if err != nil {
-			return err
-		}
-	}
+	doc := customizedDIDPayload.DIDDoc
+	//var verifyDoc *did.DIDDoc
+	//if customizedDIDPayload.Header.Operation == did.Create_DID_Operation ||
+	//	customizedDIDPayload.Header.Operation == did.Transfer_DID_Operation {
+	//	verifyDoc = customizedDIDPayload.DIDDoc
+	//} else {
+	//	verifyDoc, err = getVerifyDocMultisign(evm, customizedDIDPayload.DIDDoc.ID)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
 	//check payload VerificationMethod
-	publicKey , err := getCustDIDAuthenKey(evm, customizedDIDPayload.Proof.VerificationMethod, verifyDoc.PublicKey,
-		verifyDoc.Authentication, verifyDoc.Controller)
+	publicKey , err := getCustDIDAuthenKey(evm, customizedDIDPayload.Proof.VerificationMethod, doc.PublicKey,
+		doc.Authentication, doc.Controller)
 	if err != nil {
 		return err
 	}
@@ -988,12 +989,12 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		return errors.New("not find propoer publickey for payload proof")
 	}
 
-	if err := checkCustomIDOuterProof(evm, customizedDIDPayload, verifyDoc); err != nil {
+	if err := checkCustomIDOuterProof(evm, customizedDIDPayload); err != nil {
 		return err
 	}
 
 	M := 1
-	multisignStr := verifyDoc.MultiSig
+	multisignStr := doc.MultiSig
 	if multisignStr != "" {
 		M, _, err = GetMultisignMN(multisignStr)
 		if err != nil {
@@ -1003,7 +1004,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	// check ticket when operation is 'Transfer'
 	if customizedDIDPayload.Header.Operation == did.Transfer_DID_Operation {
 		buf := new(bytes.Buffer)
-		lowerID := strings.ToLower(verifyDoc.ID)
+		lowerID := strings.ToLower(doc.ID)
 		buf.WriteString(lowerID)
 		fmt.Println("lowerID ########")
 		lastTx, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
@@ -1020,7 +1021,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 			}
 		}
 		if err := checkTicketAvailable(evm, customizedDIDPayload,
-			verifyDoc.ID, lastTx.TXID, m, lastTx.Operation.DIDDoc); err != nil {
+			doc.ID, lastTx.TXID, m, lastTx.Operation.DIDDoc); err != nil {
 			return err
 		}
 	}
@@ -1033,12 +1034,12 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		return err
 	}
 
-	if err = sortDocSlice(verifyDoc); err != nil {
+	if err = sortDocSlice(doc); err != nil {
 		return err
 	}
 	//4, proof multisign verify
 	err = checkCustomIDInnerProof(evm, customizedDIDPayload.DIDDoc.ID, DIDProofArray,
-		customizedDIDPayload.DIDDoc.DIDPayloadData, M, verifyDoc)
+		customizedDIDPayload.DIDDoc.DIDPayloadData, M, doc)
 	if err != nil {
 		return err
 	}
@@ -1326,10 +1327,11 @@ func checkCustomizedDIDTicketProof(evm *EVM, verifyDoc *did.DIDDoc, Proof interf
 	return DIDProofArray, nil
 }
 
-func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload, verifyDoc *did.DIDDoc) error {
+func checkCustomIDOuterProof(evm *EVM, txPayload *did.DIDPayload) error {
 	//get  public key
-	publicKeyBase58 , err := getCustDIDAuthenKey(evm, txPayload.Proof.VerificationMethod, verifyDoc.PublicKey,
-		verifyDoc.Authentication, verifyDoc.Controller)
+	doc := txPayload.DIDDoc
+	publicKeyBase58 , err := getCustDIDAuthenKey(evm, txPayload.Proof.VerificationMethod, doc.PublicKey,
+		doc.Authentication, doc.Controller)
 	if publicKeyBase58 == "" || err != nil{
 		return err
 	}
@@ -1988,6 +1990,9 @@ func getDeactivatePublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 }
 
 func checkCredentialTX(evm *EVM, payload *did.DIDPayload) error {
+	if payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential == nil{
+		return  errors.New("payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential")
+	}
 	_, err := time.Parse(time.RFC3339, payload.CredentialDoc.ExpirationDate)
 	if err != nil {
 		return errors.New("invalid ExpirationDate")
