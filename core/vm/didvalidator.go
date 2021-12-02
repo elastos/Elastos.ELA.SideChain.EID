@@ -58,7 +58,9 @@ func InitDIDParams(params did.DIDParams) {
 func sortControllerSlice(controller interface{})  {
 	if controllers, ok :=controller.([]interface{}); ok{
 		sort.Sort(did.ControllerSlice(controllers))
+		fmt.Println("controller",controller)
 	}
+
 }
 //sort doc Authentication or Authorization
 func sortAuthSlice(authSlice []interface{}) error {
@@ -868,8 +870,8 @@ func checkCredential(evm *EVM, credential *did.VerifiableCredential, doc *did.DI
 	var success bool
 
 	fmt.Println("VerifiableCredentialData:", string(credential.VerifiableCredentialData.GetData()))
-	fmt.Println("issuerCode:", common.BytesToHexString(issuerCode))
-	fmt.Println("signature:", common.BytesToHexString(signature))
+	fmt.Println("issuerPublicKey:", base58.Encode(issuerPublicKey))
+	fmt.Println("proof.Signature:", proof.Signature)
 	success, err = did.VerifyByVM(credential.VerifiableCredentialData, issuerCode, signature)
 	if err != nil {
 		return err
@@ -2293,7 +2295,9 @@ func checkIDVerifiableCredential(evm *EVM, owner string,
 	var success bool
 	//VerifiableCredentials outter(payload) proof
 	success, err = did.VerifyByVM(credPayload, code, signature)
-
+	fmt.Println("credPayload.GetData():", string(credPayload.GetData()))
+	fmt.Println("publicKeyBase58:", publicKeyBase58)
+	fmt.Println("Signature:", credPayload.Proof.Signature)
 	if err != nil {
 		return err
 	}
