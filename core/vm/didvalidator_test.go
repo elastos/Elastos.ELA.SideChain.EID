@@ -2599,4 +2599,12 @@ func TestIsLetterOrNumber(t *testing.T) {
 	assert.False(t, IsLetterOrNumber(" "))
 }
 
+func TestSortDoc(t *testing.T){
+	info := new(did.DIDDoc)
+	json.Unmarshal(barzIDDocByts, info)
+	sortDocSlice(info)
+	fmt.Println(info)
+}
+
+
 

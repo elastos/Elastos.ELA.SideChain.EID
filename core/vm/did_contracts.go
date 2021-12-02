@@ -480,8 +480,9 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 	}
 	return nil
 }
-//proof controller must unique and not expired
-func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
+//proof controller must unique ,not expired ,not deactive
+//must belong to his conroller
+func IsDocProofCtrUnique_Bk(proof interface{}, evm *EVM)error{
 	DIDProofArray := make([]*did.DocProof, 0)
 	CustomizedDIDProof := &did.DocProof{}
 	//var bExist bool
@@ -519,6 +520,53 @@ func IsDocProofCtrUnique(proof interface{}, evm *EVM)error{
 
 	return nil
 }
+
+//1. proof VerificationMethod must be unique
+//2. proof controller must not deactive
+//3. proof controller must not expired
+//4. proof controller must from controller
+func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM)error{
+	DIDProofArray := make([]*did.DocProof, 0)
+	CustomizedDIDProof := &did.DocProof{}
+	//check proof array VerificationMethod unique
+	if err := Unmarshal(Doc.Proof, &DIDProofArray); err == nil {
+		//check unique
+		creatorMgr := make(map[string]struct{}, 0)
+		for _, proof := range DIDProofArray {
+			if _,ok :=  creatorMgr[proof.Creator]; ok{
+				return errors.New("proof creator is duplicated")
+			}
+			creatorMgr[proof.Creator] = struct{}{}
+		}
+
+	} else if err := Unmarshal(Doc.Proof, CustomizedDIDProof); err == nil {
+		DIDProofArray = append(DIDProofArray, CustomizedDIDProof)
+	} else {
+		//error
+		return errors.New("isCustomDocVerifMethodDefKey Invalid proof type")
+	}
+
+	//check every controller is not deactive or expired
+	for _, proof := range DIDProofArray {
+		//controller is  customizedid's controller
+		controller,_ := GetDIDAndUri(proof.Creator)
+
+		if !haveCtrl(Doc.Controller, controller) {
+			return  errors.New("doc not have this controller")
+		}
+		// controller must  valid
+		ctrlInvalid, err := isControllerInvalid(evm,controller)
+		if  err!= nil{
+			return err
+		}
+		if ctrlInvalid {
+			return errors.New("one of the controller is ctrlInvalid")
+		}
+	}
+
+	return nil
+}
+
 
 //1. proof VerificationMethod must be unique
 //2. proof controller must not deactive
@@ -665,6 +713,9 @@ func isCtrlLenEqual(newCtrl  , oldCtrl interface{}) bool {
 
 
 func isCtrlEqual(newCtrl  , oldCtrl interface{})bool{
+	//before compare we need some sort
+	sortControllerSlice(newCtrl)
+	sortControllerSlice(oldCtrl)
 	var newCtrlArray, oldCtrlArray []interface{}
 	var ok bool
 	if newCtrlArray, ok = newCtrl.([]interface{}); ok {
@@ -800,7 +851,7 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		if err := checkMultSignController(p, evm); err != nil {
 			return err
 		}
-		if err := IsDocProofCtrUnique(p.DIDDoc.Proof, evm);err !=nil {
+		if err := chckDocProofCtr(p.DIDDoc, evm);err !=nil {
 			return err
 		}
 		if len(p.DIDDoc.Authorization) != 0{
