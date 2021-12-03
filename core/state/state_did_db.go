@@ -52,7 +52,7 @@ func (self *StateDB) RemoveDIDLog(txHash common.Hash) {
 	}
 }
 
-func (self *StateDB) IsDIDDeactivated(did string) bool {
+func (self *StateDB) IsIDDeactivated(did string) bool {
 	return rawdb.IsDIDDeactivated(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), did)
 }
 

@@ -1298,6 +1298,7 @@ func TestCustomizedDIDVerifiableCredentialTx2(t *testing.T) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.BlockNumber = new(big.Int).SetInt64(1)
 
 	hash := common.Hash{}
 	id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
@@ -2234,8 +2235,8 @@ func TestIsDID(t *testing.T) {
 	info := new(did.DIDDoc)
 	json.Unmarshal(didPayloadBytes, info)
 
-	ret := isDID(info)
-	assert.Equal(t, false, ret)
+	isDID := isRegistDID(info)
+	assert.Equal(t, false, isDID)
 }
 
 func TestDocSliceSort(t *testing.T) {

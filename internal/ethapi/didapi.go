@@ -125,6 +125,29 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 		return nil, http.NewError(int(service.InvalidParams), "did is null")
 	}
 
+	idWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(idWithPrefix) {
+		//add prefix
+		idWithPrefix = did.DID_ELASTOS_PREFIX + idParam
+	}
+	buf := new(bytes.Buffer)
+	buf.WriteString(idWithPrefix)
+	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	if err != nil {
+
+		idWithPrefix= strings.ToLower(idWithPrefix)
+		buf.Reset()
+		//buf = new(bytes.Buffer)
+		buf.WriteString(idWithPrefix)
+		//try customized id
+		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+		if err != nil {
+			//if we can not find customized then it means non exist
+			return nil, http.NewError(int(service.InvalidParams), "did is not exist")
+		}
+	}
+
+
 	skip, ok := param["skip"].(float64)
 	limit, ok := param["limit"].(float64)
 	if int64(skip) < 0 {
@@ -135,9 +158,9 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 		limit = 100
 	}
 
-	credentialID := idParam
-	buf := new(bytes.Buffer)
-	buf.WriteString(credentialID)
+	//credentialID := idParam
+	//buf := new(bytes.Buffer)
+	//buf.WriteString(credentialID)
 	txsData, _ := rawdb.GetAllDIDVerifCredentials(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), int64(skip),
 		int64(limit))
 	return txsData, nil
@@ -176,12 +199,6 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	if !ok {
 		return nil, http.NewError(int(service.InvalidParams), "did is null")
 	}
-	//remove DID_ELASTOS_PREFI
-	idWithPrefix := idParam
-	if !rawdb.IsURIHasPrefix(idWithPrefix) {
-		//add prefix
-		idWithPrefix = did.DID_ELASTOS_PREFIX + idParam
-	}
 
 	isGetAll, ok := param["all"].(bool)
 	if !ok {
@@ -189,12 +206,13 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	}
 
 	var rpcPayloadDid didapi.RpcPayloadDIDInfo
-	//////////
-	//buftest := new(bytes.Buffer)
-	//buftest.WriteString("did:elastos:lindalittlefish04")
-	//////////
 
 
+	idWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(idWithPrefix) {
+		//add prefix
+		idWithPrefix = did.DID_ELASTOS_PREFIX + idParam
+	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(idWithPrefix)
 	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
