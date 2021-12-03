@@ -131,6 +131,10 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 		return nil, http.NewError(int(service.InvalidParams), "skip is negative")
 	}
 
+	if limit == 0{
+		limit = 100
+	}
+
 	credentialID := idParam
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
