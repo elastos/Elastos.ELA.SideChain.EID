@@ -933,6 +933,11 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	//if spv.SpvService == nil && didParam.IsTest != true {
 	//	return errors.New("spv.SpvService == nil && didParam.IsTest != true")
 	//}
+	lowID := strings.ToLower(customizedDIDPayload.DIDDoc.ID)
+	//todo if one is deactive and expired more than one year .it can be register again.
+	if isIDDeactive(evm,lowID) {
+		return errors.New("ID is already deactivated")
+	}
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
 		return err
