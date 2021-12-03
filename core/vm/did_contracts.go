@@ -889,7 +889,7 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 		}
 		p.DIDDoc = payloadInfo
 
-		isRegisterDID := isDID(p.DIDDoc)
+		isDID := isRegistDID(p.DIDDoc)
 
 		configHeight := evm.chainConfig.OldDIDMigrateHeight
 		configAddr := evm.chainConfig.OldDIDMigrateAddr
@@ -897,13 +897,13 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 		if configHeight == nil ||
 			evm.Context.BlockNumber.Cmp(configHeight) > 0 ||
 			senderAddr != configAddr ||
-			!isRegisterDID {
+			!isDID {
 
 			buf := new(bytes.Buffer)
 			p.Serialize(buf, did.DIDVersion)
 			//if it is normal did  lenth is 0
 			ID := payloadInfo.ID
-			if isRegisterDID {
+			if isDID {
 				ID = ""
 			}
 			needFee := getIDTxFee(evm, ID, payloadInfo.Expires, p.Header.Operation, payloadInfo.Controller, buf.Len())
@@ -971,8 +971,8 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 			return false32Byte, errors.New("ID must have prefix did:elastos:")
 		}
 		var err error
-		isRegisterDID := isDID(p.DIDDoc)
-		if isRegisterDID {
+		isDID := isRegistDID(p.DIDDoc)
+		if isDID {
 			if err = checkRegisterDID(evm, p, gas); err != nil {
 				log.Error("checkRegisterDID error", "error", err, "ID", p.DIDDoc.ID)
 			}
@@ -1040,7 +1040,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	return true32Byte, nil
 }
 
-func isDID(didDoc *did.DIDDoc) bool {
+func isRegistDID(didDoc *did.DIDDoc) bool {
 	idString := did.GetDIDFromUri(didDoc.ID)
 
 	for _, pkInfo := range didDoc.PublicKey {
@@ -1130,8 +1130,8 @@ func (j *resolveDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		}
 		tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 		if index == 0 {
-			//todo IsDIDDeactivated should be IsIDDeactivated
-			if evm.StateDB.IsDIDDeactivated(idParam) {
+			//todo IsIDDeactivated should be IsIDDeactivated
+			if evm.StateDB.IsIDDeactivated(idParam) {
 				didDocState = didapi.Deactivated
 				deactiveTXData, err := getDeactiveTx(evm, buf.Bytes())
 				if err != nil {
