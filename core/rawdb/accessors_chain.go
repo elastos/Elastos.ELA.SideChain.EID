@@ -478,12 +478,19 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 			if err = PersistDeactivateDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, receipt.TxHash); err != nil{
 				return err
 			}
-		case did.Declare_Verifiable_Credential_Operation, did.Revoke_Verifiable_Credential_Operation:
+		case did.Declare_Verifiable_Credential_Operation:
 			if err := PersistVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
 				 number, btime, receipt.TxHash); err != nil {
 				return err
 			}
+		case did.Revoke_Verifiable_Credential_Operation:
+			if err := PersistRevokeVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
+				number, btime, receipt.TxHash); err != nil {
+				return err
+			}
 		}
+
+
 	}
 	if err != nil {
 		log.Error("Failed to persist did receipt", "err", err)

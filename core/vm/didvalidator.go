@@ -2041,12 +2041,14 @@ func getDeactivatePublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 }
 
 func checkCredentialTX(evm *EVM, payload *did.DIDPayload) error {
-	if payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential == nil{
-		return  errors.New("payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential")
-	}
-	_, err := time.Parse(time.RFC3339, payload.CredentialDoc.ExpirationDate)
-	if err != nil {
-		return errors.New("invalid ExpirationDate")
+	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation {
+		if payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential == nil{
+			return  errors.New("payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential")
+		}
+		_, err := time.Parse(time.RFC3339, payload.CredentialDoc.ExpirationDate)
+		if err != nil {
+			return errors.New("invalid ExpirationDate")
+		}
 	}
 
 	//todo check valid
@@ -2151,8 +2153,8 @@ func checkCustomizedDIDVerifiableCredential(evm *EVM, signer string, payload *di
 	return nil
 }
 
-func checkRevokeVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
-	credentialID := payload.CredentialDoc.ID
+func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error {
+	credentialID := txPayload.Payload
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
@@ -2177,7 +2179,7 @@ func checkRevokeVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 		// check if owner or issuer send this transaction
 		owner := GetCredentialOwner(lastTXData.Operation.CredentialDoc)
 		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc.VerifiableCredential)
-		return checkRevokeCustomizedDIDVerifiableCredential(evm, owner, issuer, payload)
+		return checkRevokeCustomizedDIDVerifiableCredential(evm, owner, issuer, txPayload)
 	}
 
 	return nil
@@ -2357,8 +2359,10 @@ func checkIDVerifiableCredential(evm *EVM, owner string,
 		return errors.New("[VM] Check Sig FALSE")
 	}
 	//VerifiableCredentials inner(doc) proof
-	if err = checkCredential(evm, credPayload.CredentialDoc.VerifiableCredential, verifyDIDDoc); err != nil {
-		return err
+	if credPayload.Header.Operation == did.Declare_Verifiable_Credential_Operation {
+		if err = checkCredential(evm, credPayload.CredentialDoc.VerifiableCredential, verifyDIDDoc); err != nil {
+			return err
+		}
 	}
 	return nil
 }

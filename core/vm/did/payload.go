@@ -224,7 +224,7 @@ func (p *DIDPayload) Deserialize(r io.Reader, version byte) error {
 			return errors.New("[DIDPayload], ticket unmarshal failed")
 		}
 		p.Ticket = ticket
-	case Declare_Verifiable_Credential_Operation, Revoke_Verifiable_Credential_Operation:
+	case Declare_Verifiable_Credential_Operation:
 		// get DIDDIDDoc from payload data
 		pBytes, err := base64url.DecodeString(p.Payload)
 		if err != nil {
