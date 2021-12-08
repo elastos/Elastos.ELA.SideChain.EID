@@ -1026,7 +1026,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		buf := new(bytes.Buffer)
 		p.Serialize(buf, did.DIDVersion)
 		evm.StateDB.AddDIDLog(id, p.Header.Operation, buf.Bytes())
-	case did.Declare_Verifiable_Credential_Operation, did.Revoke_Verifiable_Credential_Operation:
+	case did.Declare_Verifiable_Credential_Operation:
 		payloadBase64, _ := base64url.DecodeString(p.Payload)
 		credentialDoc := new(did.VerifiableCredentialDoc)
 		if err := json.Unmarshal(payloadBase64, credentialDoc); err != nil {
@@ -1040,6 +1040,15 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		buf := new(bytes.Buffer)
 		p.Serialize(buf, did.DIDVersion)
 		evm.StateDB.AddDIDLog(p.CredentialDoc.ID, p.Header.Operation, buf.Bytes())
+	case did.Revoke_Verifiable_Credential_Operation:
+		if err := checkCredentialTX(evm, p); err != nil {
+			log.Error("checkCredentialTX error", "error", err)
+			return false32Byte, err
+		}
+		buf := new(bytes.Buffer)
+		p.Serialize(buf, did.DIDVersion)
+		creDentialID := p.Payload
+		evm.StateDB.AddDIDLog(creDentialID, p.Header.Operation, buf.Bytes())
 	default:
 		log.Error("error operation", "operation", p.Header.Operation)
 		return false32Byte, errors.New("error operation:" + p.Header.Operation)

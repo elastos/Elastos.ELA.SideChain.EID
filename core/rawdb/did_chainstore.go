@@ -644,8 +644,9 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 	tempTxData := new(did.DIDTransactionData)
 	tempTxData.TXID = txHash.String()
 	tempTxData.Operation = *credentialPayload
-	tempTxData.Timestamp = credentialPayload.CredentialDoc.ExpirationDate
-
+	if credentialPayload.CredentialDoc != nil {
+		tempTxData.Timestamp = credentialPayload.CredentialDoc.ExpirationDate
+	}
 	return tempTxData, nil
 }
 
@@ -666,12 +667,82 @@ func DeleteDIDLog(db ethdb.KeyValueStore, didLog *types.DIDLog) error {
 		if err := rollbackDeactivateDIDTx(db, []byte(id)); err != nil {
 			return err
 		}
-	case did.Declare_Verifiable_Credential_Operation, did.Revoke_Verifiable_Credential_Operation:
+	case did.Declare_Verifiable_Credential_Operation:
 		if err := rollbackVerifiableCredentialTx(db, []byte(id), didLog.TxHash); err != nil {
+			return err
+		}
+	case did.Revoke_Verifiable_Credential_Operation:
+		 if err := rollbackRevokeVerifiableCredentialTx(db, []byte(id), didLog.TxHash); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+//todo test
+//rollbackRevokeVerifiableCredentialTx
+func rollbackRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, credentialIDKey []byte, thash common.Hash) error {
+	key := []byte{byte(IX_VerifiableCredentialTXHash)}
+	key = append(key, credentialIDKey...)
+
+	data, err := db.Get(key)
+	if err != nil {
+		return err
+	}
+
+	r := bytes.NewReader(data)
+	// get the count of tx hashes
+	count, err := elaCom.ReadVarUint(r, 0)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("not exist")
+	}
+	// get the newest tx hash
+	var txHash elaCom.Uint256
+	if err := txHash.Deserialize(r); err != nil {
+		return err
+	}
+	// if not rollback the newest tx hash return error
+	hash, err := elaCom.Uint256FromBytes(thash.Bytes())
+	if err != nil {
+		return err
+	}
+	if !txHash.IsEqual(*hash) {
+		return errors.New("not rollback the last one")
+	}
+
+	//rollback operation (payload)
+	keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
+	keyPayload = append(keyPayload, txHash.Bytes()...)
+	db.Delete(keyPayload)
+
+	////rollback expires height
+	//err = rollbackVerifiableCredentialExpiresHeight(db, credentialIDKey)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = rollbackDIDVerifCredentials(db, credentialIDKey)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if count == 1 {
+	//	return db.Delete(key)
+	//}
+
+	buf := new(bytes.Buffer)
+	// write count
+	if err := elaCom.WriteVarUint(buf, count-1); err != nil {
+		return err
+	}
+	// write old hashes
+	if _, err := r.WriteTo(buf); err != nil {
+		return err
+	}
+	return db.Put(key, buf.Bytes())
 }
 
 //rollbackVerifiableCredentialTx
@@ -934,7 +1005,18 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 		return err
 	}
 	//todo check is ID is customized or did
+
 	id := payload.CredentialDoc.ID
+	contrl, uri := did.GetController(id)
+	ok, err :=isDID(db,contrl)
+	if err != nil {
+		return err
+	}
+	//customizedid
+	if !ok {
+		id = strings.ToLower(contrl) +uri
+	}
+
 	idKey := []byte(id)
 
 	verifyCred := payload.CredentialDoc
@@ -965,6 +1047,64 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 			return err
 		}
 	}
+
+	return nil
+}
+
+//persistVerifiableCredentialTx
+func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
+	blockHeight uint64, blockTimeStamp uint64, thash common.Hash) error {
+	var err error
+	var buffer *bytes.Reader
+	payload := new(did.DIDPayload)
+	buffer = bytes.NewReader(log.Data)
+	err = payload.Deserialize(buffer, did.DIDVersion)
+	if err != nil {
+		return err
+	}
+	//todo check is ID is customized or did
+	id := log.DID
+	contrl, uri := did.GetController(id)
+	isDID, err :=isDID(db,contrl)
+	if err != nil {
+		return err
+	}
+	//customizedid
+	if !isDID {
+		id = strings.ToLower(contrl) +uri
+	}
+
+
+	idKey := []byte(id)
+
+	//verifyCred := payload.CredentialDoc
+	//expiresHeight, err := TryGetExpiresHeight(verifyCred.ExpirationDate, blockHeight, blockTimeStamp)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if err := persistVerifiableCredentialExpiresHeight(db, idKey, expiresHeight); err != nil {
+	//	return err
+	//}
+	txhash, err := elaCom.Uint256FromBytes(thash.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := persisterifiableCredentialTxHash(db, idKey, txhash); err != nil {
+		return err
+	}
+	//didPayload is persisted in receipt
+	//if err := persistVerifiableCredentialPayload(db, txhash, payload); err != nil {
+	//	return err
+	//}
+	//only declare credentials will be stored
+	//reocrd owner's credential id
+	//if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation{
+	//	owner := getCredentialOwner(payload.CredentialDoc.CredentialSubject)
+	//	if err := persistDIDVerifCredentials(db, []byte(owner), verifyCred.ID); err != nil {
+	//		return err
+	//	}
+	//}
 
 	return nil
 }
@@ -1210,4 +1350,22 @@ func GetAllDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte,skip,limit i
 		credentials.Credentials = append(credentials.Credentials, credID)
 	}
 	return &credentials, nil
+}
+
+func isDID(db ethdb.KeyValueStore, ID string)(bool, error){
+	ret, err :=IsDID(db, ID)
+	//fmt.Println("checkDeactivateDID ID", ID)
+	if err!= nil {
+		if err.Error() == ERR_LEVELDB_NOT_FOUND.Error() || err.Error() == ERR_NOT_FOUND.Error()  {
+			//custDID
+			_, err := isCustomizeDIDExist(db, ID)
+			if err != nil {
+				return false, err
+			}
+			ret = false
+		}else{
+			return false, err
+		}
+	}
+	return  ret, nil
 }
