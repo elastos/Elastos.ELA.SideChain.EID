@@ -22,6 +22,7 @@ import (
 type EntryPrefix byte
 
 const (
+	IX_VerifiableCredentialRevoked       EntryPrefix = 0x86
 	IX_DIDVerifiableCredentials          EntryPrefix = 0x87
 	IX_ISDID                             EntryPrefix = 0x88
 	IX_DeactivateCustomizedDID           EntryPrefix = 0x89
@@ -1064,7 +1065,7 @@ func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDL
 	if err != nil {
 		return err
 	}
-	//todo check is ID is customized or did
+	// check is ID is customized or did
 	id := log.DID
 	contrl, uri := did.GetController(id)
 	isDID, err :=isDID(db,contrl)
