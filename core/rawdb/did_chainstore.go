@@ -584,7 +584,9 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 		}
 		tempTxData := new(did.VerifiableCredentialTxData)
 		tempTxData.TXID = txHash.String()
-		tempTxData.Timestamp = vcPayload.CredentialDoc.ExpirationDate
+		if  vcPayload.CredentialDoc != nil {
+			tempTxData.Timestamp = vcPayload.CredentialDoc.ExpirationDate
+		}
 		tempTxData.Operation = *vcPayload
 		transactionsData = append(transactionsData, *tempTxData)
 	}

@@ -60,6 +60,33 @@ func (rpcTxData *RpcCredentialTransactionData) FromCredentialTranasactionData(tx
 	return true
 }
 
+func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error){
+
+	idWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(idWithPrefix) {
+		//add prefix
+		idWithPrefix = did.DID_ELASTOS_PREFIX + idParam
+	}
+	buf := new(bytes.Buffer)
+	buf.WriteString(idWithPrefix)
+	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	if err != nil {
+
+		idWithPrefix= strings.ToLower(idWithPrefix)
+		buf.Reset()
+		//buf = new(bytes.Buffer)
+		buf.WriteString(idWithPrefix)
+		//try customized id
+		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+		if err != nil {
+			//if we can not find customized then it means non exist
+			return false , err
+		}
+		return  false , nil
+	}
+	return true, nil
+}
+
 func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param map[string]interface{}) (interface{}, error) {
 	idParam, ok := param["id"].(string)
 	if !ok {
@@ -68,17 +95,28 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	credentialID := idParam
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
-	txsData, _ := rawdb.GetAllVerifiableCredentialTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
-
+	txsData, err := rawdb.GetAllVerifiableCredentialTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	if err != nil {
+		return  nil , http.NewError(int(service.InvalidParams), "get credentialID failed")
+	}
 	issuer, ok := param["issuer"].(string)
+	isDID := false
 	var issuerID string
 	if issuer != "" {
 		issuerID = issuer
+		isDID, err =s.isDID(issuerID)
+		if err != nil {
+			return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
+		}
 	}
 
 	var rpcPayloadDid RpcCredentialPayloadDIDInfo
-	for index, txData := range txsData {
-		rpcPayloadDid.ID = txData.Operation.CredentialDoc.ID
+	for _, txData := range txsData {
+		if txData.Operation.CredentialDoc == nil&& txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation{
+			rpcPayloadDid.ID = txData.Operation.Payload
+		}else{
+			rpcPayloadDid.ID = txData.Operation.CredentialDoc.ID
+		}
 		err, timestamp := s.getTxTime(ctx, txData.TXID)
 		if err != nil {
 			continue
@@ -89,18 +127,23 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			continue
 		}
 
-		var isRevokeTransaction bool
-		if len(txsData) == 2 && index == 0 {
-			isRevokeTransaction = true
+		var onlyRevokeTX bool
+		//only revoke
+		if len(txsData) == 1 && txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation {
+			onlyRevokeTX = true
 		}
 
-		signer := txData.Operation.Proof.VerificationMethod
-		if isRevokeTransaction && issuerID == "" && signer == txData.Operation.CredentialDoc.Issuer {
-			continue
-		}
-
-		if isRevokeTransaction && issuerID != "" && signer != issuerID {
-			continue
+		if onlyRevokeTX{
+			if issuerID != ""{
+				controller , _ := did.GetController(txData.Operation.Payload)
+				if !isDID {
+					issuerID = strings.ToLower(issuerID)
+					controller = strings.ToLower(controller)
+				}
+				if issuerID != controller {
+					continue
+				}
+			}
 		}
 
 		tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
@@ -111,7 +154,12 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		rpcPayloadDid.Status = didapi.CredentialNonExist
 		rpcPayloadDid.ID = idParam
 	} else if len(txsData) == 1 {
-		rpcPayloadDid.Status = didapi.CredentialValid
+		if txsData[0].Operation.Header.Operation ==did.Declare_Verifiable_Credential_Operation {
+			rpcPayloadDid.Status = didapi.CredentialValid
+		}else{
+			rpcPayloadDid.Status = didapi.CredentialRevoked
+		}
+
 	} else if len(txsData) == 2 {
 		rpcPayloadDid.Status = didapi.CredentialRevoked
 	}
