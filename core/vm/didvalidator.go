@@ -2120,7 +2120,7 @@ func checkRevokeCustomizedDIDVerifiableCredential(evm *EVM, owner string, issuer
 		return nil
 	}
 
-	return errors.New("invalid signer of revoke payload")
+	return errors.New("revoke  checkIDVerifiableCredential failed")
 }
 
 func checkCustomizedDIDVerifiableCredential(evm *EVM, signer string, payload *did.DIDPayload) error {
@@ -2287,38 +2287,51 @@ func checkDIDVerifiableCredential(evm *EVM, signer string,
 	}
 	return nil
 }
-
-func checkIDVerifiableCredential(evm *EVM, owner string,
+//signer can be owner or issuer
+func checkIDVerifiableCredential(evm *EVM, signer string,
 	credPayload *did.DIDPayload) error {
-	//todo if this owner is customized this will be error
-	///////////////
-	//todo check expire  and deactive
-	bDID , err := isDID(evm, owner)
+	// check expire  and deactive
+	bDID , err := isDID(evm, signer)
 	if err!= nil {
 		return err
 	}
 	prefixDID,_ := GetDIDAndUri(credPayload.Proof.VerificationMethod)
 	controller := prefixDID
+
 	//customized did
 	if !bDID {
-		controller = strings.ToLower(owner)
+		controller = strings.ToLower(signer)
 	}
+	//make sure VerificationMethod is valid
 	ctrlInvalid, err := isControllerInvalid(evm,controller)
 	if  err!= nil{
+		log.Error("checkIDVerifiableCredential","err", err)
 		return err
 	}
-
 	if ctrlInvalid {
+		log.Error("checkIDVerifiableCredential the VerificationMethod controller is invalid")
 		return errors.New(" the VerificationMethod controller is invalid")
 	}
 	//////////////
-	IDOwner := owner
+	IDSigner := signer
 	if !bDID {
-		IDOwner = strings.ToLower(owner)
+		IDSigner = strings.ToLower(signer)
 	}
-	verifyDIDDoc, err := GetIDLastDoc(evm, IDOwner)
+	verifyDIDDoc, err := GetIDLastDoc(evm, IDSigner)
 	if err != nil {
+		log.Error("checkIDVerifiableCredential the GetIDLastDoc ", "err", err)
 		return err
+	}
+	//make sure signer is releated VerificationMethod.
+	//signer must be  VerificationMethod's controller
+	// if VerificationMethod is customizedid signer must one of his controller
+	if signer != prefixDID {
+		//check if signer if one of customdid 's controller
+		if !bDID {
+			if ! haveCtrl(verifyDIDDoc.Controller, prefixDID){
+				return  errors.New("VerificationMethod is not equal with signer")
+			}
+		}
 	}
 	publicKeyBase58 := ""
 	//todo test this
@@ -2331,6 +2344,7 @@ func checkIDVerifiableCredential(evm *EVM, owner string,
 			verifyDIDDoc.Authentication, verifyDIDDoc.Controller)
 	}
 	if publicKeyBase58 == "" {
+		log.Error("checkIDVerifiableCredential checkDIDVerifiableCredential Not find proper publicKeyBase58 ")
 		return errors.New("checkDIDVerifiableCredential Not find proper publicKeyBase58")
 	}
 
@@ -2353,14 +2367,18 @@ func checkIDVerifiableCredential(evm *EVM, owner string,
 	fmt.Println("publicKeyBase58:", publicKeyBase58)
 	fmt.Println("Signature:", credPayload.Proof.Signature)
 	if err != nil {
+		log.Error("checkIDVerifiableCredential payload VerifyByVM failed", "err", err)
 		return err
 	}
 	if !success {
-		return errors.New("[VM] Check Sig FALSE")
+		log.Error("checkIDVerifiableCredential payload VerifyByVM unsuccessed")
+		return errors.New("checkIDVerifiableCredential payload VerifyByVM unsuccessed")
 	}
 	//VerifiableCredentials inner(doc) proof
 	if credPayload.Header.Operation == did.Declare_Verifiable_Credential_Operation {
 		if err = checkCredential(evm, credPayload.CredentialDoc.VerifiableCredential, verifyDIDDoc); err != nil {
+			log.Error("checkIDVerifiableCredential checkCredential ", "err", err)
+
 			return err
 		}
 	}
