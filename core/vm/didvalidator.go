@@ -2080,28 +2080,37 @@ func checkDeclareVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	//1, if one credential is declear can not be declear again
 	//if one credential is revoke  can not be decalre or revoke again
 	// this is the receiver id  todo
-	owner := GetCredentialOwner(payload.CredentialDoc)
+	credOwner := GetCredentialOwner(payload.CredentialDoc)
 	credentialID := payload.CredentialDoc.ID
-	//issuer := getCredentialIssuer(receiverID, payload.CredentialDoc)
-	if err := checkVerifiableCredentialOperation(evm, &payload.Header, credentialID); err != nil {
+	issuer := getCredentialIssuer(credOwner, payload.CredentialDoc.VerifiableCredential)
+	if err := checkVerifiableCredentialOperation(evm, &payload.Header, credentialID,  issuer); err != nil {
 		return err
 	}
 
 
-	return checkIDVerifiableCredential(evm, owner, payload)
+	return checkIDVerifiableCredential(evm, credOwner, payload)
 }
 
 
 //1, if one credential is declear can not be declear again
 //if one credential is revoke  can not be decalre or revoke again
 func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
-	CredentialID string) error {
+	CredentialID , issuer string) error {
 	if header.Operation != did.Declare_Verifiable_Credential_Operation {
 		return errors.New("checkVerifiableCredentialOperation WRONG OPERATION")
 	}
+	// tod  CredentialID if it is belong to custdid must tolow
+	credOwner, uri := did.GetController(CredentialID)
+	ownerIsDID, err := isDID(evm,credOwner)
+	if err != nil {
+		return err
+	}
+	if !ownerIsDID{
+		CredentialID= strings.ToLower(credOwner) +uri
+	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(CredentialID)
-	_, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
+	_, err = evm.StateDB.GetCredentialExpiresHeight(buf.Bytes())
 	dbExist := true
 	if err != nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error() {
@@ -2110,8 +2119,61 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 			return err
 		}
 	}
+
 	if dbExist  {
 		return errors.New("VerifiableCredential WRONG OPERATION")
+	}else{
+
+		issuerIsDID, err := isDID(evm,issuer)
+		if err != nil {
+			return err
+		}
+		//even it is not exit check if it was revoke by owner or issuer
+		ctrls, err := evm.StateDB.GetRevokeCredentialCtrls(buf.Bytes())
+		if err != nil{
+			if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
+				return nil
+			}
+			return err
+		}
+		var ownerTxData *did.DIDTransactionData
+		var issuerTxData *did.DIDTransactionData
+
+		if !ownerIsDID {
+			if ownerTxData, err = GetLastDIDTxData(evm, strings.ToLower(credOwner)); err != nil {
+				return  err
+			}
+		}
+		if !issuerIsDID {
+			if issuerTxData, err = GetLastDIDTxData(evm, strings.ToLower(credOwner)); err != nil {
+				return  err
+			}
+		}
+		//iterator every ctrl check if owner or issuer have revok this credential
+		for _, ctrl := range ctrls{
+			if ownerIsDID {
+				if ctrl == credOwner {
+					return errors.New("VerifiableCredential was revoked by owner")
+				}
+			}else{
+				//check if customizedid owner have ctrl
+				if haveCtrl(ownerTxData.Operation.DIDDoc.Controller, ctrl) {
+					return errors.New("VerifiableCredential was revoked by owner controller")
+				}
+
+			}
+			if issuerIsDID {
+				if ctrl == issuer {
+					return errors.New("VerifiableCredential was revoked by issuer")
+				}
+			}else{
+				//check if customizedid owner have ctrl
+				if haveCtrl(issuerTxData.Operation.DIDDoc.Controller, ctrl) {
+					return errors.New("VerifiableCredential was revoked by issuer controller")
+				}
+			}
+		}
+
 	}
 	return nil
 }
@@ -2160,6 +2222,14 @@ func checkCustomizedDIDVerifiableCredential(evm *EVM, signer string, payload *di
 
 func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error {
 	credentialID := txPayload.Payload
+	credOwner, uri := did.GetController(credentialID)
+	ownerIsDID, err := isDID(evm,credOwner)
+	if err != nil {
+		return err
+	}
+	if !ownerIsDID{
+		credentialID= strings.ToLower(credOwner) +uri
+	}
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)

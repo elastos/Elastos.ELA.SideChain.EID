@@ -92,22 +92,42 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	if !ok {
 		return nil, http.NewError(int(service.InvalidParams), "id is null")
 	}
-	credentialID := idParam
+
+	credentialIDWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(credentialIDWithPrefix) {
+		//add prefix
+		credentialIDWithPrefix = did.DID_ELASTOS_PREFIX + idParam
+	}
+	controller ,uri := did.GetController(credentialIDWithPrefix)
+
+	isDID, err := s.isDID(controller)
+	if err != nil {
+		return nil, http.NewError(int(service.InvalidParams), "idParam controller not found")
+	}
+	//customizedid
+	if !isDID {
+		credentialIDWithPrefix = strings.ToLower(controller)+uri
+	}
+
+	credentialID := credentialIDWithPrefix
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
+	// credentialID can be customized
 	txsData, err := rawdb.GetAllVerifiableCredentialTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 		return  nil , http.NewError(int(service.InvalidParams), "get credentialID failed")
 	}
+
+	//check issuer
 	issuer, ok := param["issuer"].(string)
-	isDID := false
+	isDID = false
 	var issuerID string
 	if issuer != "" {
 		issuerID = issuer
-		isDID, err =s.isDID(issuerID)
-		if err != nil {
-			return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
-		}
+		//isDID, err =s.isDID(issuerID)
+		//if err != nil {
+		//	return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
+		//}
 	}
 
 	var rpcPayloadDid RpcCredentialPayloadDIDInfo
@@ -134,14 +154,22 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		}
 
 		if onlyRevokeTX{
-			if issuerID != ""{
-				controller , _ := did.GetController(txData.Operation.Payload)
-				if !isDID {
-					issuerID = strings.ToLower(issuerID)
-					controller = strings.ToLower(controller)
-				}
-				if issuerID != controller {
-					continue
+			// revoker is owner ignore issureid
+			revoker, _ := did.GetController(txData.Operation.Proof.VerificationMethod)
+			credeOwner, _ := did.GetController(rpcPayloadDid.ID)
+			if revoker !=credeOwner {
+				if issuerID != ""{
+					isDID, err =s.isDID(issuerID)
+					if err != nil {
+						return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
+					}
+					if !isDID {
+						issuerID = strings.ToLower(issuerID)
+						credeOwner = strings.ToLower(credeOwner)
+					}
+					if issuerID != revoker {
+						continue
+					}
 				}
 			}
 		}
