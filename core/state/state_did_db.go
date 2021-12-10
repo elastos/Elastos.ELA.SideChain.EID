@@ -173,3 +173,13 @@ func (self *StateDB) GetDIDExpiresHeight(idKey []byte)  (uint32, error) {
 	return rawdb.GetDIDExpiresHeight(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey)
 }
 
+func (self *StateDB) GetCredentialExpiresHeight(idKey []byte)  (uint32, error) {
+	return rawdb.GetCredentialExpiresHeight(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey)
+}
+
+func (self *StateDB) GetRevokeCredentialCtrls(credentIDKey []byte)  ([]string, error){
+	return rawdb.GetRevokeCredentialCtrls(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), credentIDKey)
+}
+
+
+

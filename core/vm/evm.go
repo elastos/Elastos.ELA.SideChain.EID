@@ -141,7 +141,7 @@ type EVM struct {
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
-// only ever be used *once*.
+// only ever be used *once*.statedb *state.StateDB
 func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
 	evm := &EVM{
 		Context:      ctx,

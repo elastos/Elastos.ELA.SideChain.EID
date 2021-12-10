@@ -81,6 +81,10 @@ type StateDB interface {
 
 	GetLastVerifiableCredentialTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
 
+	GetCredentialExpiresHeight(credentIDKey []byte)  (uint32, error)
+
+	GetRevokeCredentialCtrls(credentIDKey []byte) ([]string, error)
+
 	AddDIDLog(did string, operation string, doc []byte)
 
 	IsDID(did string)  (bool, error)
