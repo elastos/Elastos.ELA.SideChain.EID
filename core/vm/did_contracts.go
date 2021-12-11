@@ -1001,7 +1001,6 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 			return false32Byte, errors.New("createDIDVerify Payload is error")
 		}
 		p.DIDDoc = payloadInfo
-		////////////////////////
 		ticketBase64data, _ := base64url.DecodeString(p.Header.Ticket)
 		ticket := new(did.CustomIDTicket)
 		if err := json.Unmarshal(ticketBase64data, ticket); err != nil {
@@ -1009,7 +1008,6 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		}
 		p.DIDDoc = payloadInfo
 		p.Ticket= ticket
-		////////////////////////
 		if err := checkCustomizedDID(evm, p, gas); err != nil {
 			log.Error("checkCustomizedDID error", "error", err)
 			return false32Byte, err

@@ -371,6 +371,8 @@ func TestIDChainStore_CreateDIDTx(t *testing.T) {
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(0)
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
+
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	//2021 09 24 unix 1632450124
 	evm.Time =new(big.Int).SetInt64(1632450124)
@@ -794,6 +796,7 @@ func TestCustomizedDID(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 	evm.Time=big.NewInt(0)
 	buf := new(bytes.Buffer)
@@ -836,6 +839,8 @@ func TestCustomizedDIDMultSign(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
+
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 	statedb.AddDIDLog(idUser1, did.Create_DID_Operation, buf.Bytes())
@@ -1546,9 +1551,13 @@ func checkDIDTransaction(didpayload []byte, db *state.StateDB) error {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(0)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
+
 	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
+	evm.chainConfig.MaxExpiredHeight = new(big.Int).SetInt64(100)
+
 	evm.Time = &big.Int{}
 	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
 	if gas == math.MaxUint64 {
@@ -1811,6 +1820,8 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+	evm.chainConfig.MaxExpiredHeight = new(big.Int).SetInt64(100)
+
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 
 	statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
@@ -2018,6 +2029,8 @@ func TestCustomizedDIDTransferProofs(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
+
 	user1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
 	user1PrivateKeyStr := "3z2QFDJE7woSUzL6az9sCB1jkZtzfvEZQtUnYVgQEebS"
 	user1TX := getPayloadDIDInfo(user1, "create", user1IDDocByts, user1PrivateKeyStr)
@@ -2251,6 +2264,8 @@ func TestNewCustomizedDID(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
+
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
 
@@ -2695,13 +2710,6 @@ func TestCredentialTx2(t *testing.T)  {
 	statedb.RemoveDIDLog(tx3hash)
 
 
-	////verifableCredentialTx
-	//verifableCredentialTx := getIDVerifiableCredentialTx(id1, "declare", custIDVerifCredDocBytes, privateKey1Str)
-	//data, err := json.Marshal(verifableCredentialTx)
-	//assert.NoError(t, err)
-	//err = checkDIDTransaction(data, statedb)
-	//assert.NoError(t, err)
-
 	payload := new(did.DIDPayload)
 	if err := json.Unmarshal(declareCredDocPayload, payload); err != nil {
 	}
@@ -2717,10 +2725,10 @@ func TestCredentialTx2(t *testing.T)  {
 	assert.NoError(t, err4)
 
 	//credentialID2 := "did:elastos:lindalittlefish20#id_normal_issuer_normal_Lindaprofile07"
-	owner, uri := did.GetController(credentialID)
+	owner, _ := did.GetController(credentialID)
 	owner = strings.ToLower(owner)
 	credential, _ :=rawdb.GetAllDIDVerifCredentials(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore),[]byte(owner),0, 100)
 	assert.EqualValues(t, len(credential.Credentials), 1)
-	storedCred := owner+uri
-	assert.EqualValues(t, credential.Credentials[0], storedCred)
+	//expectedCred := owner+uri
+	assert.EqualValues(t, credential.Credentials[0], credentialID)
 }
