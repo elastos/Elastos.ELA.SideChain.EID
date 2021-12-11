@@ -1589,17 +1589,14 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "testnet", "geth")
 		}
-
-		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
-			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(1)
-		}
-
-		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
-			cfg.DocArraySortHeight =  new(big.Int).SetUint64(1)
-		}
-
 		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
 			cfg.DynamicArbiterHeight = 1
+		}
+		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
+			cfg.DocArraySortHeight = new(big.Int).SetUint64(1)
+		}
+		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
+			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(1)
 		}
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
@@ -1673,6 +1670,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 		}
 	}
+	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
+
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.
