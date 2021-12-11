@@ -92,6 +92,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	if !ok {
 		return nil, http.NewError(int(service.InvalidParams), "id is null")
 	}
+	var rpcPayloadDid RpcCredentialPayloadDIDInfo
 
 	credentialIDWithPrefix := idParam
 	if !rawdb.IsURIHasPrefix(credentialIDWithPrefix) {
@@ -115,7 +116,10 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	// credentialID can be customized
 	txsData, err := rawdb.GetAllVerifiableCredentialTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
-		return  nil , http.NewError(int(service.InvalidParams), "get credentialID failed")
+		rpcPayloadDid.Status = didapi.CredentialNonExist
+		rpcPayloadDid.ID = idParam
+		//http.NewError(int(service.InvalidParams), "get credentialID failed"
+		return  rpcPayloadDid , nil
 	}
 
 	//check issuer
@@ -130,7 +134,6 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		//}
 	}
 
-	var rpcPayloadDid RpcCredentialPayloadDIDInfo
 	for _, txData := range txsData {
 		if txData.Operation.CredentialDoc == nil&& txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation{
 			rpcPayloadDid.ID = txData.Operation.Payload
