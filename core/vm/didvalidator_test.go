@@ -123,6 +123,7 @@ var (
 
 	headerPayloadBytes        []byte
 	changeDocPayload          []byte
+	declareCredDocPayload          []byte
 	issuerDocByts             []byte
 	docDocBytes               []byte
 	didDocPubKeyTest          []byte
@@ -155,6 +156,10 @@ var (
 
 	//doc slice sort
 	check2DocByte []byte
+
+	//veriable credential test
+	Lindalittlefish20DocByte []byte
+	Lindaprofile07DocByte []byte
 )
 
 const (
@@ -178,6 +183,8 @@ func init() {
 
 	headerPayloadBytes, _ = LoadJsonData("./testdata/customized_did_multi_controllers.json")
 	changeDocPayload, _ = LoadJsonData("./testdata/changedocpayload.json")
+	declareCredDocPayload, _ = LoadJsonData("./testdata/declareCreddocpayload.json")
+
 
 	issuerDocByts, _ = LoadJsonData("./testdata/issuer.json")
 	docDocBytes, _ = LoadJsonData("./testdata/document.json")
@@ -207,6 +214,10 @@ func init() {
 	barzIDDocByts, _ = LoadJsonData("./testdata/baz.id.json")
 	bazNewIDDocByts, _ = LoadJsonData("./testdata/baz.new.id.json")
 	check2DocByte, _ = LoadJsonData("./testdata/check2.json")
+
+	Lindalittlefish20DocByte, _ = LoadJsonData("./testdata/Lindalittlefish20.json")
+	Lindaprofile07DocByte, _ = LoadJsonData("./testdata/Lindaprofile07.json")
+
 }
 
 var didPayloadBytes = []byte(
@@ -1785,6 +1796,7 @@ func TestCreateMyOwnSign(t *testing.T) {
 		fmt.Println("error:", err)
 	}
 	dest.Write(b11)
+	os.Remove("test11.json")
 }
 
 func TestCustomizedDIDTransferSingleProof(t *testing.T) {
@@ -2223,11 +2235,14 @@ func TestDocSliceSort(t *testing.T) {
 	assert.NoError(t, err)
 
 }
+
+
 //new
 func TestNewCustomizedDID(t *testing.T) {
 	id1 := "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj"
 	privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ" //413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ
 	tx1 := getPayloadDIDInfo(id1, "create", id11DocByts, privateKey1Str)
+
 	outputPayloadToFile(tx1, "user2.dest.payload.json")
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
@@ -2248,7 +2263,8 @@ func TestNewCustomizedDID(t *testing.T) {
 	didParam.IsTest = true
 	tx3 := getCustomizedDIDDoc(id1, "create", customizedDIDDocSingleContrller, privateKey1Str)
 	//did:elastos:example
-	outputPayloadToFile(tx3, "did:elastos:example.json")
+	fileName := "did:elastos:example.json"
+	outputPayloadToFile(tx3, fileName)
 
 	receipt := getCreateDIDReceipt(*tx1)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
@@ -2258,6 +2274,9 @@ func TestNewCustomizedDID(t *testing.T) {
 	assert.NoError(t, err3)
 
 	didParam.IsTest = false
+	os.Remove(fileName)
+	os.Remove("user2.dest.payload.json")
+
 }
 
 
@@ -2587,3 +2606,121 @@ func TestSortDoc(t *testing.T){
 
 
 
+func TestCredentialTx(t *testing.T) {
+
+
+
+	payload := new(did.DIDPayload)
+	if err := json.Unmarshal(declareCredDocPayload, payload); err != nil {
+	}
+
+	payloadBase64, _ := base64url.DecodeString(payload.Payload)
+	credentialDoc := new(did.VerifiableCredentialDoc)
+	if err := json.Unmarshal(payloadBase64, credentialDoc); err != nil {
+	}
+	payload.CredentialDoc = credentialDoc
+
+
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+
+
+
+	{
+		//verifableCredentialTx := getIDVerifiableCredentialTx(id1, "declare", custIDVerifCredDocBytes, privateKey1Str)
+		//data, err := json.Marshal(verifableCredentialTx)
+		//assert.NoError(t, err)
+		//err = checkDIDTransaction(data, statedb)
+		//assert.NoError(t, err)
+
+		tx4Hash := common.HexToHash("0x3456")
+		credentialID := "did:elastos:Lindalittlefish20#id_normal_issuer_normal_Lindaprofile07"
+		buf := new(bytes.Buffer)
+		statedb.Prepare(tx4Hash, tx4Hash, 1)
+		payload.Serialize(buf, did.DIDVersion)
+		statedb.AddDIDLog(credentialID, did.Declare_Verifiable_Credential_Operation, buf.Bytes())
+		receipt := getDeclareDIDReceipt(*payload)
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx4Hash, 0, types.Receipts{receipt})
+		err4 := rawdb.PersistVerifiableCredentialTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx4Hash), 100, 123456, tx4Hash)
+		assert.NoError(t, err4)
+	}
+
+}
+
+func TestCredentialTx2(t *testing.T)  {
+	id1 := "did:elastos:ibTPLrp758SGtLCzLoiF4VQqCpT7cNCAdh"
+	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
+	tx1 := getPayloadDIDInfo(id1, "create", jianbinCtrl3PubKeyTest, privateKey1Str)
+
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+
+	buf := new(bytes.Buffer)
+	tx1.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+	receipt := getCreateDIDReceipt(*tx1)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
+	err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}),
+		100, 123456)
+	assert.NoError(t, err1)
+	statedb.RemoveDIDLog(common.Hash{})
+
+
+	//id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
+	//privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
+	//tx2 := getPayloadDIDInfo(id2, "create", issuerDocByts, privateKey2Str)
+	//
+	//buf = new(bytes.Buffer)
+	//tx2.Serialize(buf, did.DIDVersion)
+	//tx2hash := common.HexToHash("0x1234")
+	//statedb.Prepare(tx2hash, tx2hash, 1)
+	//statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+	//receipt = getCreateDIDReceipt(*tx2)
+	//rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx2hash, 0, types.Receipts{receipt})
+	//err2 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx2hash),
+	//	100, 123456)
+	//assert.NoError(t, err2)
+	//statedb.RemoveDIDLog(tx2hash)
+
+	//customized persist Lindalittlefish20
+	tx3hash := common.HexToHash("0x2345")
+	statedb.Prepare(tx3hash, tx3hash, 1)
+	CustomizedDIDTx1 := getCustomizedDIDTx(id1, "create", Lindalittlefish20DocByte, privateKey1Str)
+	buf = new(bytes.Buffer)
+	CustomizedDIDTx1.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+	receipt = getCreateDIDReceipt(*CustomizedDIDTx1)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx3hash, 0, types.Receipts{receipt})
+	err3 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx3hash),
+		100, 123456)
+	assert.NoError(t, err3)
+	statedb.RemoveDIDLog(tx3hash)
+
+
+	////verifableCredentialTx
+	//verifableCredentialTx := getIDVerifiableCredentialTx(id1, "declare", custIDVerifCredDocBytes, privateKey1Str)
+	//data, err := json.Marshal(verifableCredentialTx)
+	//assert.NoError(t, err)
+	//err = checkDIDTransaction(data, statedb)
+	//assert.NoError(t, err)
+
+	payload := new(did.DIDPayload)
+	if err := json.Unmarshal(declareCredDocPayload, payload); err != nil {
+	}
+	tx4Hash := common.HexToHash("0x3456")
+	credentialID := "did:elastos:Lindalittlefish20#id_normal_issuer_normal_Lindaprofile07"
+	buf = new(bytes.Buffer)
+	statedb.Prepare(tx4Hash, tx4Hash, 1)
+	payload.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog(credentialID, did.Declare_Verifiable_Credential_Operation, buf.Bytes())
+	receipt = getDeclareDIDReceipt(*payload)
+	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx4Hash, 0, types.Receipts{receipt})
+	err4 := rawdb.PersistVerifiableCredentialTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx4Hash), 100, 123456, tx4Hash)
+	assert.NoError(t, err4)
+
+	//credentialID2 := "did:elastos:lindalittlefish20#id_normal_issuer_normal_Lindaprofile07"
+	owner, uri := did.GetController(credentialID)
+	owner = strings.ToLower(owner)
+	credential, _ :=rawdb.GetAllDIDVerifCredentials(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore),[]byte(owner),0, 100)
+	assert.EqualValues(t, len(credential.Credentials), 1)
+	storedCred := owner+uri
+	assert.EqualValues(t, credential.Credentials[0], storedCred)
+}

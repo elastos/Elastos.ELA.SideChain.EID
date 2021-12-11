@@ -1245,8 +1245,6 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	if err != nil {
 		return err
 	}
-	//todo check is ID is customized or did
-
 	id := payload.CredentialDoc.ID
 	contrl, uri := did.GetController(id)
 	ok, err :=isDID(db,contrl)
@@ -1284,6 +1282,14 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	//reocrd owner's credential id
 	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation{
 		owner := getCredentialOwner(payload.CredentialDoc.CredentialSubject)
+		ok, err :=isDID(db,owner)
+		if err != nil {
+			return err
+		}
+		//customizedid
+		if !ok {
+			owner = strings.ToLower(owner)
+		}
 		if err := persistDIDVerifCredentials(db, []byte(owner), verifyCred.ID); err != nil {
 			return err
 		}
@@ -1549,7 +1555,7 @@ func rollbackDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte) error {
 	}
 	return db.Put(key, buf.Bytes())
 }
-
+//IX_DIDVerifiableCredentials
 func GetAllDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte,skip,limit int64) (*did.ListDIDVerifCreentials, error) {
 	key := []byte{byte(IX_DIDVerifiableCredentials)}
 	key = append(key, idKey...)
