@@ -1124,9 +1124,9 @@ func isControllerExpired(evm *EVM, id string )(bool, error)  {
 	//did = strings.ToLower(did)
 	id1 := []byte(id)
 	expiresHeight, err := evm.StateDB.GetDIDExpiresHeight(id1)
+	log.Debug("isControllerExpired", "id", id, "expiresHeight", expiresHeight)
 	if err != nil {
 		fmt.Println("isControllerExpired did ", id)
-
 		fmt.Println("isControllerExpired", err)
 		return true ,err
 	}
@@ -2481,47 +2481,11 @@ func checkIDVerifiableCredential(evm *EVM, signer string,
 	}else{
 		//// singer is customized
 		IDSigner = strings.ToLower(signer)
-		////make sure signer is valid
-		//ctrlInvalid, err := isControllerInvalid(evm,IDSigner)
-		//if  err!= nil{
-		//	log.Error("checkIDVerifiableCredential","err", err)
-		//	return err
-		//}
-		//if ctrlInvalid {
-		//	log.Error("checkIDVerifiableCredential the VerificationMethod controller is invalid")
-		//	return errors.New(" the VerificationMethod controller is invalid")
-		//}
-		////VerificationMethod can be one of  customized IDSigner controller
-		//vmController,_ := GetDIDAndUri(credPayload.Proof.VerificationMethod)
-		////controller := vmController
 		verifyDIDDoc, err = GetIDLastDoc(evm, IDSigner)
 		if err != nil {
 			log.Error("checkIDVerifiableCredential the GetIDLastDoc ", "err", err)
 			return err
 		}
-		////check VerificationMethod's controller invalide
-		//if vmController  !=  signer{
-		//	//check if signer if one of customdid 's controller
-		//	if !bDID {
-		//		if ! haveCtrl(verifyDIDDoc.Controller, vmController){
-		//			return  errors.New("VerificationMethod is not equal with signer")
-		//		}
-		//	}
-		//	////customized did
-		//	//if !bDID {
-		//	//	controller = strings.ToLower(signer)
-		//	//}
-		//	//make sure VerificationMethod is valid
-		//	ctrlInvalid, err = isControllerInvalid(evm,vmController)
-		//	if  err!= nil{
-		//		log.Error("checkIDVerifiableCredential","err", err)
-		//		return err
-		//	}
-		//	if ctrlInvalid {
-		//		log.Error("checkIDVerifiableCredential the VerificationMethod controller is invalid")
-		//		return errors.New(" the VerificationMethod controller is invalid")
-		//	}
-		//}
 		ctrlInvalid, err :=checkCustDIDInvalid(evm,signer, credPayload.Proof.VerificationMethod, verifyDIDDoc.Controller)
 		if  err!= nil{
 			log.Error("checkIDVerifiableCredential","err", err)
@@ -2534,53 +2498,6 @@ func checkIDVerifiableCredential(evm *EVM, signer string,
 
 	}
 
-	//if !bDID {
-	//	IDSigner = strings.ToLower(signer)
-	//}
-	////make sure signer is valid
-	//ctrlInvalid, err := isControllerInvalid(evm,IDSigner)
-	//if  err!= nil{
-	//	log.Error("checkIDVerifiableCredential","err", err)
-	//	return err
-	//}
-
-	////VerificationMethod can be customized ctrl
-	////check VerificationMethod controller is valid
-	//vmController,_ := GetDIDAndUri(credPayload.Proof.VerificationMethod)
-	//controller := vmController
-	//
-	////customized did
-	//if !bDID {
-	//	controller = strings.ToLower(signer)
-	//}
-	////make sure VerificationMethod is valid
-	//ctrlInvalid, err = isControllerInvalid(evm,controller)
-	//if  err!= nil{
-	//	log.Error("checkIDVerifiableCredential","err", err)
-	//	return err
-	//}
-	//if ctrlInvalid {
-	//	log.Error("checkIDVerifiableCredential the VerificationMethod controller is invalid")
-	//	return errors.New(" the VerificationMethod controller is invalid")
-	//}
-	////////////////
-	//
-	//verifyDIDDoc, err := GetIDLastDoc(evm, IDSigner)
-	//if err != nil {
-	//	log.Error("checkIDVerifiableCredential the GetIDLastDoc ", "err", err)
-	//	return err
-	//}
-	////make sure signer is releated VerificationMethod.
-	////signer must be  VerificationMethod's controller
-	//// if VerificationMethod is customizedid signer must one of his controller
-	//if vmController  !=  signer{
-	//	//check if signer if one of customdid 's controller
-	//	if !bDID {
-	//		if ! haveCtrl(verifyDIDDoc.Controller, vmController){
-	//			return  errors.New("VerificationMethod is not equal with signer")
-	//		}
-	//	}
-	//}
 	publicKeyBase58 := ""
 	//todo test this
 	//if is did
