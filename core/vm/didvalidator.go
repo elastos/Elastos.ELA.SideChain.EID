@@ -2099,16 +2099,6 @@ func checkCredentialTX(evm *EVM, payload *did.DIDPayload) error {
 		}
 	}
 
-	//todo check valid
-	//didWithPrefix,_ := GetDIDAndUri(payload.CredentialDoc.Proof.VerificationMethod)
-	//ctrlInvalid, err := isControllerInvalid(evm,didWithPrefix)
-	//if  err!= nil{
-	//	return err
-	//}
-	//if ctrlInvalid {
-	//	return errors.New(" the VerificationMethod controller is invalid")
-	//}
-
 	switch payload.Header.Operation {
 	case did.Declare_Verifiable_Credential_Operation:
 		return checkDeclareVerifiableCredential(evm, payload)
@@ -2123,6 +2113,9 @@ func checkDeclareVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	//1, if one credential is declear can not be declear again
 	//if one credential is revoke  can not be decalre or revoke again
 	// this is the receiver id  todo
+	if err := checkExpires(payload.CredentialDoc.VerifiableCredential.ExpirationDate, evm.Time); err != nil {
+		return  err
+	}
 	credOwner := GetCredentialOwner(payload.CredentialDoc.CredentialSubject)
 	credentialID := payload.CredentialDoc.ID
 	issuer := getCredentialIssuer(credOwner, payload.CredentialDoc.VerifiableCredential)
