@@ -1290,6 +1290,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 		if !ok {
 			owner = strings.ToLower(owner)
 		}
+		fmt.Println("PersistVerifiableCredentialTx","owner", owner, "verifyCred.ID", verifyCred.ID)
 		if err := persistDIDVerifCredentials(db, []byte(owner), verifyCred.ID); err != nil {
 			return err
 		}
