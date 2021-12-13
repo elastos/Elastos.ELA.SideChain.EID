@@ -250,7 +250,7 @@ func PersistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
 
 // key                                                    value
 //IX_VerifiableCredentialRevoked+ credentialID             controller
-func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte, controller string) error {
+func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte, revokerID string) error {
 	key := []byte{byte(IX_VerifiableCredentialRevoked)}
 	key = append(key, credentialID...)
 
@@ -264,10 +264,10 @@ func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte,
 		if err := elaCom.WriteVarUint(buf, 1); err != nil {
 			return err
 		}
-		err = elaCom.WriteVarString(buf, controller)
+		err = elaCom.WriteVarString(buf, revokerID)
 		if err != nil {
-			return errors.New(fmt.Sprintf( "[persistVerifyCredentialRevoked], WriteVarString controller %s error ",
-				controller))
+			return errors.New(fmt.Sprintf( "[persistVerifyCredentialRevoked], WriteVarString revokerID %s error ",
+				revokerID))
 		}
 		return db.Put(key, buf.Bytes())
 	}
@@ -287,10 +287,10 @@ func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte,
 		return err
 	}
 
-	err = elaCom.WriteVarString(buf, controller)
+	err = elaCom.WriteVarString(buf, revokerID)
 	if err != nil {
-		return errors.New(fmt.Sprintf( "[persistDIDVerifCredentials], WriteVarString2 controller %s error ",
-			controller))
+		return errors.New(fmt.Sprintf( "[persistDIDVerifCredentials], WriteVarString2 revokerID %s error ",
+			revokerID))
 	}
 
 	// write old credential ids
@@ -1311,19 +1311,22 @@ func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDL
 		return err
 	}
 	// check is ID is customized or did
-	id := log.DID
-	contrl, uri := did.GetController(id)
-	isDID, err :=isDID(db,contrl)
+	credID := log.DID
+	contrl, uri := did.GetController(credID)
+	isOwnerDID, err :=isDID(db,contrl)
 	if err != nil {
 		return err
 	}
 	//customizedid
-	if !isDID {
-		id = strings.ToLower(contrl) +uri
+	if !isOwnerDID {
+		credID = strings.ToLower(contrl) +uri
 	}
 
+	revokerID, uri := did.GetController(payload.Proof.VerificationMethod)
 
-	idKey := []byte(id)
+
+
+	credIDKey := []byte(credID)
 
 	//verifyCred := payload.CredentialDoc
 	//expiresHeight, err := TryGetExpiresHeight(verifyCred.ExpirationDate, blockHeight, blockTimeStamp)
@@ -1338,10 +1341,12 @@ func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDL
 	if err != nil {
 		return err
 	}
-	if err := persisterifiableCredentialTxHash(db, idKey, txhash); err != nil {
+	if err := persisterifiableCredentialTxHash(db, credIDKey, txhash); err != nil {
 		return err
 	}
-	persistVerifyCredentialRevoked(db, idKey,contrl)
+	fmt.Println("PersistRevokeVerifiableCredentialTx", "credID", credID, "revokerID", revokerID)
+
+	persistVerifyCredentialRevoked(db, credIDKey,revokerID)
 	//didPayload is persisted in receipt
 	//if err := persistVerifiableCredentialPayload(db, txhash, payload); err != nil {
 	//	return err

@@ -2120,9 +2120,10 @@ func checkDeclareVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	//1, if one credential is declear can not be declear again
 	//if one credential is revoke  can not be decalre or revoke again
 	// this is the receiver id  todo
-	if err := checkExpires(payload.CredentialDoc.VerifiableCredential.ExpirationDate, evm.Time); err != nil {
-		return  err
-	}
+	//if err := checkExpires(payload.CredentialDoc.VerifiableCredential.ExpirationDate, evm.Time); err != nil {
+	//	return  err
+	//}
+
 	credOwner := GetCredentialOwner(payload.CredentialDoc.CredentialSubject)
 	credentialID := payload.CredentialDoc.ID
 	issuer := getCredentialIssuer(credOwner, payload.CredentialDoc.VerifiableCredential)
@@ -2200,6 +2201,9 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 				}
 			}else{
 				//check if customizedid owner have ctrl
+				if ctrl == credOwner {
+					return errors.New("VerifiableCredential was revoked by owner")
+				}
 				if haveCtrl(ownerTxData.Operation.DIDDoc.Controller, ctrl) {
 					return errors.New("VerifiableCredential was revoked by owner controller")
 				}
@@ -2210,6 +2214,9 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 					return errors.New("VerifiableCredential was revoked by issuer")
 				}
 			}else{
+				if ctrl == issuer {
+					return errors.New("VerifiableCredential was revoked by issuer")
+				}
 				//check if customizedid owner have ctrl
 				if haveCtrl(issuerTxData.Operation.DIDDoc.Controller, ctrl) {
 					return errors.New("VerifiableCredential was revoked by issuer controller")
@@ -2301,8 +2308,8 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 	}else{
 		controler ,_ := did.GetController(txPayload.Proof.VerificationMethod)
 		//revoke credentialID who is not exist
-		if err := checkIDVerifiableCredential(evm, controler,txPayload); err == nil {
-			return nil
+		if err := checkIDVerifiableCredential(evm, controler,txPayload); err != nil {
+			return err
 		}
 	}
 
