@@ -962,12 +962,9 @@ func IsLetterOrNumber(s string) bool {
 	return isLetterOrNumber(s)
 }
 
-
-func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
-	//if spv.SpvService == nil && didParam.IsTest != true {
-	//	return errors.New("spv.SpvService == nil && didParam.IsTest != true")
-	//}
-	lowID := strings.ToLower(customizedDIDPayload.DIDDoc.ID)
+// checkCu
+func checkCustIDOverMaxExpireHeight(evm *EVM,custID, operation string)error{
+	lowID := strings.ToLower(custID)
 	//
 	idKey := []byte(lowID)
 	expiredHeight, err := evm.StateDB.GetDIDExpiresHeight(idKey)
@@ -982,9 +979,9 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		expiresHeightInt :=new(big.Int).SetUint64(uint64(expiredHeight))
 		nextRegisterTime  := new(big.Int).Add(expiresHeightInt, evm.chainConfig.MaxExpiredHeight)
 		//not reached max expired hegith
-		if evm.BlockNumber.Cmp(nextRegisterTime) < 0 {
+		if evm.BlockNumber.Cmp(nextRegisterTime) <= 0 {
 			//can not be create
-			if customizedDIDPayload.Header.Operation == did.Create_DID_Operation{
+			if operation == did.Create_DID_Operation{
 				return errors.New("customizedid was already created")
 			}
 			//for update or transfer
@@ -993,13 +990,23 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 				return errors.New("ID is already deactivated")
 			}
 		}else{
-		 	//	over max expired height
-			if customizedDIDPayload.Header.Operation != did.Create_DID_Operation{
+			//	over max expired height
+			if operation!= did.Create_DID_Operation{
 				return errors.New("customizedid was already reached max expired time .Create it again")
 			}
 		}
 	}
+	return nil
+}
 
+func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint64) error {
+	if spv.SpvService == nil && didParam.IsTest != true {
+		return errors.New("spv.SpvService == nil && didParam.IsTest != true")
+	}
+	doc := customizedDIDPayload.DIDDoc
+	if err := checkCustIDOverMaxExpireHeight(evm, doc.ID, customizedDIDPayload.Header.Operation); err != nil {
+		return err
+	}
 
 
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
@@ -1038,7 +1045,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 
 	//1, if it is "create" use now m/n and public key otherwise use last time m/n and public key
 	//var verifyDoc *id.DIDDoc
-	doc := customizedDIDPayload.DIDDoc
+
 	//var verifyDoc *did.DIDDoc
 	//if customizedDIDPayload.Header.Operation == did.Create_DID_Operation ||
 	//	customizedDIDPayload.Header.Operation == did.Transfer_DID_Operation {

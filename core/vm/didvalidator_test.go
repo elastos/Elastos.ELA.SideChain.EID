@@ -2716,3 +2716,108 @@ func TestCredentialTx2(t *testing.T)  {
 	assert.EqualValues(t, len(credential.Credentials), 1)
 	assert.EqualValues(t, credential.Credentials[0], credentialID)
 }
+
+
+func Test_checkCustIDOverMaxExpireHeight(t *testing.T) {
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+	evm.chainConfig.MaxExpiredHeight = big.NewInt(5)
+
+	type args struct {
+		evm       *EVM
+		custID    string
+		operation string
+		curBlockNumber uint64
+		expiredHeight uint64
+		deactivated bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			//cur Block number 7 > expired height 1+MaxExpiredHeight 5   so can recreate
+			"over max expired height and recreate  ",
+			args{evm,
+				"cust1",
+				"create",
+				7,
+				1,
+				false},
+			false,
+		},
+		// TODO: Add test cases.
+		{
+			//cur Block number 7 > expired height 1+MaxExpiredHeight 5   so must recreate
+			"over max expired height and update  ",
+			args{evm,
+				"cust1",
+				"update",
+				7,
+				1,
+				false},
+			true,
+		},
+		// TODO: Add test cases.
+		{
+			//cur Block number 7 <= expired height 2+MaxExpiredHeight 5   so can not recreate
+			"not over max expired height and recreate  ",
+			args{evm,
+				"cust1",
+				"create",
+				7,
+				2,
+				false},
+			true,
+		},
+		{
+			//cur Block number 7 <= expired height 2+MaxExpiredHeight 5   so can update
+			"not over max expired height and update  ",
+			args{evm,
+				"cust1",
+				"update",
+				7,
+				2,
+			false},
+			false,
+		},
+		{
+			//cur Block number 7 <= expired height 2+MaxExpiredHeight 5  but deactiveated so can not update
+			"not over max expired height and update and deactivated ",
+			args{evm,
+				"cust1",
+				"update",
+				7,
+				2,
+			true},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lowerID := strings.ToLower(tt.args.custID)
+
+			db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
+			evm.BlockNumber = new(big.Int).SetUint64(tt.args.curBlockNumber)
+
+			rawdb.PersistIsDID(db, []byte(lowerID), 0)
+			if tt.args.deactivated {
+				hash3 := common.HexToHash("0x2345")
+				buf := new(bytes.Buffer)
+				txDeactivate := getDeactivateCustomizedDIDTx(lowerID, "id1", "privateKey1Str")
+				txDeactivate.Serialize(buf, did.DIDVersion)
+				statedb.Prepare(hash3, hash3, 1)
+
+				statedb.AddDIDLog(lowerID, did.Deactivate_DID_Operation, buf.Bytes())
+				rawdb.PersistDeactivateDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore),
+					statedb.GetDIDLog(hash3), hash3)
+			}
+			rawdb.PersistRegisterDIDExpiresHeight(db, []byte(lowerID), tt.args.expiredHeight )
+			if err := checkCustIDOverMaxExpireHeight(tt.args.evm, tt.args.custID, tt.args.operation); (err != nil)  != tt.wantErr {
+				t.Errorf("checkCustIDOverMaxExpireHeight() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
