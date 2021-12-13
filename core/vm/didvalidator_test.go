@@ -1051,6 +1051,7 @@ func TestRevokeVerifiableCredentialTx(t *testing.T) {
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+	evm.Time=big.NewInt(0)
 
 	privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
 	id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
@@ -1292,7 +1293,7 @@ func TestCustomizedDIDVerifiableCredentialTx2(t *testing.T) {
 	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 	evm.BlockNumber = new(big.Int).SetInt64(1)
-
+	evm.Time = new(big.Int).SetInt64(0)
 	hash := common.Hash{}
 	id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
 	privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
@@ -2679,22 +2680,6 @@ func TestCredentialTx2(t *testing.T)  {
 	statedb.RemoveDIDLog(common.Hash{})
 
 
-	//id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
-	//privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
-	//tx2 := getPayloadDIDInfo(id2, "create", issuerDocByts, privateKey2Str)
-	//
-	//buf = new(bytes.Buffer)
-	//tx2.Serialize(buf, did.DIDVersion)
-	//tx2hash := common.HexToHash("0x1234")
-	//statedb.Prepare(tx2hash, tx2hash, 1)
-	//statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
-	//receipt = getCreateDIDReceipt(*tx2)
-	//rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx2hash, 0, types.Receipts{receipt})
-	//err2 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx2hash),
-	//	100, 123456)
-	//assert.NoError(t, err2)
-	//statedb.RemoveDIDLog(tx2hash)
-
 	//customized persist Lindalittlefish20
 	tx3hash := common.HexToHash("0x2345")
 	statedb.Prepare(tx3hash, tx3hash, 1)
@@ -2709,7 +2694,8 @@ func TestCredentialTx2(t *testing.T)  {
 	assert.NoError(t, err3)
 	statedb.RemoveDIDLog(tx3hash)
 
-
+	err := checkDIDTransaction(declareCredDocPayload, statedb)
+	assert.NoError(t, err)
 	payload := new(did.DIDPayload)
 	if err := json.Unmarshal(declareCredDocPayload, payload); err != nil {
 	}
@@ -2724,11 +2710,9 @@ func TestCredentialTx2(t *testing.T)  {
 	err4 := rawdb.PersistVerifiableCredentialTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx4Hash), 100, 123456, tx4Hash)
 	assert.NoError(t, err4)
 
-	//credentialID2 := "did:elastos:lindalittlefish20#id_normal_issuer_normal_Lindaprofile07"
 	owner, _ := did.GetController(credentialID)
 	owner = strings.ToLower(owner)
 	credential, _ :=rawdb.GetAllDIDVerifCredentials(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore),[]byte(owner),0, 100)
 	assert.EqualValues(t, len(credential.Credentials), 1)
-	//expectedCred := owner+uri
 	assert.EqualValues(t, credential.Credentials[0], credentialID)
 }
