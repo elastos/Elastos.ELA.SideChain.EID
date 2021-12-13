@@ -75,7 +75,7 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 		return err
 	}
 
-	if err := persistRegisterDIDExpiresHeight(db, idKey, expiresHeight); err != nil {
+	if err := PersistRegisterDIDExpiresHeight(db, idKey, expiresHeight); err != nil {
 		return err
 	}
 
@@ -93,7 +93,7 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	//}
 
 
-	if err := persistIsDID(db, idKey, isDID); err != nil {
+	if err := PersistIsDID(db, idKey, isDID); err != nil {
 		return err
 	}
 	fmt.Println("PersistRegisterDIDTx end")
@@ -101,7 +101,7 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	return nil
 }
 
-func persistIsDID(db ethdb.KeyValueStore, idKey []byte, isDID uint64) error {
+func PersistIsDID(db ethdb.KeyValueStore, idKey []byte, isDID uint64) error {
 	key := []byte{byte(IX_ISDID)}
 	key = append(key, idKey...)
 
@@ -202,7 +202,7 @@ func  GetCredentialExpiresHeight(db ethdb.KeyValueStore,idKey []byte) (uint32, e
 	return expiresBlockHeight, nil
 }
 
-func persistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
+func PersistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
 	expiresHeight uint64) error {
 	key := []byte{byte(IX_DIDExpiresHeight)}
 	key = append(key, idKey...)
