@@ -1,0 +1,43 @@
+{
+  "id":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg",
+  "publicKey":[
+    {
+      "id":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg#primary",
+      "type":"ECDSAsecp256r1",
+      "controller":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg",
+      "publicKeyBase58":"uPECyhNktwqha88dpfg3nYQ16Kgr9EjfMeYCE6JEdREs"
+    }
+  ],
+  "authentication":[
+    "did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg#primary"
+  ],
+  "verifiableCredential":[
+    {
+      "id":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg#cred-1",
+      "type":[
+        "BasicProfileCredential",
+        "SelfClaimedCredential",
+        "VerifiableCredential"
+      ],
+      "issuer":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg",
+      "issuanceDate":"2021-12-08T05:37:36Z",
+      "expirationDate":"2026-12-08T05:37:18Z",
+      "credentialSubject":{
+        "id":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg",
+        "bio":"Crypto & NFT enthusiast"
+      },
+      "proof":{
+        "type":"ECDSAsecp256r1",
+        "verificationMethod":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg#primary",
+        "signature":"BMYY2fe0rZdF1Fosqfw7S5QuI37VUOPcgDjXHzcqemndRzEU3GB3k4UyIaUyHNwQd4SXwBQ0fx5LivTgzFejPw"
+      }
+    }
+  ],
+  "expires":"2026-12-08T05:37:18Z",
+  "proof":{
+    "type":"ECDSAsecp256r1",
+    "created":"2021-12-08T05:37:36Z",
+    "creator":"did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg#primary",
+    "signatureValue":"AI-q7FOOUmCXbgvkNOPksTBVZPvvE4N7qbTgyNtJJvj9KYT3EPCS4vljGTS3kdWy_8pto2ofn133NyfhggvCSA"
+  }
+}

@@ -4,8 +4,52 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
+	"strings"
 )
+
+//func JSONMarshal2(t interface{}) ([]byte, error) {
+//	bf := bytes.NewBuffer([]byte{})
+//	jsonEncoder := json.NewEncoder(bf)
+//	jsonEncoder.SetEscapeHTML(false)
+//	jsonEncoder.Encode(t)
+//	fmt.Println("JSONMarshal2", bf.String())
+//	str := strings.Replace(bf.String(), "\n", "", -1)
+//	return []byte(str) ,nil
+//}
+
+func JSONMarshal2(t interface{}) ([]byte, error) {
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(false)
+	jsonEncoder.Encode(t)
+	fmt.Println("JSONMarshal2", bf.String())
+	str := strings.Replace(bf.String(), "\n", "", -1)
+	return []byte(str) ,nil
+}
+//func MyJsonMarshal(v interface{}) ([]byte, error) {
+//	e := json.newEncodeState()
+//
+//	err := e.marshal(v, json.encOpts{escapeHTML: true})
+//	if err != nil {
+//		return nil, err
+//	}
+//	buf := append([]byte(nil), e.Bytes()...)
+//
+//	e.Reset()
+//	json.encodeStatePool.Put(e)
+//
+//	return buf, nil
+//}
+
+func JSONMarshal(t interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(t)
+	return buffer.Bytes(), err
+}
 
 func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 	var b []byte
@@ -373,7 +417,8 @@ func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) 
 		if err != nil {
 			return err
 		}
-		idv, err := json.Marshal(data.value)
+		//JSONMarshal2
+		idv, err := JSONMarshal2(data.value)
 		if err != nil {
 			return err
 		}
@@ -439,7 +484,8 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 		if err != nil {
 			return err
 		}
-		idv, err := json.Marshal(data.value)
+		//
+		idv, err := JSONMarshal2(data.value)
 		if err != nil {
 			return err
 		}
