@@ -204,7 +204,6 @@ func (p *DIDPayload) Deserialize(r io.Reader, version byte) error {
 		}
 		p.DIDDoc = DIDDoc
 	case Transfer_DID_Operation:
-		////////////
 		pBytes, err := base64url.DecodeString(p.Payload)
 		if err != nil {
 			return errors.New("[DIDPayload], payload decode failed")
@@ -214,7 +213,6 @@ func (p *DIDPayload) Deserialize(r io.Reader, version byte) error {
 			return errors.New("[DIDPayload], payload unmarshal failed")
 		}
 		p.DIDDoc = DIDDoc
-		//////////////////
 		tBytes, err := base64url.DecodeString(p.Header.Ticket)
 		if err != nil {
 			return errors.New("[DIDPayload], ticket decode failed")

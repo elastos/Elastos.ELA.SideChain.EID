@@ -176,9 +176,6 @@ func (c *DIDPayloadData) GetData() []byte {
 	if err != nil {
 		return nil
 	}
-	//var b []byte
-	//buf := bytes.NewBuffer(b)
-	//json.HTMLEscape(buf,data)
 	return data
 }
 

@@ -761,12 +761,6 @@ func getPayloadDeactivateDIDFin(id, PayloadVMPubKeyURI,PayloadVMPriKey  string) 
 	fmt.Println("getPayloadDeactivateDIDFin PayloadVMPriKey", PayloadVMPriKey)
 	fmt.Println("getPayloadDeactivateDIDFin GetData", string(p.GetData()))
 	fmt.Println("getPayloadDeactivateDIDFin Signature", p.Proof.Signature)
-
-	// error pubkey i1HcDgXEZD4xHhHffEkuqLbCRQkRvKTNUdVSmgns8UyB private
-	//publickey := base58.Decode("i1HcDgXEZD4xHhHffEkuqLbCRQkRvKTNUdVSmgns8UyB")
-	//pubkey, err := elaCrypto.DecodePoint(publickey)
-	//err = elaCrypto.Verify(*pubkey, p.GetData(), sign)
-	//fmt.Println("Verify err ",err)
 	return p
 }
 
@@ -980,10 +974,6 @@ func getIDVerifiableCredentialTx(id string, didDIDPayload string, docBytes []byt
 
 //didDIDPayload must be create or update
 func getRevokeVerifiableCredentialTx(VMKey ,  IDVerCre , privateKeyStr string) *did.DIDPayload {
-	//fmt.Println(" ---docBytes--- ", string(docBytes))
-	//info := new(did.VerifiableCredentialDoc)
-	//json.Unmarshal(docBytes, info)
-
 	p := &did.DIDPayload{
 		Header: did.Header{
 			Specification: "elastos/did/1.0",
@@ -1989,13 +1979,6 @@ func getCustomizedDIDTransferTx(id string, operation string, docBytes []byte, ti
 		DIDDoc: info,
 		Ticket: ticket,
 	}
-	///////////////////
-	//ticketBase64data, _ := base64url.DecodeString(p.Header.Ticket)
-	//ticket2 := new(did.CustomIDTicket)
-	//if err := json.Unmarshal(ticketBase64data, ticket2); err != nil {
-	//	fmt.Println("error ", err)
-	//}
-	/////////////////////
 	privateKey1 := base58.Decode(payloadPrivateKeyStr)
 	signTicket, _ := elaCrypto.Sign(privateKey1, p.GetData())
 	p.Proof.Signature = base64url.EncodeToString(signTicket)
@@ -2680,12 +2663,6 @@ func TestCredentialTx(t *testing.T) {
 
 
 	{
-		//verifableCredentialTx := getIDVerifiableCredentialTx(id1, "declare", custIDVerifCredDocBytes, privateKey1Str)
-		//data, err := json.Marshal(verifableCredentialTx)
-		//assert.NoError(t, err)
-		//err = checkDIDTransaction(data, statedb)
-		//assert.NoError(t, err)
-
 		tx4Hash := common.HexToHash("0x3456")
 		credentialID := "did:elastos:Lindalittlefish20#id_normal_issuer_normal_Lindaprofile07"
 		buf := new(bytes.Buffer)
