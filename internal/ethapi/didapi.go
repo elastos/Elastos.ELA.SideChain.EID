@@ -118,7 +118,6 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	if err != nil {
 		rpcPayloadDid.Status = didapi.CredentialNonExist
 		rpcPayloadDid.ID = idParam
-		//http.NewError(int(service.InvalidParams), "get credentialID failed"
 		return  rpcPayloadDid , nil
 	}
 
@@ -128,10 +127,6 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	var issuerID string
 	if issuer != "" {
 		issuerID = issuer
-		//isDID, err =s.isDID(issuerID)
-		//if err != nil {
-		//	return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
-		//}
 	}
 
 	for _, txData := range txsData {
@@ -162,13 +157,18 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			credeOwner, _ := did.GetController(rpcPayloadDid.ID)
 			if revoker !=credeOwner {
 				if issuerID != ""{
+					if !rawdb.IsURIHasPrefix(issuerID) {
+						//add prefix
+						issuerID = did.DID_ELASTOS_PREFIX + issuerID
+					}
 					isDID, err =s.isDID(issuerID)
 					if err != nil {
 						return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
 					}
+
 					if !isDID {
 						issuerID = strings.ToLower(issuerID)
-						credeOwner = strings.ToLower(credeOwner)
+						revoker = strings.ToLower(revoker)
 					}
 					if issuerID != revoker {
 						continue
@@ -216,7 +216,6 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 
 		idWithPrefix= strings.ToLower(idWithPrefix)
 		buf.Reset()
-		//buf = new(bytes.Buffer)
 		buf.WriteString(idWithPrefix)
 		//try customized id
 		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
@@ -236,10 +235,6 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 	if limit == 0{
 		limit = 100
 	}
-
-	//credentialID := idParam
-	//buf := new(bytes.Buffer)
-	//buf.WriteString(credentialID)
 	txsData, _ := rawdb.GetAllDIDVerifCredentials(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), int64(skip),
 		int64(limit))
 	return txsData, nil
