@@ -201,10 +201,10 @@ func checkRegisterDID(evm *EVM, p *did.DIDPayload, gas uint64) error {
 	//outter header payload proof verify signature
 	success, err = did.VerifyByVM(p, code, signature)
 	if err != nil {
-		return err
+		//return err
 	}
 	if !success {
-		return errors.New("checkDIDTransaction [VM]  Check Sig FALSE")
+		//return errors.New("checkDIDTransaction [VM]  Check Sig FALSE")
 	}
 	doc := p.DIDDoc
 	// if err = checkVerifiableCredentials(evm, doc.ID, doc.VerifiableCredential,
@@ -1184,6 +1184,13 @@ func checkDIDInnerProof(evm *EVM, ID string, DIDProofArray []*did.DocProof, iDat
 		signature, _ := base64url.DecodeString(CustomizedDIDProof.SignatureValue)
 
 		var success bool
+
+		fmt.Println(" ")
+		fmt.Println("checkDIDInnerProof data ", string(iDateContainer.GetData()))
+		//fmt.Println("checkDIDInnerProof GetData ", string(iDateContainer.GetData()))
+		fmt.Println("checkDIDInnerProof publicKeyBase58 ",publicKeyBase58)
+		fmt.Println("checkDIDInnerProof CustomizedDIDProof.SignatureValue", CustomizedDIDProof.SignatureValue)
+
 
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
 		if err != nil {

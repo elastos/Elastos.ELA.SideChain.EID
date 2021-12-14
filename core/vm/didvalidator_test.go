@@ -126,6 +126,8 @@ var (
 	declareCredDocPayload          []byte
 	issuerDocByts             []byte
 	docDocBytes               []byte
+	specialCharacterDocBytes               []byte
+
 	didDocPubKeyTest          []byte
 	jianbinCtrl1PubKeyTest          []byte
 	jianbinCtrl2PubKeyTest          []byte
@@ -188,6 +190,9 @@ func init() {
 
 	issuerDocByts, _ = LoadJsonData("./testdata/issuer.json")
 	docDocBytes, _ = LoadJsonData("./testdata/document.json")
+	specialCharacterDocBytes, _ = LoadJsonData("./testdata/special_character.json")
+
+
 
 	didDocPubKeyTest, _ = LoadJsonData("./testdata/diddocpubkeytest.json")
 	jianbinCtrl1PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl1.json")
@@ -1658,6 +1663,7 @@ func checkDIDTransactionAfterMigrateHeight(didpayload []byte, db *state.StateDB)
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xb445f9487bF570fF508eA9Ac320b59730e81e503"
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+	evm.chainConfig.CustomizeDIDHeight= new(big.Int).SetInt64(2)
 	evm.Time = &big.Int{}
 	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
 	if gas == math.MaxUint64 {
@@ -2282,7 +2288,6 @@ func TestDocSliceSort(t *testing.T) {
 	assert.NoError(t, err)
 
 }
-
 
 //new
 func TestNewCustomizedDID(t *testing.T) {
@@ -2957,5 +2962,17 @@ func TestDecalreAfterRevokeTx(t *testing.T) {
 
 	ctrls,err := rawdb.GetRevokeCredentialCtrls(db, []byte("did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile"))
 	fmt.Println(ctrls)
+
+}
+func TestMainNetCheckRegisterDID(t *testing.T) {
+	id1 := "did:elastos:id5PQX43gxxxDiii2fhhSEGguYpZbHdBNg"
+	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
+	tx1 := getPayloadDIDInfo(id1, "create", specialCharacterDocBytes, privateKey1Str)
+
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	docBytes, err := json.Marshal(tx1)
+	assert.NoError(t, err)
+	err3 := checkDIDTransactionAfterMigrateHeight(docBytes, statedb)
+	assert.NoError(t, err3)
 
 }
