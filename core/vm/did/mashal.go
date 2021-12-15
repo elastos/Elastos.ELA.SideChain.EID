@@ -386,7 +386,8 @@ func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) 
 			return err
 		}
 		//JSONMarshal
-		idv, err := JSONMarshal(data.value)
+		idv, err := json.Marshal(data.value)
+		//idv, err := JSONMarshal(data.value)
 		if err != nil {
 			return err
 		}
@@ -453,7 +454,8 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 			return err
 		}
 		//
-		idv, err := JSONMarshal(data.value)
+		idv, err := json.Marshal(data.value)
+		//idv, err := JSONMarshal(data.value)
 		if err != nil {
 			return err
 		}
