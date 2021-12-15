@@ -87,6 +87,140 @@ func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error){
 	return true, nil
 }
 
+
+//func (s *PublicTransactionPoolAPI)isRevokerValid2(credentID string, IDS []string)(bool,error){
+//	buf := new(bytes.Buffer)
+//
+//	credOwner, uri := did.GetController(credentID)
+//	ownerIsDID, err := s.isDID(credOwner)
+//	if err != nil {
+//		return false, err
+//	}
+//	if !ownerIsDID{
+//		credentID= strings.ToLower(credOwner) +uri
+//	}
+//	buf.WriteString(credentID)
+//	ctrls, err := evm.StateDB.GetRevokeCredentialCtrls(buf.Bytes())
+//	if err != nil{
+//		if err.Error() == vm.ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
+//			return false, nil
+//		}
+//		return false, err
+//	}
+//
+//	for _, id := range IDS {
+//		var idTxData *did.DIDTransactionData
+//		isDID, err := isDID(evm,id)
+//		if err != nil {
+//			return false, err
+//		}
+//		lowerID := id
+//		if !isDID{
+//			lowerID= strings.ToLower(id)
+//		}
+//		if idTxData, err = GetLastDIDTxData(evm, lowerID); err != nil {
+//			return  false, err
+//		}
+//
+//		for _, ctrl := range ctrls{
+//			if isDID {
+//				if ctrl == id {
+//					return true, nil
+//				}
+//			}else{
+//				//check if customizedid owner have ctrl
+//				if ctrl == id {
+//					return true, nil
+//				}
+//				if HaveCtrl(idTxData.Operation.DIDDoc.Controller, ctrl) {
+//					return true, nil
+//				}
+//
+//			}
+//		}
+//	}
+//	return false ,nil
+//}
+
+//IDS shoule be issuer or owner
+func (s *PublicTransactionPoolAPI) isRevokerValid(revoker , credentID string, IDS []string)(bool,error){
+
+	//revoker, _ := did.GetController(txData.Operation.Proof.VerificationMethod)
+	//credeOwner, _ := did.GetController(rpcPayloadDid.ID)
+	//////////////////////////////////////
+	//buf := new(bytes.Buffer)
+
+	credOwner, uri := did.GetController(credentID)
+	ownerIsDID, err := s.isDID(credOwner)
+	if err != nil {
+		return  false ,err
+	}
+	if !ownerIsDID{
+		credentID= strings.ToLower(credOwner) +uri
+	}
+	//buf.WriteString(credentID)
+	//ctrls, err := rawdb.GetRevokeCredentialCtrls(s.b.ChainDb().(ethdb.KeyValueStore),buf.Bytes())
+	//if err != nil{
+	//	if err.Error() == vm.ErrLeveldbNotFound.Error() || err.Error() == vm.ErrNotFound.Error()  {
+	//		return false,nil
+	//	}
+	//	return false, err
+	//}
+	///////////////////////////////////////
+	//
+	//isCredOwnerDID, err :=s.isDID(credIDOwner)
+	//if err != nil {
+	//	return errors.New("credIDOwner not exist")
+	//}
+	//lowerCredOwner := credIDOwner
+	////cust id
+	//if !isCredOwnerDID {
+	//	lowerCredOwner = strings.ToLower(credIDOwner)
+	//}
+	//owerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerCredOwner), s.b.ChainConfig())
+	//if err != nil {
+	//	return errors.New("credential id owner not exist")
+	//}
+	////revoker not credeowner or credeowner's ctrl(if customized)
+	//if revoker != credIDOwner && (!vm.HaveCtrl(owerTxData.Operation.DIDDoc.Controller, revoker)) {
+	//	if issuerID != "" {
+	//	}
+	//}
+	///////////////////////////////
+	for _, id := range IDS {
+		var idTxData *did.DIDTransactionData
+		isDID, err := s.isDID(id)
+		if err != nil {
+			return  false, err
+		}
+		lowerID := id
+		if !isDID{
+			lowerID= strings.ToLower(id)
+		}
+		if idTxData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerID), s.b.ChainConfig()); err != nil {
+			return   false ,err
+		}
+
+		//for _, ctrl := range ctrls{
+			if isDID {
+				if revoker == id {
+					return true, nil
+				}
+			}else{
+				//check if customizedid owner have ctrl
+				if revoker == id {
+					return true, nil
+				}
+				if vm.HaveCtrl(idTxData.Operation.DIDDoc.Controller, revoker) {
+					return true, nil
+				}
+
+			}
+		//}
+	}
+	return false ,nil
+}
+
 func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param map[string]interface{}) (interface{}, error) {
 	idParam, ok := param["id"].(string)
 	if !ok {
@@ -122,13 +256,17 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	}
 
 	//check issuer
-	issuer, ok := param["issuer"].(string)
+	//issuer, ok := param["issuer"].(string)
 	isDID = false
-	var issuerID string
-	if issuer != "" {
-		issuerID = issuer
-	}
+	//var issuerID string
+	//if issuer != "" {
+	//	issuerID = issuer
+	//}
 
+	//if haveIssuerRevokeTx is true issuerRevokeTXData is the tx
+	//issuerRevokeTXData := new(RpcCredentialTransactionData)
+	//haveIssuerRevokeTx := false //if issuer param is one of the revoker set true
+	//haveValidRevoke := false//if revoked by issuer or owner  set true
 	for _, txData := range txsData {
 		if txData.Operation.CredentialDoc == nil&& txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation{
 			rpcPayloadDid.ID = txData.Operation.Payload
@@ -145,61 +283,69 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			continue
 		}
 
-		var onlyRevokeTX bool
-		//only revoke
-		if len(txsData) == 1 && txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation {
-			onlyRevokeTX = true
+		//var onlyRevokeTX bool
+		// decalre always been added
+		if  txData.Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation  {
+			tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
+			rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
+		}else{
+			//for revoke tx
+			//if it is credential owner or issuer
 		}
 
-		if onlyRevokeTX{
-			// revoker is owner ignore issureid
-			revoker, _ := did.GetController(txData.Operation.Proof.VerificationMethod)
-			credeOwner, _ := did.GetController(rpcPayloadDid.ID)
-			isCredOwnerDID, err :=s.isDID(credeOwner)
-			if err != nil {
-				return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
-			}
-			lowerCredOwner := credeOwner
-			//cust id
-			if !isCredOwnerDID {
-				lowerCredOwner = strings.ToLower(credeOwner)
-			}
-			owerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerCredOwner), s.b.ChainConfig())
-			if err != nil {
-				return nil, http.NewError(int(service.InvalidParams), "credentialid owner not exist")
-			}
-			//revoker not credeowner or credeowner's ctrl(if customized)
-			if revoker !=credeOwner && (!vm.HaveCtrl(owerTxData.Operation.DIDDoc.Controller, revoker)) {
-				if issuerID != ""{
-					if !rawdb.IsURIHasPrefix(issuerID) {
-						//add prefix
-						issuerID = did.DID_ELASTOS_PREFIX + issuerID
-					}
-					isDID, err =s.isDID(issuerID)
-					if err != nil {
-						return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
-					}
 
-					if !isDID {
-						issuerID = strings.ToLower(issuerID)
-						revoker = strings.ToLower(revoker)
-					}
-					issuerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(issuerID), s.b.ChainConfig())
-					if err != nil {
-						return nil, http.NewError(int(service.InvalidParams), "credentialid issuer not exist")
-					}
 
-					if issuerID != revoker &&  (!vm.HaveCtrl(issuerTxData.Operation.DIDDoc.Controller, revoker)) {
-						continue
-					}
-				}
-			}
-		}
+
+		//
+		//if onlyRevokeTX{
+		//	// revoker is owner ignore issureid
+		//	revoker, _ := did.GetController(txData.Operation.Proof.VerificationMethod)
+		//	credeOwner, _ := did.GetController(rpcPayloadDid.ID)
+		//	isCredOwnerDID, err :=s.isDID(credeOwner)
+		//	if err != nil {
+		//		return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
+		//	}
+		//	lowerCredOwner := credeOwner
+		//	//cust id
+		//	if !isCredOwnerDID {
+		//		lowerCredOwner = strings.ToLower(credeOwner)
+		//	}
+		//	owerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerCredOwner), s.b.ChainConfig())
+		//	if err != nil {
+		//		return nil, http.NewError(int(service.InvalidParams), "credentialid owner not exist")
+		//	}
+		//	//revoker not credeowner or credeowner's ctrl(if customized)
+		//	if revoker !=credeOwner && (!vm.HaveCtrl(owerTxData.Operation.DIDDoc.Controller, revoker)) {
+		//		if issuerID != ""{
+		//			if !rawdb.IsURIHasPrefix(issuerID) {
+		//				//add prefix
+		//				issuerID = did.DID_ELASTOS_PREFIX + issuerID
+		//			}
+		//			isDID, err =s.isDID(issuerID)
+		//			if err != nil {
+		//				return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
+		//			}
+		//
+		//			if !isDID {
+		//				issuerID = strings.ToLower(issuerID)
+		//				revoker = strings.ToLower(revoker)
+		//			}
+		//			issuerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(issuerID), s.b.ChainConfig())
+		//			if err != nil {
+		//				return nil, http.NewError(int(service.InvalidParams), "credentialid issuer not exist")
+		//			}
+		//
+		//			if issuerID != revoker &&  (!vm.HaveCtrl(issuerTxData.Operation.DIDDoc.Controller, revoker)) {
+		//				continue
+		//			}
+		//		}
+		//	}
+		//}
 
 		tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 		rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
 	}
-
+	//not declare and not revke situation 1
 	if len(txsData) == 0 {
 		rpcPayloadDid.Status = didapi.CredentialNonExist
 		rpcPayloadDid.ID = idParam

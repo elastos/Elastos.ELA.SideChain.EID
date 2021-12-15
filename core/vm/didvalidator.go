@@ -2041,7 +2041,7 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 			}
 		}
 		if !issuerIsDID {
-			if issuerTxData, err = GetLastDIDTxData(evm, strings.ToLower(credOwner)); err != nil {
+			if issuerTxData, err = GetLastDIDTxData(evm, strings.ToLower(issuer)); err != nil {
 				return  err
 			}
 		}
