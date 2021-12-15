@@ -2169,6 +2169,10 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
 
+	lastTXData, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
+	if err != nil {
+		return err
+	}
 	dbExist := false
 	_, err = evm.StateDB.GetCredentialExpiresHeight(buf.Bytes())
 	//already decalred
@@ -2181,28 +2185,27 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 	}else{
 		dbExist = true
 	}
-
 	if dbExist {
-		lastTXData, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
-		//dbExist := true
-		if err != nil {
-			return err
-		}
+
 		if lastTXData == nil {
 			return errors.New("checkRevokeVerifiableCredential invalid last transaction")
 		}
+		if lastTXData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation {
+			return errors.New("VerifiableCredential revoked again")
+		}
+
 		// check if owner or issuer send this transaction
 		owner := GetCredentialOwner(lastTXData.Operation.CredentialDoc.CredentialSubject)
 		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc.VerifiableCredential)
-		ids  :=[]string{credOwner, issuer}
+		//ids  :=[]string{credOwner, issuer}
 		// try check if revoked by owner or issuer
-		revoked , err :=isRevokedByIDS(evm, credentialID, ids)
-		if err != nil {
-			return err
-		}
-		if revoked {
-			return errors.New("already have valid revoked")
-		}
+		//revoked , err :=isRevokedByIDS(evm, credentialID, ids)
+		//if err != nil {
+		//	return err
+		//}
+		//if revoked {
+		//	return errors.New("already have valid revoked")
+		//}
 		return checkRevokeCustomizedDIDVerifiableCredential(evm, owner, issuer, txPayload)
 	}else{
 		controler ,_ := did.GetController(txPayload.Proof.VerificationMethod)
