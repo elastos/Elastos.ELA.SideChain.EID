@@ -854,6 +854,8 @@ func checkCustIDOverMaxExpireHeight(evm *EVM,custID, operation string)error{
 	//
 	idKey := []byte(lowID)
 	expiredHeight, err := evm.StateDB.GetDIDExpiresHeight(idKey)
+	log.Debug("checkCustIDOverMaxExpireHeight", "MaxExpiredHeight", evm.chainConfig.MaxExpiredHeight)
+	log.Debug("checkCustIDOverMaxExpireHeight", "custID", custID,"expiredHeight", expiredHeight)
 	if err != nil {
 		//real error happens.return.
 		if err.Error() != ErrLeveldbNotFound.Error() && err.Error() != ErrNotFound.Error() {
@@ -2169,10 +2171,7 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
 
-	lastTXData, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
-	if err != nil {
-		return err
-	}
+
 	dbExist := false
 	_, err = evm.StateDB.GetCredentialExpiresHeight(buf.Bytes())
 	//already decalred
@@ -2186,7 +2185,10 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 		dbExist = true
 	}
 	if dbExist {
-
+		lastTXData, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
+		if err != nil {
+			return err
+		}
 		if lastTXData == nil {
 			return errors.New("checkRevokeVerifiableCredential invalid last transaction")
 		}
