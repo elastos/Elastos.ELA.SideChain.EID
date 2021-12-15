@@ -1312,7 +1312,7 @@ func TestDuplicatedRevokeVerifiableCredentialTx(t *testing.T) {
 	data, err = json.Marshal(verifableCredentialRevokeTx2)
 	assert.NoError(t, err)
 	err = checkDIDTransaction(data, statedb)
-	assert.EqualError(t, err, "VerifiableCredential revoked again")
+	assert.EqualError(t, err, "already have valid revoked")
 }
 
 //more than  one cotroller
@@ -2843,8 +2843,8 @@ func Test_checkCredential(t *testing.T) {
 }
 
 
-//  invalid revoke again
-func TestDecalreAfterRevokeTx(t *testing.T) {
+//  invalid revoke   first  fake issuer revoke then owner revoke
+func TestOwnerRevokeAfterFakeRevokeTx(t *testing.T) {
 	privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
 	id1 := "did:elastos:iWFAUYhTa35c1fPe3iCJvihZHx6quumnym"
 	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
@@ -2918,12 +2918,107 @@ func TestDecalreAfterRevokeTx(t *testing.T) {
 	statedb.RemoveDIDLog(hash)
 
 
-	verifableCredentialRevokeTx2 := getRevokeVerifiableCredentialTx("did:elastos:foobar#primary",
-		"did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile", privateKey1Str)
+	verifableCredentialRevokeTx2 := getRevokeVerifiableCredentialTx("did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#primary",
+		"did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile", privateKey2Str)
 	data, err = json.Marshal(verifableCredentialRevokeTx2)
 	assert.NoError(t, err)
 	err = checkDIDTransaction(data, statedb)
 	assert.EqualError(t, err, "VerifiableCredential revoked again")
+
+	buf = new(bytes.Buffer)
+	hash =  common.HexToHash("0x234533333")
+	statedb.Prepare(hash, hash, 1)
+	verifableCredentialRevokeTx2.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog("did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile", did.Revoke_Verifiable_Credential_Operation, buf.Bytes())
+	receipt = getDeclareDIDReceipt(*verifableCredentialRevokeTx2)
+	rawdb.WriteReceipts(db, hash, 0, types.Receipts{receipt})
+
+	err = rawdb.PersistRevokeVerifiableCredentialTx(db, statedb.GetDIDLog(hash), 0, 100, hash)
+	assert.NoError(t, err)
+	statedb.RemoveDIDLog(hash)
+
+	ctrls,err := rawdb.GetRevokeCredentialCtrls(db, []byte("did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile"))
+	fmt.Println(ctrls)
+}
+
+func TestFakeRevokeAfterOwnerRevokeTx(t *testing.T) {
+	privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
+	id1 := "did:elastos:iWFAUYhTa35c1fPe3iCJvihZHx6quumnym"
+	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
+
+	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+	db := statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore)
+	{
+
+		hash1 := common.HexToHash("0x00234")
+		statedb.Prepare(hash1, hash1, 1)
+		tx1 := getPayloadDIDInfo(id1, "create", docDocBytes, privateKey1Str)
+		buf := new(bytes.Buffer)
+		tx1.Serialize(buf, did.DIDVersion)
+		statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+		receipt := getCreateDIDReceipt(*tx1)
+		rawdb.WriteReceipts(db, hash1, 0, types.Receipts{receipt})
+		err1 := rawdb.PersistRegisterDIDTx(db, statedb.GetDIDLog(hash1), 0, 0)
+		assert.NoError(t, err1)
+		statedb.RemoveDIDLog(hash1)
+	}
+	{
+		tx3hash := common.HexToHash("0x2345678")
+		statedb.Prepare(tx3hash, tx3hash, 1)
+		CustomizedDIDTx1 := getCustomizedDIDTx(id1, "create", custIDSingleSignDocBytes1, privateKey1Str)
+		buf := new(bytes.Buffer)
+		CustomizedDIDTx1.Serialize(buf, did.DIDVersion)
+		statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+		receipt := getCreateDIDReceipt(*CustomizedDIDTx1)
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx3hash, 0, types.Receipts{receipt})
+		err3 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx3hash),
+			100, 123456)
+		assert.NoError(t, err3)
+		statedb.RemoveDIDLog(tx3hash)
+	}
+
+	id2 := "did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB"
+	//	regisgter did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB
+	hash2 := common.HexToHash("0x2345")
+	statedb.Prepare(hash2, hash2, 1)
+	tx2 := getPayloadDIDInfo(id2, "create", issuerDocByts, privateKey2Str)
+	buf := new(bytes.Buffer)
+	tx2.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog(id2, did.Create_DID_Operation, buf.Bytes())
+	receipt := getCreateDIDReceipt(*tx2)
+	rawdb.WriteReceipts(db, hash2, 0, types.Receipts{receipt})
+	err2 := rawdb.PersistRegisterDIDTx(db, statedb.GetDIDLog(hash2), 100, 123456)
+	assert.NoError(t, err2)
+	statedb.RemoveDIDLog(hash2)
+
+	verifableCredentialRevokeTx := getRevokeVerifiableCredentialTx("did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#primary",
+		"did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile", privateKey2Str)
+	data, err := json.Marshal(verifableCredentialRevokeTx)
+
+	assert.NoError(t, err)
+	err = checkDIDTransaction(data, statedb)
+	assert.NoError(t, err)
+
+	buf = new(bytes.Buffer)
+	hash := common.Hash{}
+	statedb.Prepare(hash, hash, 1)
+	verifableCredentialRevokeTx.Serialize(buf, did.DIDVersion)
+	statedb.AddDIDLog("did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile", did.Revoke_Verifiable_Credential_Operation, buf.Bytes())
+	receipt = getDeclareDIDReceipt(*verifableCredentialRevokeTx)
+	rawdb.WriteReceipts(db, common.Hash{}, 0, types.Receipts{receipt})
+
+	err = rawdb.PersistRevokeVerifiableCredentialTx(db, statedb.GetDIDLog(common.Hash{}), 0, 100, common.Hash{})
+	assert.NoError(t, err)
+	statedb.RemoveDIDLog(hash)
+
+
+	verifableCredentialRevokeTx2 := getRevokeVerifiableCredentialTx("did:elastos:iWFAUYhTa35c1fPe3iCJvihZHx6quumnym#primary",
+		"did:elastos:ir31cZZbBQUFbp4pNpMQApkAyJ9dno3frB#profile", privateKey1Str)
+
+	data, err = json.Marshal(verifableCredentialRevokeTx2)
+	assert.NoError(t, err)
+	err = checkDIDTransaction(data, statedb)
+	assert.EqualError(t, err, "already have valid revoked")
 
 	buf = new(bytes.Buffer)
 	hash =  common.HexToHash("0x234533333")

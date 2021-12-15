@@ -102,8 +102,8 @@ func Test_haveCtrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := haveCtrl(tt.args.docCtrl, tt.args.controller); got != tt.want {
-				t.Errorf("haveCtrl() = %v, want %v", got, tt.want)
+			if got := HaveCtrl(tt.args.docCtrl, tt.args.controller); got != tt.want {
+				t.Errorf("HaveCtrl() = %v, want %v", got, tt.want)
 			}
 		})
 	}

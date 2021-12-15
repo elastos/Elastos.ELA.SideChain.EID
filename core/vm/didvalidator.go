@@ -2064,7 +2064,7 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 				if ctrl == credOwner {
 					return errors.New("VerifiableCredential was revoked by owner")
 				}
-				if haveCtrl(ownerTxData.Operation.DIDDoc.Controller, ctrl) {
+				if HaveCtrl(ownerTxData.Operation.DIDDoc.Controller, ctrl) {
 					return errors.New("VerifiableCredential was revoked by owner controller")
 				}
 
@@ -2078,7 +2078,7 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 					return errors.New("VerifiableCredential was revoked by issuer")
 				}
 				//check if customizedid owner have ctrl
-				if haveCtrl(issuerTxData.Operation.DIDDoc.Controller, ctrl) {
+				if HaveCtrl(issuerTxData.Operation.DIDDoc.Controller, ctrl) {
 					return errors.New("VerifiableCredential was revoked by issuer controller")
 				}
 			}
@@ -2099,6 +2099,61 @@ func checkRevokeCustomizedDIDVerifiableCredential(evm *EVM, owner string, issuer
 
 	return errors.New("revoke  checkIDVerifiableCredential failed")
 }
+//IDS can have did or ctusomizedid
+//issuer , owner or someone
+//even it is not exit check if it was revoke by owner or issuer
+func isRevokedByIDS(evm *EVM,credentID string, IDS []string)(bool,error){
+	buf := new(bytes.Buffer)
+
+	credOwner, uri := did.GetController(credentID)
+	ownerIsDID, err := isDID(evm,credOwner)
+	if err != nil {
+		return false, err
+	}
+	if !ownerIsDID{
+		credentID= strings.ToLower(credOwner) +uri
+	}
+	buf.WriteString(credentID)
+	ctrls, err := evm.StateDB.GetRevokeCredentialCtrls(buf.Bytes())
+	if err != nil{
+		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, id := range IDS {
+		var idTxData *did.DIDTransactionData
+		isDID, err := isDID(evm,id)
+		if err != nil {
+			return false, err
+		}
+		if !isDID{
+			id= strings.ToLower(id)
+		}
+		if idTxData, err = GetLastDIDTxData(evm, id); err != nil {
+			return  false, err
+		}
+
+		for _, ctrl := range ctrls{
+			if isDID {
+				if ctrl == id {
+					return true, nil
+				}
+			}else{
+				//check if customizedid owner have ctrl
+				if ctrl == id {
+					return true, nil
+				}
+				if HaveCtrl(idTxData.Operation.DIDDoc.Controller, ctrl) {
+					return true, nil
+				}
+
+			}
+		}
+	}
+	return false ,nil
+}
 
 func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error {
 	credentialID := txPayload.Payload
@@ -2113,30 +2168,53 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
-	lastTXData, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
 
-	dbExist := true
+	dbExist := false
+	_, err = evm.StateDB.GetCredentialExpiresHeight(buf.Bytes())
+	//already decalred
 	if err != nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error() {
 			dbExist = false
 		} else {
 			return err
 		}
+	}else{
+		dbExist = true
 	}
+
 	if dbExist {
+		lastTXData, err := evm.StateDB.GetLastVerifiableCredentialTxData(buf.Bytes(), evm.chainConfig)
+		//dbExist := true
+		if err != nil {
+			return err
+		}
 		if lastTXData == nil {
 			return errors.New("checkRevokeVerifiableCredential invalid last transaction")
 		}
-		if lastTXData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation {
-			return errors.New("VerifiableCredential revoked again")
-		}
-
 		// check if owner or issuer send this transaction
 		owner := GetCredentialOwner(lastTXData.Operation.CredentialDoc.CredentialSubject)
 		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc.VerifiableCredential)
+		ids  :=[]string{credOwner, issuer}
+		// try check if revoked by owner or issuer
+		revoked , err :=isRevokedByIDS(evm, credentialID, ids)
+		if err != nil {
+			return err
+		}
+		if revoked {
+			return errors.New("already have valid revoked")
+		}
 		return checkRevokeCustomizedDIDVerifiableCredential(evm, owner, issuer, txPayload)
 	}else{
 		controler ,_ := did.GetController(txPayload.Proof.VerificationMethod)
+		ids  :=[]string{credOwner, controler}
+		// try check if revoked by owner or issuer
+		revoked , err :=isRevokedByIDS(evm, credentialID, ids)
+		if err != nil {
+			return err
+		}
+		if revoked {
+			return errors.New("already have valid revoked")
+		}
 		//revoke credentialID who is not exist
 		if err := checkIDVerifiableCredential(evm, controler,txPayload); err != nil {
 			return err
@@ -2196,7 +2274,7 @@ func checkCustDIDInvalid(evm *EVM, custDID , verificationMethod string, docCtrl 
 	//check VerificationMethod's controller invalide
 	if vmController  !=  signer{
 		//check if signer if one of customdid 's controller
-		if ! haveCtrl(docCtrl, vmController){
+		if ! HaveCtrl(docCtrl, vmController){
 			return true, errors.New("VerificationMethod is not equal with signer")
 		}
 		//make sure VerificationMethod is valid

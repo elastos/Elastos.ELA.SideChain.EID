@@ -558,7 +558,7 @@ func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM)error{
 		//controller is  customizedid's controller
 		controller,_ := GetDIDAndUri(proof.Creator)
 
-		if !haveCtrl(Doc.Controller, controller) {
+		if !HaveCtrl(Doc.Controller, controller) {
 			return  errors.New("doc not have this controller")
 		}
 		// controller must  valid
@@ -611,7 +611,7 @@ func IsTicketProofCtrInvalid(proof interface{}, evm *EVM,ID string)error{
 		//controller is  customizedid's controller 
 		controller,_ := GetDIDAndUri(proof.VerificationMethod)
 
-		if !haveCtrl(verifyDoc.Controller, controller) {
+		if !HaveCtrl(verifyDoc.Controller, controller) {
 			return  errors.New("doc not have this controller")
 		}
 		// controller must  valid
@@ -744,7 +744,7 @@ func isCtrlEqual(newCtrl  , oldCtrl interface{})bool{
 	}
 }
 
-func haveCtrl(docCtrl interface{}, controller string)bool{
+func HaveCtrl(docCtrl interface{}, controller string)bool{
 	var newCtrlArray []interface{}
 	var ok bool
 	if newCtrlArray, ok = docCtrl.([]interface{}); ok {

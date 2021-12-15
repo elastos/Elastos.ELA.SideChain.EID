@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"strings"
 	"time"
 
@@ -155,7 +156,21 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			// revoker is owner ignore issureid
 			revoker, _ := did.GetController(txData.Operation.Proof.VerificationMethod)
 			credeOwner, _ := did.GetController(rpcPayloadDid.ID)
-			if revoker !=credeOwner {
+			isCredOwnerDID, err :=s.isDID(credeOwner)
+			if err != nil {
+				return nil, http.NewError(int(service.InvalidParams), "issuerID not exist")
+			}
+			lowerCredOwner := credeOwner
+			//cust id
+			if !isCredOwnerDID {
+				lowerCredOwner = strings.ToLower(credeOwner)
+			}
+			owerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerCredOwner), s.b.ChainConfig())
+			if err != nil {
+				return nil, http.NewError(int(service.InvalidParams), "credentialid owner not exist")
+			}
+			//revoker not credeowner or credeowner's ctrl(if customized)
+			if revoker !=credeOwner && (!vm.HaveCtrl(owerTxData.Operation.DIDDoc.Controller, revoker)) {
 				if issuerID != ""{
 					if !rawdb.IsURIHasPrefix(issuerID) {
 						//add prefix
