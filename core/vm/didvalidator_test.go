@@ -2838,11 +2838,6 @@ func Test_checkCustIDOverMaxExpireHeight(t *testing.T) {
 }
 
 
-func Test_checkCredential(t *testing.T) {
-
-}
-
-
 //  invalid revoke   first  fake issuer revoke then owner revoke
 func TestOwnerRevokeAfterFakeRevokeTx(t *testing.T) {
 	privateKey2Str := "9sYYMSsS2xDbGvSRhNSnMsTbCbF2LPwLovRH93drSetM"
