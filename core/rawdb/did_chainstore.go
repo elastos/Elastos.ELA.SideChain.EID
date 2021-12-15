@@ -447,7 +447,6 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.C
 }
 
 func IsDIDDeactivated(db ethdb.KeyValueStore, did string) bool {
-	//did = strings.ToLower(did)
 	idKey := new(bytes.Buffer)
 	idKey.WriteString(did)
 
@@ -1186,7 +1185,9 @@ func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDL
 	}
 	fmt.Println("PersistRevokeVerifiableCredentialTx", "credID", credID, "revokerID", revokerID)
 
-	persistVerifyCredentialRevoked(db, credIDKey,revokerID)
+	if err = persistVerifyCredentialRevoked(db, credIDKey,revokerID); err != nil{
+		return err
+	}
 
 	return nil
 }
@@ -1438,7 +1439,6 @@ func GetAllDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte,skip,limit i
 
 func isDID(db ethdb.KeyValueStore, ID string)(bool, error){
 	ret, err :=IsDID(db, ID)
-	//fmt.Println("checkDeactivateDID ID", ID)
 	if err!= nil {
 		if err.Error() == ERR_LEVELDB_NOT_FOUND.Error() || err.Error() == ERR_NOT_FOUND.Error()  {
 			//custDID

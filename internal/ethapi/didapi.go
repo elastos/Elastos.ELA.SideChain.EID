@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"strings"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/didapi"
@@ -75,7 +75,6 @@ func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error){
 
 		idWithPrefix= strings.ToLower(idWithPrefix)
 		buf.Reset()
-		//buf = new(bytes.Buffer)
 		buf.WriteString(idWithPrefix)
 		//try customized id
 		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
@@ -185,7 +184,12 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 						issuerID = strings.ToLower(issuerID)
 						revoker = strings.ToLower(revoker)
 					}
-					if issuerID != revoker {
+					issuerTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(issuerID), s.b.ChainConfig())
+					if err != nil {
+						return nil, http.NewError(int(service.InvalidParams), "credentialid issuer not exist")
+					}
+
+					if issuerID != revoker &&  (!vm.HaveCtrl(issuerTxData.Operation.DIDDoc.Controller, revoker)) {
 						continue
 					}
 				}
@@ -309,7 +313,6 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 
 		idWithPrefix= strings.ToLower(idWithPrefix)
 		buf.Reset()
-		//buf = new(bytes.Buffer)
 		buf.WriteString(idWithPrefix)
 		//try customized id
 		txData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())

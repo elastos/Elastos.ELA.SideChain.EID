@@ -958,11 +958,8 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		buf := new(bytes.Buffer)
 		lowerID := strings.ToLower(doc.ID)
 		buf.WriteString(lowerID)
-		fmt.Println("lowerID ########")
 		lastTx, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 		if err != nil {
-			fmt.Println("lowerID ######## not find")
-
 			return err
 		}
 		m := 1
@@ -1002,13 +999,10 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 //
 //is expired id can be did or custid
 func isControllerExpired(evm *EVM, id string )(bool, error)  {
-	//did = strings.ToLower(did)
 	id1 := []byte(id)
 	expiresHeight, err := evm.StateDB.GetDIDExpiresHeight(id1)
 	log.Debug("isControllerExpired", "id", id, "expiresHeight", expiresHeight)
 	if err != nil {
-		fmt.Println("isControllerExpired did ", id)
-		fmt.Println("isControllerExpired", err)
 		return true ,err
 	}
 	expiresHeightInt :=new(big.Int).SetUint64(uint64(expiresHeight))
@@ -1200,7 +1194,6 @@ func checkTicketProof(evm *EVM, ticket *did.CustomIDTicket, N int,
 
 func checkCustomIDTicketProof(evm *EVM, ticketProofArray []*did.TicketProof, iDateContainer interfaces.IDataContainer,
 	M int, lastDocCtrl interface{}) error {
-	//isRegistDID := did.IsDID(verifyDoc.ID, verifyDoc.PublicKey)
 	verifyOkCount := 0
 	//3, proof multisign verify
 	for _, ticketProof := range ticketProofArray {
@@ -1221,7 +1214,6 @@ func checkCustomIDTicketProof(evm *EVM, ticketProofArray []*did.TicketProof, iDa
 		signature, _ := base64url.DecodeString(ticketProof.Signature)
 
 		var success bool
-		fmt.Println("checkCustomIDTicketProof before VerifyByVM")
 		success, err = did.VerifyByVM(iDateContainer, code, signature)
 		fmt.Println("checkCustomIDTicketProof publicKeyBase58 ", publicKeyBase58)
 		fmt.Println("checkCustomIDTicketProof signature ", ticketProof.Signature)
@@ -1821,7 +1813,6 @@ func checkDeactivePayloadVM(controller           interface{}, verificationMethod
 
 func isDID(evm *EVM, ID string)(bool, error){
 	ret, err := evm.StateDB.IsDID(ID)
-	//fmt.Println("checkDeactivateDID ID", ID)
 	if err!= nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
 			//custDID
@@ -1841,7 +1832,6 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 	ID := deactivateDIDOpt.Payload
 	// Who wants to be deactived did or customizedid
 	isDID, err := evm.StateDB.IsDID(ID)
-	//fmt.Println("checkDeactivateDID ID", ID)
 	if err!= nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error()  {
 			//custDID
@@ -2130,10 +2120,11 @@ func isRevokedByIDS(evm *EVM,credentID string, IDS []string)(bool,error){
 		if err != nil {
 			return false, err
 		}
+		lowerID := id
 		if !isDID{
-			id= strings.ToLower(id)
+			lowerID= strings.ToLower(id)
 		}
-		if idTxData, err = GetLastDIDTxData(evm, id); err != nil {
+		if idTxData, err = GetLastDIDTxData(evm, lowerID); err != nil {
 			return  false, err
 		}
 
