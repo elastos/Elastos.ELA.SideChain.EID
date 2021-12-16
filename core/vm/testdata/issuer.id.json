@@ -1,4 +1,5 @@
 {
+  "@context" : [ "https://www.w3.org/ns/did/v1", "https://ns.elastos.org/did/v1", "https://w3id.org/security/v1" ],
   "id" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj",
   "publicKey" : [ {
     "id" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary",
@@ -8,30 +9,31 @@
   } ],
   "authentication" : [ "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary" ],
   "verifiableCredential" : [ {
+    "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://ns.elastos.org/credentials/v1", "https://ns.elastos.org/credentials/profile/v1", "https://ns.elastos.org/credentials/email/v1" ],
     "id" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#profile",
-    "type" : [ "BasicProfileCredential", "SelfProclaimedCredential" ],
+    "type" : [ "EmailCredential", "ProfileCredential", "SelfProclaimedCredential", "VerifiableCredential" ],
     "issuer" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj",
-    "issuanceDate" : "2021-01-28T06:38:34Z",
-    "expirationDate" : "2026-01-28T06:38:34Z",
+    "issuanceDate" : "2021-11-20T09:55:43Z",
+    "expirationDate" : "2026-11-20T09:55:43Z",
     "credentialSubject" : {
       "id" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj",
       "email" : "issuer@example.com",
-      "language" : "English",
+      "gender" : "Male",
       "name" : "Test Issuer",
-      "nation" : "Singapore"
+      "nationality" : "Singapore"
     },
     "proof" : {
       "type" : "ECDSAsecp256r1",
-      "created" : "2021-01-28T06:38:34Z",
+      "created" : "2021-11-20T09:55:43Z",
       "verificationMethod" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary",
-      "signature" : "EqFCIEVB6g1kD3pYiZ1twfNgsIgyUpH1jeh0HJI9ZdGVJQLLjK6E-3RuqPA2NFRurXIlknkua4T6C2_89R3fMg"
+      "signature" : "Eomh4f6c5HkABRh5l7OIGrSseL7DR9Rkk1i871Xe1ZfQdIHIFpO-iKDdOYifIlmuYOUFjtl_6saQcFmFih0GLA"
     }
   } ],
-  "expires" : "2026-01-28T06:38:34Z",
+  "expires" : "2026-11-20T09:55:43Z",
   "proof" : {
     "type" : "ECDSAsecp256r1",
-    "created" : "2021-01-28T06:38:34Z",
+    "created" : "2021-11-20T09:55:43Z",
     "creator" : "did:elastos:imUUPBfrZ1yZx6nWXe6LNN59VeX2E6PPKj#primary",
-    "signatureValue" : "ubd93smQLojkwdshuUAIAF30P8kJ2udZx8YQsrrA_noImJKeEHNm5TY7InIN54nI4cJcH5Of7J84TvMjUpVvWA"
+    "signatureValue" : "GU0zA5-d00k3_I4O7fbZVfhtZxBlKom-PP0E0_r07xieyIkj_7GZ7q5wzngYDr7VbjarvQbQGmW9MmfHpiJCQA"
   }
 }
