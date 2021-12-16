@@ -2113,21 +2113,36 @@ func isRevokedByIDS(evm *EVM,credentID string, IDS []string)(bool,error){
 
 	for _, id := range IDS {
 		var idTxData *did.DIDTransactionData
-		isDID, err := isDID(evm,id)
+		bisDID, err := isDID(evm,id)
 		if err != nil {
 			return false, err
 		}
 		lowerID := id
-		if !isDID{
+		if !bisDID {
 			lowerID= strings.ToLower(id)
 		}
 		if idTxData, err = GetLastDIDTxData(evm, lowerID); err != nil {
 			return  false, err
 		}
-
+		//ctrls is db stored who revoked this credential
 		for _, ctrl := range ctrls{
-			if isDID {
+			var ctrlTxData *did.DIDTransactionData
+			ctrlisDID, err := isDID(evm,ctrl)
+			if err != nil {
+				return false, err
+			}
+			lowerCtrlID := ctrl
+			if !ctrlisDID {
+				lowerCtrlID= strings.ToLower(ctrl)
+			}
+			if ctrlTxData, err = GetLastDIDTxData(evm, lowerCtrlID); err != nil {
+				return  false, err
+			}
+			if bisDID {
 				if ctrl == id {
+					return true, nil
+				}
+				if HaveCtrl(ctrlTxData.Operation.DIDDoc.Controller, id) {
 					return true, nil
 				}
 			}else{
