@@ -162,6 +162,10 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	var issuerID string
 	if issuer != "" {
 		issuerID = issuer
+		if !rawdb.IsURIHasPrefix(issuerID) {
+			//add prefix
+			issuerID = did.DID_ELASTOS_PREFIX + issuer
+		}
 	}
 
 	issuerRevokeTXData := new(RpcCredentialTransactionData)//if haveIssuerRevokeTx is true issuerRevokeTXData is the tx
@@ -217,28 +221,34 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 				rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
 			}
 
-			//if we do not have validate revoke and issuerid parameter is not empty
-			//try if we have one revoke tx by issuerID
-			if !haveValidRevoke && issuerID != "" {
-				ids := []string{ issuerID}
-				haveIssuerRevokeTx , err := s.isRevokerValid(revoker, ids)
-				if err != nil {
-					if err.Error() != vm.ErrLeveldbNotFound.Error() && err.Error() != vm.ErrNotFound.Error()  {
-						return nil, http.NewError(int(service.InvalidParams), "isRevokerValid issuer parameter")
+			if issuerID != "" {
+				//if we do not have validate revoke and issuerid parameter is not empty
+				//try if we have one revoke tx by issuerID
+				if !haveValidRevoke  && (!haveIssuerRevokeTx){
+					ids := []string{ issuerID}
+					haveIssuerRevokeTx , err = s.isRevokerValid(revoker, ids)
+					if err != nil {
+						if err.Error() != vm.ErrLeveldbNotFound.Error() && err.Error() != vm.ErrNotFound.Error()  {
+							return nil, http.NewError(int(service.InvalidParams), "isRevokerValid issuer parameter")
+						}
+					}
+					// if we have  Issuer Revoke Tx then store it into issuerRevokeTXData
+					if haveIssuerRevokeTx {
+						tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
+						issuerRevokeTXData = tempTXData
 					}
 				}
-				// if we have  Issuer Revoke Tx then store it into issuerRevokeTXData
-				if haveIssuerRevokeTx {
+			}else{
+				if !haveValidRevoke{
 					tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
-					issuerRevokeTXData = tempTXData
+					rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
 				}
 			}
-
 		}
-		// if we did not have valid revoke and do have issuer revoke tx  add it to  RpcTXDatas
-		if !haveValidRevoke && haveIssuerRevokeTx{
-			rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *issuerRevokeTXData)
-		}
+	}
+	// if we did not have valid revoke and do have issuer revoke tx  add it to  RpcTXDatas
+	if !haveValidRevoke && haveIssuerRevokeTx{
+		rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *issuerRevokeTXData)
 	}
 	//not declare and not revke situation 1
 	if len(txsData) == 0 {

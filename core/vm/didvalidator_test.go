@@ -133,6 +133,7 @@ var (
 	jianbinCtrl2PubKeyTest          []byte
 	jianbinCtrl3PubKeyTest          []byte
 	jianbinCtrl4PubKeyTest          []byte
+	jianbinCtrl5PubKeyTest          []byte
 
 	custmizeDIDSingleCtrlTest          []byte
 	custmizeDIDMultyCtrlTest          []byte
@@ -199,6 +200,7 @@ func init() {
 	jianbinCtrl2PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl2.json")
 	jianbinCtrl3PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl3.json")
 	jianbinCtrl4PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl4.json")
+	jianbinCtrl5PubKeyTest, _ = LoadJsonData("./testdata/jianbinctrl5.json")
 
 
 
@@ -2283,6 +2285,29 @@ func TestIsDID(t *testing.T) {
 
 func TestDocSliceSort(t *testing.T) {
 	return
+	{
+		id1 := "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ"
+		privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ"
+		tx1 := getPayloadDIDInfo(id1, "create", jianbinCtrl5PubKeyTest, privateKey1Str)
+
+		outputPayloadToFile(tx1, "user2.dest.payload.json")
+		statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
+		evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
+		evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
+		evm.Time=big.NewInt(0)
+		evm.BlockNumber = new(big.Int).SetInt64(1)
+		evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
+		evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+		evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
+
+		buf := new(bytes.Buffer)
+		tx1.Serialize(buf, did.DIDVersion)
+
+		statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
+		err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}), 0, 100)
+		assert.NoError(t, err1)
+		statedb.RemoveDIDLog(common.Hash{})
+	}
 	didParam.IsTest = true
 	err := checkDIDTransactionAfterMigrateHeight(changeDocPayload, nil)
 	assert.NoError(t, err)
