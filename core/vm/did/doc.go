@@ -16,8 +16,38 @@ type DIDDoc struct {
 	Proof interface{} `json:"proof,omitempty"`
 }
 
+func (c *DIDDoc) GetData() []byte {
+	data, err := MarshalDocData(c)
+	if err != nil {
+		return nil
+	}
+	return data
+}
+
 type VerifiableCredentialDoc struct {
-	*VerifiableCredential `json:"verifiableCredential,omitempty"`
+	*VerifiableCredentialData
+	Proof CredentialProof `json:"proof,omitempty"`
+}
+
+func (p *VerifiableCredentialDoc) CompleteCompact(did string) {
+	if IsCompact(p.Issuer) {
+		p.Issuer = did + p.Issuer
+	}
+	if IsCompact(p.ID) {
+		p.ID = did + p.ID
+	}
+
+	creSub := p.CredentialSubject.(map[string]interface{})
+	realIssuer := ""
+	for k, v := range creSub {
+		if k == ID_STRING {
+			realIssuer = v.(string)
+			break
+		}
+	}
+	if realIssuer == "" {
+		creSub[ID_STRING] = did
+	}
 }
 
 type VerifiableCredential struct {

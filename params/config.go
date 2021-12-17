@@ -73,7 +73,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(6307200),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(3095000),
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		DynamicArbiterHeight: 0,
@@ -144,7 +144,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(6307201),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(2823000),
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		Pbft: &PbftConfig{
@@ -214,7 +214,7 @@ var (
 			Epoch:  30000,
 		},
 		PBFTBlock: big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(6307200),//todo set it before online
+		CustomizeDIDHeight: big.NewInt(369486),
 		MaxExpiredHeight: big.NewInt(6307200),
 		PreConnectOffset: 20,
 		Pbft: &PbftConfig{

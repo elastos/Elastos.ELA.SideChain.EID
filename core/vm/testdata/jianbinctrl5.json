@@ -1,4 +1,5 @@
 {
+  "@context" : [ "https://www.w3.org/ns/did/v1", "https://ns.elastos.org/did/v1", "https://w3id.org/security/v1" ],
   "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ",
   "publicKey":[
     {
@@ -84,6 +85,12 @@
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#primary",
     "#key2",
     "#key3",
+    {
+      "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#key6",
+      "type":"ECDSAsecp256r1",
+      "controller":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ",
+      "publicKeyBase58":"fy4iz4MEdEpoAhVf6aHit3wMWkSD7Erk39oKfc7m6PqJ"
+    },
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#append",
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#appendthree"
   ],
@@ -91,6 +98,12 @@
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#key4",
     "#appendtwo",
     "#recovery",
+    {
+      "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#key8",
+      "type":"ECDSAsecp256r1",
+      "controller":"did:elastos:idYDUcRRTUrQFgJBFRCU6tmtGEknif8vCV",
+      "publicKeyBase58":"fy4iz4MEdEpoAhVf6aHit3wMWkSD7Erk39oKfc7m6PqJ"
+    },
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#appendfour",
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#littlefish01",
     "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#littlefish02",
@@ -100,6 +113,7 @@
   ],
   "verifiableCredential":[
     {
+      "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://ns.elastos.org/credentials/v1", "https://ns.elastos.org/credentials/profile/v1", "https://ns.elastos.org/credentials/email/v1" ],
       "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#crdential-3",
       "type":[
         "SelfProclaimedCredential",
@@ -122,6 +136,7 @@
       }
     },
     {
+      "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://ns.elastos.org/credentials/v1", "https://ns.elastos.org/credentials/profile/v1", "https://ns.elastos.org/credentials/email/v1" ],
       "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#crdential-2",
       "type":[
         "InternetAccountCredential",

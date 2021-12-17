@@ -709,14 +709,15 @@ func Unmarshal(src, target interface{}) error {
 	return nil
 }
 
-func checkCredential(evm *EVM, credential *did.VerifiableCredential) error {
+//*VerifiableCredentialDoc
+func checkCredential(evm *EVM, credentialDoc *did.VerifiableCredentialDoc) error {
 
 	var issuerPublicKey, issuerCode, signature []byte
 	//var err error
 	var issuerDoc *did.DIDDoc
-	credOwner := GetCredentialOwner(credential.CredentialSubject)
-	proof := credential.Proof
-	realIssuer := getCredentialIssuer(credOwner, credential)
+	credOwner := GetCredentialOwner(credentialDoc.CredentialSubject)
+	proof := credentialDoc.Proof
+	realIssuer := getCredentialIssuer(credOwner, credentialDoc)
 	isDID , err := isDID(evm, realIssuer)
 	if err!= nil {
 		return err
@@ -789,14 +790,14 @@ func checkCredential(evm *EVM, credential *did.VerifiableCredential) error {
 		return err
 	}
 	//if DID is compact format must Completion DID
-	credential.CompleteCompact(credOwner)
+	credentialDoc.CompleteCompact(credOwner)
 	// verify proof
 	var success bool
 
-	fmt.Println("VerifiableCredentialData:", string(credential.VerifiableCredentialData.GetData()))
+	fmt.Println("VerifiableCredentialData:", string(credentialDoc.VerifiableCredentialData.GetData()))
 	fmt.Println("issuerPublicKey:", base58.Encode(issuerPublicKey))
 	fmt.Println("proof.Signature:", proof.Signature)
-	success, err = did.VerifyByVM(credential.VerifiableCredentialData, issuerCode, signature)
+	success, err = did.VerifyByVM(credentialDoc.VerifiableCredentialData, issuerCode, signature)
 	if err != nil {
 		return err
 	}
@@ -1946,7 +1947,7 @@ func getDeactivatePublicKey(evm *EVM, ID, verificationMethod string, isDID bool,
 
 func checkCredentialTX(evm *EVM, payload *did.DIDPayload) error {
 	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation {
-		if payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential == nil{
+		if payload.CredentialDoc == nil {
 			return  errors.New("payload.CredentialDoc == nil || payload.CredentialDoc.VerifiableCredential")
 		}
 		_, err := time.Parse(time.RFC3339, payload.CredentialDoc.ExpirationDate)
@@ -1969,13 +1970,13 @@ func checkDeclareVerifiableCredential(evm *EVM, payload *did.DIDPayload) error {
 	//1, if one credential is declear can not be declear again
 	//if one credential is revoke  can not be decalre or revoke again
 	// this is the receiver id  todo
-	if err := checkExpires(payload.CredentialDoc.VerifiableCredential.ExpirationDate, evm.Time); err != nil {
+	if err := checkExpires(payload.CredentialDoc.ExpirationDate, evm.Time); err != nil {
 		return  err
 	}
 
 	credOwner := GetCredentialOwner(payload.CredentialDoc.CredentialSubject)
 	credentialID := payload.CredentialDoc.ID
-	issuer := getCredentialIssuer(credOwner, payload.CredentialDoc.VerifiableCredential)
+	issuer := getCredentialIssuer(credOwner, payload.CredentialDoc)
 	if err := checkVerifiableCredentialOperation(evm, &payload.Header, credentialID,  issuer); err != nil {
 		return err
 	}
@@ -2219,7 +2220,7 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 
 		// check if owner or issuer send this transaction
 		owner := GetCredentialOwner(lastTXData.Operation.CredentialDoc.CredentialSubject)
-		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc.VerifiableCredential)
+		issuer := getCredentialIssuer(owner, lastTXData.Operation.CredentialDoc)
 		//ids  :=[]string{credOwner, issuer}
 		// try check if revoked by owner or issuer
 		//revoked , err :=isRevokedByIDS(evm, credentialID, ids)
@@ -2249,11 +2250,11 @@ func checkRevokeVerifiableCredential(evm *EVM, txPayload *did.DIDPayload) error 
 
 	return nil
 }
-//owner can be DID or custid
-func getCredentialIssuer(owner string, cridential *did.VerifiableCredential) string {
-	realIssuer := cridential.Issuer
-	if cridential.Issuer == "" {
-		creSub := cridential.CredentialSubject.(map[string]interface{})
+//owner can be DID or custid *VerifiableCredentialDoc
+func getCredentialIssuer(owner string, cridentialDoc *did.VerifiableCredentialDoc) string {
+	realIssuer := cridentialDoc.Issuer
+	if cridentialDoc.Issuer == "" {
+		creSub := cridentialDoc.CredentialSubject.(map[string]interface{})
 		for k, v := range creSub {
 			if k == did.ID_STRING {
 				realIssuer = v.(string)
@@ -2410,7 +2411,7 @@ func checkIDVerifiableCredential(evm *EVM, signer string,
 	}
 	//VerifiableCredentials inner(doc) proof
 	if credPayload.Header.Operation == did.Declare_Verifiable_Credential_Operation {
-		if err = checkCredential(evm, credPayload.CredentialDoc.VerifiableCredential); err != nil {
+		if err = checkCredential(evm, credPayload.CredentialDoc); err != nil {
 			log.Error("checkIDVerifiableCredential checkCredential ", "err", err)
 
 			return err
