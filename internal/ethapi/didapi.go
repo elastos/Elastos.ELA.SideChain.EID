@@ -210,17 +210,18 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			if realIssuer != "" {
 				ids = append(ids, realIssuer)
 			}
-			//check if revoker is belong to  credowner or issuer
-			haveValidRevoke , err := s.isRevokerValid(revoker, ids)
-			if err != nil  {
-				return nil, http.NewError(int(service.InvalidParams), "isRevokerValid credentialid owner/issuer")
+			if !haveValidRevoke {
+				//check if revoker is belong to  credowner or issuer
+				haveValidRevoke , err = s.isRevokerValid(revoker, ids)
+				if err != nil  {
+					return nil, http.NewError(int(service.InvalidParams), "isRevokerValid credentialid owner/issuer")
+				}
+				//if we haveValidRevoke add it into RpcTXDatas
+				if haveValidRevoke {
+					tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
+					rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
+				}
 			}
-			//if we haveValidRevoke add it into RpcTXDatas
-			if haveValidRevoke {
-				tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
-				rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
-			}
-
 			if issuerID != "" {
 				//if we do not have validate revoke and issuerid parameter is not empty
 				//try if we have one revoke tx by issuerID
@@ -261,8 +262,18 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			rpcPayloadDid.Status = didapi.CredentialRevoked
 		}
 
-	} else if len(txsData) == 2 {
-		rpcPayloadDid.Status = didapi.CredentialRevoked
+	} else if len(txsData) >= 2 {
+		if haveValidRevoke {
+			rpcPayloadDid.Status = didapi.CredentialRevoked
+		}else{
+			//declared
+			if realIssuer != "" {
+				rpcPayloadDid.Status = didapi.CredentialValid
+			}else{
+				rpcPayloadDid.Status = didapi.CredentialRevoked
+			}
+		}
+
 	}
 
 	return rpcPayloadDid, nil
