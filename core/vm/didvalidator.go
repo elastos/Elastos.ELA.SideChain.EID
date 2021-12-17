@@ -2044,23 +2044,42 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 		}
 		//iterator every ctrl check if owner or issuer have revok this credential
 		for _, ctrl := range ctrls{
+			var ctrlTxData *did.DIDTransactionData
+			ctrlisDID, err := isDID(evm,ctrl)
+			if err != nil {
+				return  err
+			}
+			lowerCtrlID := ctrl
+			if !ctrlisDID {
+				lowerCtrlID= strings.ToLower(ctrl)
+			}
+			if ctrlTxData, err = GetLastDIDTxData(evm, lowerCtrlID); err != nil {
+				return   err
+			}
+
 			if ownerIsDID {
 				if ctrl == credOwner {
 					return errors.New("VerifiableCredential was revoked by owner")
 				}
+				if HaveCtrl(ctrlTxData.Operation.DIDDoc.Controller, credOwner) {
+					return  errors.New("VerifiableCredential was revoked by owner's customizedid")
+				}
 			}else{
 				//check if customizedid owner have ctrl
+				//credOwner is customizedid   ctrl can be did/customizedid
 				if ctrl == credOwner {
 					return errors.New("VerifiableCredential was revoked by owner")
 				}
 				if HaveCtrl(ownerTxData.Operation.DIDDoc.Controller, ctrl) {
 					return errors.New("VerifiableCredential was revoked by owner controller")
 				}
-
 			}
 			if issuerIsDID {
 				if ctrl == issuer {
 					return errors.New("VerifiableCredential was revoked by issuer")
+				}
+				if HaveCtrl(ctrlTxData.Operation.DIDDoc.Controller, issuer) {
+					return  errors.New("VerifiableCredential was revoked by issuer's customizedid")
 				}
 			}else{
 				if ctrl == issuer {
@@ -2072,7 +2091,6 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 				}
 			}
 		}
-
 	}
 	return nil
 }
