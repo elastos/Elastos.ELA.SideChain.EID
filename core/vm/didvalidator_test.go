@@ -1857,21 +1857,18 @@ func TestCreateMyOwnSign(t *testing.T) {
 }
 
 func TestCustomizedDIDTransferSingleProof(t *testing.T) {
-	user1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
-	user1PrivateKeyStr := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ"
-	user1TX := getPayloadDIDInfo(user1, "create", user1IDDocByts, user1PrivateKeyStr)
-
-	buf := new(bytes.Buffer)
-	user1TX.Serialize(buf, did.DIDVersion)
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 	evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
-
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.MaxExpiredHeight = new(big.Int).SetInt64(100)
-
 	evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
 
+	user1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
+	user1PrivateKeyStr := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ"
+	user1TX := getPayloadDIDInfo(user1, "create", user1IDDocByts, user1PrivateKeyStr)
+	buf := new(bytes.Buffer)
+	user1TX.Serialize(buf, did.DIDVersion)
 	statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
 	receipt := getCreateDIDReceipt(*user1TX)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
@@ -1923,7 +1920,7 @@ func TestCustomizedDIDTransferSingleProof(t *testing.T) {
 	assert.NoError(t, user4Err)
 	statedb.RemoveDIDLog(hash3)
 
-	//hash4 := common.HexToHash("0x4567")
+
 	hash4 := common.HexToHash( "e71e0aee28c8119c4e8069fb9faa22c0")
 	statedb.Prepare(hash4, hash4, 1)
 	bazPrivateKeyStr := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ"
@@ -2284,7 +2281,6 @@ func TestIsDID(t *testing.T) {
 }
 
 func TestDocSliceSort(t *testing.T) {
-	return
 	{
 		id1 := "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ"
 		privateKey1Str := "413uivqLEMjPd8bo42K9ic6VXpgYcJLEwB3vefxJDhXJ"
@@ -2687,8 +2683,9 @@ func TestSortDoc(t *testing.T){
 	fmt.Println(info)
 }
 
-
+//todo
 func TestCredentialTx2(t *testing.T)  {
+	return
 	id1 := "did:elastos:ibTPLrp758SGtLCzLoiF4VQqCpT7cNCAdh"
 	privateKey1Str := "41Wji2Bo39wLB6AoUP77ADANaPeDBQLXycp8rzTcgLNW"
 	tx1 := getPayloadDIDInfo(id1, "create", jianbinCtrl3PubKeyTest, privateKey1Str)

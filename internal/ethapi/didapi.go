@@ -138,7 +138,9 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 
 	isDID, err := s.isDID(controller)
 	if err != nil {
-		return nil, http.NewError(int(service.InvalidParams), "idParam controller not found")
+		rpcPayloadDid.Status = didapi.CredentialNonExist
+		rpcPayloadDid.ID = idParam
+		return rpcPayloadDid, nil
 	}
 	//customizedid
 	if !isDID {
@@ -312,9 +314,16 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 	if int64(skip) < 0 {
 		return nil, http.NewError(int(service.InvalidParams), "skip is negative")
 	}
+	if int64(limit) < 0 {
+		return nil, http.NewError(int(service.InvalidParams), "limit is negative")
+	}
 
 	if limit == 0{
-		limit = 100
+		limit = 128
+	}
+
+	if limit > 256 {
+		limit = 256
 	}
 	txsData, _ := rawdb.GetAllDIDVerifCredentials(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), int64(skip),
 		int64(limit))
