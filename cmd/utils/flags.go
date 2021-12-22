@@ -1593,7 +1593,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.DynamicArbiterHeight = 1
 		}
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
-			cfg.DocArraySortHeight = new(big.Int).SetUint64(1)
+			cfg.DocArraySortHeight = new(big.Int).SetUint64(2854640)
 		}
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
 			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(1)
