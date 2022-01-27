@@ -3,9 +3,11 @@ package vm
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"testing"
 
+	"github.com/elastos/Elastos.ELA.SideChain/service"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
@@ -13,6 +15,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	elacom "github.com/elastos/Elastos.ELA/common"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -25,6 +28,12 @@ PayloadGenerator is the helper struct
 
 var  gentor PayloadGenerator
 
+func TestReverse(t *testing.T){
+	hash,_ := elacom.Uint256FromHexString("bedeaad0ce7eb8338546700ccaf84788c21219c560c8dd99f46b60e0a02ce946")
+
+	hashReverse := service.ToReversedString(*hash)
+	fmt.Println("hashReverse", hashReverse)
+}
 
 func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 

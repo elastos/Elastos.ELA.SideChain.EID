@@ -52,8 +52,7 @@ func (rpcTxData *RpcCredentialTransactionData) FromCredentialTranasactionData(tx
 	if err != nil {
 		return false
 	}
-
-	rpcTxData.TXID = service.ToReversedString(*hash)
+	rpcTxData.TXID = hash.String()
 	rpcTxData.Timestamp = txData.Timestamp
 	rpcTxData.Operation.Header = txData.Operation.Header
 	rpcTxData.Operation.Payload = txData.Operation.Payload
