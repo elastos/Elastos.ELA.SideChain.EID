@@ -378,6 +378,9 @@ func TestIDChainStore_CreateDIDTx(t *testing.T) {
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(0)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
+
 	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 	evm.BlockNumber = new(big.Int).SetInt64(1)
@@ -811,6 +814,7 @@ func TestCustomizedDID(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
 	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 	evm.Time=big.NewInt(0)
@@ -854,6 +858,8 @@ func TestCustomizedDIDMultSign(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
 	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 	buf := new(bytes.Buffer)
@@ -1598,6 +1604,8 @@ func checkDIDTransaction(didpayload []byte, db *state.StateDB) error {
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 	evm.chainConfig.CustomizeDIDHeight= new(big.Int).SetInt64(0)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
 	evm.Context.Origin = common.HexToAddress("0xC445f9487bF570fF508eA9Ac320b59730e81e503")
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.OldDIDMigrateAddr = "0xC445f9487bF570fF508eA9Ac320b59730e81e503"
@@ -1634,6 +1642,7 @@ func checkDIDTransactionWithPayloadSyntax(didpayload []byte, db *state.StateDB) 
 	evm.BlockNumber = new(big.Int).SetInt64(3)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = new(big.Int).SetInt64(2)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
 
 	evm.Context.Origin = common.HexToAddress("0xB445f9487bF570fF508eA9Ac320b59730e81e503")
 	evm.chainConfig.OldDIDMigrateHeight = new(big.Int).SetInt64(2)
@@ -1672,6 +1681,8 @@ func checkDIDTransactionAfterMigrateHeight(didpayload []byte, db *state.StateDB)
 	evm.chainConfig.OldDIDMigrateAddr = "0xb445f9487bF570fF508eA9Ac320b59730e81e503"
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight= new(big.Int).SetInt64(2)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
 	evm.Time = &big.Int{}
 	gas, _ := did_contract.RequiredGas(evm, []byte(didpayload))
 	if gas == math.MaxUint64 {
@@ -2067,6 +2078,8 @@ func TestCustomizedDIDTransferProofs(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
 	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 	user1 := "did:elastos:iXcRhYB38gMt1phi5JXJMjeXL2TL8cg58y"
@@ -2294,6 +2307,8 @@ func TestDocSliceSort(t *testing.T) {
 		evm.BlockNumber = new(big.Int).SetInt64(1)
 		evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 		evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+		evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
 		evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 		buf := new(bytes.Buffer)
@@ -2324,6 +2339,8 @@ func TestNewCustomizedDID(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(1)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
+
 	evm.chainConfig.MaxExpiredHeight = big.NewInt(100)
 
 	buf := new(bytes.Buffer)
@@ -2486,7 +2503,7 @@ func TestCustomizeDIDMultiCtrlPublicKeyUse(t *testing.T) {
 	evm.Time=big.NewInt(0)
 	evm.BlockNumber = new(big.Int).SetInt64(3)
 	evm.chainConfig.CustomizeDIDHeight = new(big.Int).SetInt64(3)
-
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)
@@ -2574,6 +2591,7 @@ func TestJianBinCustomizeDIDMultiCtrlPublicKeyUse(t *testing.T) {
 	evm.BlockNumber = new(big.Int).SetInt64(3)
 	evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 	evm.chainConfig.CustomizeDIDHeight = new(big.Int).SetInt64(2)
+	evm.chainConfig.CheckCustomizeDIDBeginHeight = big.NewInt(0)
 
 	buf := new(bytes.Buffer)
 	tx1.Serialize(buf, did.DIDVersion)

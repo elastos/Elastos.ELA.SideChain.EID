@@ -808,6 +808,11 @@ var (
 		Usage: "after this height DocArraySortHeight doc array need sort",
 		Value: 0,//todo
 	}
+	CheckCustomizeDIDBeginHeightFlag = cli.Uint64Flag{
+		Name:  "checkcustomizedidbeginheight",
+		Usage: "after this height CheckCustomizeDIDBeginHeight check custdid",
+		Value: 0,//todo
+	}
 	OldDIDMigrateAddrFlag = cli.StringFlag{
 		Name:  "olddidmigrateaddr",
 		Usage: "configue old did migrate address",
@@ -1576,7 +1581,12 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(ctx.GlobalUint64(OldDIDMigrateHeightFlag.Name))
 	cfg.OldDIDMigrateAddr = ctx.GlobalString(OldDIDMigrateAddrFlag.Name)
 	cfg.DocArraySortHeight = new(big.Int).SetUint64(ctx.GlobalUint64(DocArraySortHeightFlag.Name))
+	cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(ctx.GlobalUint64(CheckCustomizeDIDBeginHeightFlag.Name))
+
+
 	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
+	log.Info("SetEthConfig", "cfg.CheckCustomizeDIDBeginHeight ", cfg.CheckCustomizeDIDBeginHeight)
+
 	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
 	// Override any default configs for hard coded networks.
 	switch {
