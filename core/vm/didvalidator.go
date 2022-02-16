@@ -908,7 +908,9 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 	if !IsLetterOrNumber(idString) {
 		return errors.New("invalid custom ID: only letter and number is allowed")
 	}
-	if err := checkCustomizedDIDAvailable(customizedDIDPayload); err != nil {
+
+
+	if err := checkCustomizedDIDAvailable(customizedDIDPayload,evm.ElaHeight); err != nil {
 		return err
 	}
 
@@ -1330,7 +1332,7 @@ func ReceivedCustomToLower(receivedCustomIDs map[string]common.Uint168)map[strin
 	return	lowerCustomIDs
 }
 
-func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
+func checkCustomizedDIDAvailable(cPayload *did.DIDPayload, elaHeight uint32) error {
 
 	log.Error("checkCustomizedDIDAvailable 1")
 	if spv.SpvService == nil && didParam.IsTest == true {
@@ -1339,15 +1341,11 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	if  spv.SpvService == nil{
 		return nil
 	}
-	bestHeader,err := spv.SpvService.HeaderStore().GetBest()
-	if err != nil{
-		return err
-	}
-	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs(bestHeader.Height)
+	reservedCustomIDs, err := spv.SpvService.GetReservedCustomIDs(elaHeight)
 	if err != nil {
 		return err
 	}
-	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs(bestHeader.Height)
+	receivedCustomIDs, err := spv.SpvService.GetReceivedCustomIDs(elaHeight)
 	if err != nil {
 		return err
 	}
