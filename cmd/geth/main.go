@@ -176,6 +176,7 @@ var (
 		utils.OldDIDMigrateAddrFlag,
 		utils.OldDIDMigrateHeightFlag,
 		utils.DocArraySortHeightFlag,
+		utils.CheckCustomizeDIDBeginHeightFlag,
 		utils.DynamicArbiter,
 	}
 

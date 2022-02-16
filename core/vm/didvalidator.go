@@ -890,10 +890,17 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		return errors.New("spv.SpvService == nil && didParam.IsTest != true")
 	}
 	doc := customizedDIDPayload.DIDDoc
+
+	log.Info("checkCustomizedDIDAvailable", "CheckCustomizeDIDBeginHeight",
+		evm.chainConfig.CheckCustomizeDIDBeginHeight)
+
+	if evm.BlockNumber.Cmp(evm.chainConfig.CheckCustomizeDIDBeginHeight) < 0{
+		return errors.New("receive customized did  before CheckCustomizeDIDBeginHeight ")
+	}
+
 	if err := checkCustIDOverMaxExpireHeight(evm, doc.ID, customizedDIDPayload.Header.Operation); err != nil {
 		return err
 	}
-
 
 	if err := checkCustomIDPayloadSyntax(customizedDIDPayload, evm); err != nil {
 		log.Error("checkPayloadSyntax error", "error", err, "ID", customizedDIDPayload.DIDDoc.ID)
@@ -1332,7 +1339,7 @@ func ReceivedCustomToLower(receivedCustomIDs map[string]common.Uint168)map[strin
 
 func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 
-	log.Error("checkCustomizedDIDAvailable 1")
+	log.Info("checkCustomizedDIDAvailable 1")
 	if spv.SpvService == nil && didParam.IsTest == true {
 		return nil
 	}
@@ -1353,17 +1360,19 @@ func checkCustomizedDIDAvailable(cPayload *did.DIDPayload) error {
 	}
 
 	if reservedCustomIDs == nil || len(reservedCustomIDs) == 0 {
+
+		log.Error("checkCustomizedDIDAvailable ", "bestHeader.Height", bestHeader.Height)
 		return errors.New("Before registe customized did must have reservedCustomIDs")
 	}
 	reservedCustomIDs = ReserveCustomToLower(reservedCustomIDs)
 	receivedCustomIDs = ReceivedCustomToLower(receivedCustomIDs)
-	log.Error("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
-	log.Error("checkCustomizedDIDAvailable ", "receivedCustomIDs ", receivedCustomIDs)
+	log.Info("checkCustomizedDIDAvailable ", "reservedCustomIDs", reservedCustomIDs)
+	log.Info("checkCustomizedDIDAvailable ", "receivedCustomIDs ", receivedCustomIDs)
 
 	noPrefixID := did.GetDIDFromUri(cPayload.DIDDoc.ID)
 	//customID is no prefix and lower character
 	customID := strings.ToLower(noPrefixID)
-	log.Error("checkCustomizedDIDAvailable 1", "customID", customID, "noPrefixID", noPrefixID)
+	log.Info("checkCustomizedDIDAvailable 1", "customID", customID, "noPrefixID", noPrefixID)
 
 	if _, ok := reservedCustomIDs[customID]; ok {
 		if customDID, ok := receivedCustomIDs[customID]; ok {

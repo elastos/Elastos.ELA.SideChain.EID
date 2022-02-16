@@ -82,6 +82,7 @@ func New(ctx *node.ServiceContext, config *eth.Config, node *node.Node) (*LightE
 	chainConfig.OldDIDMigrateAddr = config.OldDIDMigrateAddr
 	chainConfig.OldDIDMigrateHeight = config.OldDIDMigrateHeight
 	chainConfig.DocArraySortHeight = config.DocArraySortHeight
+	chainConfig.CheckCustomizeDIDBeginHeight = config.CheckCustomizeDIDBeginHeight
 	log.Info("New", "chainConfig.DocArraySortHeight ", chainConfig.DocArraySortHeight)
 
 	if len(chainConfig.PbftKeyStore) > 0 {
