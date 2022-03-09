@@ -1584,8 +1584,6 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(ctx.GlobalUint64(CheckCustomizeDIDBeginHeightFlag.Name))
 
 
-	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
-	log.Info("SetEthConfig", "cfg.CheckCustomizeDIDBeginHeight ", cfg.CheckCustomizeDIDBeginHeight)
 
 	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
 	// Override any default configs for hard coded networks.
@@ -1608,6 +1606,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
 			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(1)
 		}
+		if !ctx.GlobalIsSet(CheckCustomizeDIDBeginHeightFlag.Name) {
+			cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(3649000)
+		}
+
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 24
@@ -1681,6 +1683,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		}
 	}
 	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
+	log.Info("SetEthConfig", "cfg.CheckCustomizeDIDBeginHeight ", cfg.CheckCustomizeDIDBeginHeight)
 
 }
 
