@@ -1,8 +1,6 @@
 package did
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"strings"
@@ -87,7 +85,7 @@ func (p *VerifiableCredential) CompleteCompact(did string) {
 }
 
 type VerifiableCredentialData struct {
-	Context 		  []string    `json:"@context,omitempty"`
+	Context           []string    `json:"@context,omitempty"`
 	ID                string      `json:"id"`
 	Type              []string    `json:"type,omitempty"`
 	Issuer            string      `json:"issuer,omitempty"`
@@ -97,7 +95,7 @@ type VerifiableCredentialData struct {
 }
 
 func (p *VerifiableCredentialData) GetData() []byte {
-	buf := new(bytes.Buffer)
+	buf := NewNFCBuffer()
 	err := MarshalVerifiableCredentialData(p, buf)
 	if err != nil {
 		return nil
@@ -112,7 +110,7 @@ type Service struct {
 }
 
 type DIDPayloadData struct {
-	Context 			 []string               `json:"@context,omitempty"`
+	Context              []string               `json:"@context,omitempty"`
 	ID                   string                 `json:"id"`
 	Controller           interface{}            `json:"controller,omitempty"`
 	MultiSig             string                 `json:"multisig,omitempty"`
@@ -158,7 +156,6 @@ func (s ControllerSlice) Less(i, j int) bool {
 	return result
 }
 
-
 type ServiceSlice []interface{}
 
 func (s ServiceSlice) Len() int {
@@ -191,16 +188,6 @@ func (v VerifiableCredentialSlice) Less(i, j int) bool {
 		result = true
 	}
 	return result
-}
-
-func writeKey(buf *bytes.Buffer, key string) error {
-	sig, err := json.Marshal(key)
-	if err != nil {
-		return err
-	}
-	buf.Write(sig)
-	buf.WriteRune(':')
-	return nil
 }
 
 func (c *DIDPayloadData) GetData() []byte {

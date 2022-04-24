@@ -16,18 +16,17 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	jsonEncoder.Encode(t)
 	fmt.Println("JSONMarshal", bf.String())
 	str := strings.Replace(bf.String(), "\n", "", -1)
-	return []byte(str) ,nil
+	return []byte(str), nil
 }
 
 func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
-	var b []byte
-	buf := bytes.NewBuffer(b)
-	buf.WriteRune('{')
+	buf := NewNFCBuffer()
+	buf.WriteString("{")
 
 	//context
 	contextCount := len(p.Context)
 	if contextCount != 0 {
-		err := writeKey(buf, "@context")
+		err := buf.WriteKey("@context")
 		if err != nil {
 			return nil, err
 		}
@@ -35,11 +34,13 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		buf.Write(pks)
-		buf.WriteRune(',')
+		nfcPKS := ToNFCBytes(pks)
+		buf.Write(nfcPKS)
+		buf.WriteString(",")
 	}
+
 	// ID
-	err := writeKey(buf, "id")
+	err := buf.WriteKey("id")
 	if err != nil {
 		return nil, err
 	}
@@ -48,11 +49,11 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 		return nil, err
 	}
 	buf.Write(idv)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// Controller
 	if p.Controller != nil {
-		err := writeKey(buf, "controller")
+		err := buf.WriteKey("controller")
 		if err != nil {
 			return nil, err
 		}
@@ -62,13 +63,12 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(idv)
-
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// MultiSig
 	if p.MultiSig != "" {
-		err := writeKey(buf, "multisig")
+		err := buf.WriteKey("multisig")
 		if err != nil {
 			return nil, err
 		}
@@ -77,13 +77,13 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(sigv)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// Publickey
 	count := len(p.PublicKey)
 	if count != 0 {
-		err := writeKey(buf, "publicKey")
+		err := buf.WriteKey("publicKey")
 		if err != nil {
 			return nil, err
 		}
@@ -92,91 +92,91 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(pks)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// Authentication
 	count = len(p.Authentication)
 	if count != 0 {
-		err = writeKey(buf, "authentication")
+		err = buf.WriteKey("authentication")
 		if err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, authen := range p.Authentication {
 			if err = MarshalAuthentication(authen, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// Authorization
 	count = len(p.Authorization)
 	if count != 0 {
-		err := writeKey(buf, "authorization")
+		err := buf.WriteKey("authorization")
 		if err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, vc := range p.Authorization {
 			if err = MarshalAuthentication(vc, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// VerifiableCredential
 	count = len(p.VerifiableCredential)
 	if count != 0 {
-		err := writeKey(buf, "verifiableCredential")
+		err := buf.WriteKey("verifiableCredential")
 		if err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, vc := range p.VerifiableCredential {
 			if err = MarshalVerifiableCredential(vc, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// Servie
 	count = len(p.Service)
 	if count != 0 {
-		if err := writeKey(buf, "service"); err != nil {
+		if err := buf.WriteKey("service"); err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, se := range p.Service {
 			if err := MarshalService(se, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// Expires
 	if p.Expires != "" {
-		if err := writeKey(buf, "expires"); err != nil {
+		if err := buf.WriteKey("expires"); err != nil {
 			return nil, err
 		}
 		sigv, err := json.Marshal(p.Expires)
@@ -186,21 +186,20 @@ func MarshalDIDPayloadData(p *DIDPayloadData) ([]byte, error) {
 		buf.Write(sigv)
 	}
 
-	buf.WriteRune('}')
+	buf.WriteString("}")
 
 	return buf.Bytes(), nil
 }
 
 func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 	p := doc.DIDPayloadData
-	var b []byte
-	buf := bytes.NewBuffer(b)
-	buf.WriteRune('{')
+	buf := NewNFCBuffer()
+	buf.WriteString("{")
 
 	//context
 	contextCount := len(p.Context)
 	if contextCount != 0 {
-		err := writeKey(buf, "@context")
+		err := buf.WriteKey("@context")
 		if err != nil {
 			return nil, err
 		}
@@ -209,10 +208,10 @@ func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(pks)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 	// ID
-	err := writeKey(buf, "id")
+	err := buf.WriteKey("id")
 	if err != nil {
 		return nil, err
 	}
@@ -221,11 +220,11 @@ func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 		return nil, err
 	}
 	buf.Write(idv)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// Controller
 	if p.Controller != nil {
-		err := writeKey(buf, "controller")
+		err := buf.WriteKey("controller")
 		if err != nil {
 			return nil, err
 		}
@@ -236,12 +235,12 @@ func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 		}
 		buf.Write(idv)
 
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// MultiSig
 	if p.MultiSig != "" {
-		err := writeKey(buf, "multisig")
+		err := buf.WriteKey("multisig")
 		if err != nil {
 			return nil, err
 		}
@@ -250,13 +249,13 @@ func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(sigv)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// Publickey
 	count := len(p.PublicKey)
 	if count != 0 {
-		err := writeKey(buf, "publicKey")
+		err := buf.WriteKey("publicKey")
 		if err != nil {
 			return nil, err
 		}
@@ -265,91 +264,91 @@ func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(pks)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// Authentication
 	count = len(p.Authentication)
 	if count != 0 {
-		err = writeKey(buf, "authentication")
+		err = buf.WriteKey("authentication")
 		if err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, authen := range p.Authentication {
 			if err = MarshalAuthentication(authen, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// Authorization
 	count = len(p.Authorization)
 	if count != 0 {
-		err := writeKey(buf, "authorization")
+		err := buf.WriteKey("authorization")
 		if err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, vc := range p.Authorization {
 			if err = MarshalAuthentication(vc, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// VerifiableCredential
 	count = len(p.VerifiableCredential)
 	if count != 0 {
-		err := writeKey(buf, "verifiableCredential")
+		err := buf.WriteKey("verifiableCredential")
 		if err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, vc := range p.VerifiableCredential {
 			if err = MarshalVerifiableCredential(vc, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// Servie
 	count = len(p.Service)
 	if count != 0 {
-		if err := writeKey(buf, "service"); err != nil {
+		if err := buf.WriteKey("service"); err != nil {
 			return nil, err
 		}
-		buf.WriteRune('[')
+		buf.WriteString("[")
 		for i, se := range p.Service {
 			if err := MarshalService(se, buf); err != nil {
 				return nil, err
 			}
 			if i != count-1 {
-				buf.WriteRune(',')
+				buf.WriteString(",")
 			}
 		}
-		buf.WriteRune(']')
-		buf.WriteRune(',')
+		buf.WriteString("]")
+		buf.WriteString(",")
 	}
 
 	// Expires
 	if p.Expires != "" {
-		if err := writeKey(buf, "expires"); err != nil {
+		if err := buf.WriteKey("expires"); err != nil {
 			return nil, err
 		}
 		sigv, err := json.Marshal(p.Expires)
@@ -359,39 +358,39 @@ func MarshalDocData(doc *DIDDoc) ([]byte, error) {
 		buf.Write(sigv)
 	}
 
-	buf.WriteRune(',')
-	err = writeKey(buf, "proof")
+	buf.WriteString(",")
+	err = buf.WriteKey("proof")
 	if err != nil {
-		return nil ,err
+		return nil, err
 	}
 	pf, err := json.Marshal(doc.Proof)
 	if err != nil {
-		return nil ,err
+		return nil, err
 	}
 	buf.Write(pf)
-	buf.WriteRune('}')
+	buf.WriteString("}")
 
 	return buf.Bytes(), nil
 }
 
-func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) error {
-	buf.WriteRune('{')
+func MarshalVerifiableCredential(p VerifiableCredential, buf *NFCBuffer) error {
+	buf.WriteString("{")
 	//context
 	contextCount := len(p.Context)
 	if contextCount != 0 {
-		err := writeKey(buf, "@context")
+		err := buf.WriteKey("@context")
 		if err != nil {
-			return  err
+			return err
 		}
 		pks, err := json.Marshal(p.Context)
 		if err != nil {
 			return err
 		}
 		buf.Write(pks)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 	// ID
-	err := writeKey(buf, "id")
+	err := buf.WriteKey("id")
 	if err != nil {
 		return err
 	}
@@ -400,12 +399,12 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 		return err
 	}
 	buf.Write(idv)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// Type
 	count := len(p.Type)
 	if count != 0 {
-		err := writeKey(buf, "type")
+		err := buf.WriteKey("type")
 		if err != nil {
 			return err
 		}
@@ -414,11 +413,11 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 			return err
 		}
 		buf.Write(tpe)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// Issuer
-	if err = writeKey(buf, "issuer"); err != nil {
+	if err = buf.WriteKey("issuer"); err != nil {
 		return err
 	}
 	ise, err := json.Marshal(p.Issuer)
@@ -426,10 +425,10 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 		return err
 	}
 	buf.Write(ise)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// IssuanceDate
-	err = writeKey(buf, "issuanceDate")
+	err = buf.WriteKey("issuanceDate")
 	if err != nil {
 		return err
 	}
@@ -438,11 +437,11 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 		return err
 	}
 	buf.Write(isd)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// ExpirationDate if not empty str
 	if p.ExpirationDate != "" {
-		err = writeKey(buf, "expirationDate")
+		err = buf.WriteKey("expirationDate")
 		if err != nil {
 			return err
 		}
@@ -451,12 +450,11 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 			return err
 		}
 		buf.Write(exp)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
-
 	// CredentialSubject
-	err = writeKey(buf, "credentialSubject")
+	err = buf.WriteKey("credentialSubject")
 	if err != nil {
 		return err
 	}
@@ -464,10 +462,10 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 	if err != nil {
 		return err
 	}
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// proof
-	err = writeKey(buf, "proof")
+	err = buf.WriteKey("proof")
 	if err != nil {
 		return err
 	}
@@ -477,28 +475,28 @@ func MarshalVerifiableCredential(p VerifiableCredential, buf *bytes.Buffer) erro
 	}
 	buf.Write(pf)
 
-	buf.WriteRune('}')
+	buf.WriteString("}")
 	return nil
 }
 
-func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buffer) error {
-	buf.WriteRune('{')
+func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *NFCBuffer) error {
+	buf.WriteString("{")
 	//context
 	contextCount := len(p.Context)
 	if contextCount != 0 {
-		err := writeKey(buf, "@context")
+		err := buf.WriteKey("@context")
 		if err != nil {
-			return  err
+			return err
 		}
 		pks, err := json.Marshal(p.Context)
 		if err != nil {
 			return err
 		}
 		buf.Write(pks)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 	// ID
-	err := writeKey(buf, "id")
+	err := buf.WriteKey("id")
 	if err != nil {
 		return err
 	}
@@ -507,12 +505,12 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 		return err
 	}
 	buf.Write(idv)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// Type
 	count := len(p.Type)
 	if count != 0 {
-		err := writeKey(buf, "type")
+		err := buf.WriteKey("type")
 		if err != nil {
 			return err
 		}
@@ -521,11 +519,11 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 			return err
 		}
 		buf.Write(tpe)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 
 	// Issuer
-	if err = writeKey(buf, "issuer"); err != nil {
+	if err = buf.WriteKey("issuer"); err != nil {
 		return err
 	}
 	ise, err := json.Marshal(p.Issuer)
@@ -533,10 +531,10 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 		return err
 	}
 	buf.Write(ise)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// IssuanceDate
-	err = writeKey(buf, "issuanceDate")
+	err = buf.WriteKey("issuanceDate")
 	if err != nil {
 		return err
 	}
@@ -545,11 +543,11 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 		return err
 	}
 	buf.Write(isd)
-	buf.WriteRune(',')
+	buf.WriteString(",")
 
 	// ExpirationDate
 	if p.ExpirationDate != "" {
-		err = writeKey(buf, "expirationDate")
+		err = buf.WriteKey("expirationDate")
 		if err != nil {
 			return err
 		}
@@ -558,10 +556,10 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 			return err
 		}
 		buf.Write(exp)
-		buf.WriteRune(',')
+		buf.WriteString(",")
 	}
 	// CredentialSubject
-	err = writeKey(buf, "credentialSubject")
+	err = buf.WriteKey("credentialSubject")
 	if err != nil {
 		return err
 	}
@@ -570,11 +568,11 @@ func MarshalVerifiableCredentialData(p *VerifiableCredentialData, buf *bytes.Buf
 		return err
 	}
 
-	buf.WriteRune('}')
+	buf.WriteString("}")
 	return nil
 }
 
-func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) error {
+func MarshalCredentialSubject(credentialSubject interface{}, buf *NFCBuffer) error {
 	creSub := credentialSubject.(map[string]interface{})
 	_, ok := creSub["id"]
 	if !ok {
@@ -602,9 +600,9 @@ func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) 
 	})
 
 	l := len(sortedData)
-	buf.WriteRune('{')
+	buf.WriteString("{")
 	for i, data := range sortedData {
-		err := writeKey(buf, data.key)
+		err := buf.WriteKey(data.key)
 		if err != nil {
 			return err
 		}
@@ -617,16 +615,15 @@ func MarshalCredentialSubject(credentialSubject interface{}, buf *bytes.Buffer) 
 		buf.Write(idv)
 
 		if i != l-1 {
-			buf.WriteRune(',')
+			buf.WriteString(",")
 		}
 	}
-	buf.WriteRune('}')
+	buf.WriteString("}")
 
 	return nil
 }
 
-
-func MarshalService(service interface{}, buf *bytes.Buffer) error {
+func MarshalService(service interface{}, buf *NFCBuffer) error {
 	ser := service.(map[string]interface{})
 	if _, ok := ser["id"]; !ok {
 		return errors.New("not found id in service")
@@ -671,9 +668,9 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 	})
 
 	l := len(sortedData)
-	buf.WriteRune('{')
+	buf.WriteString("{")
 	for i, data := range sortedData {
-		err := writeKey(buf, data.key)
+		err := buf.WriteKey(data.key)
 		if err != nil {
 			return err
 		}
@@ -686,17 +683,16 @@ func MarshalService(service interface{}, buf *bytes.Buffer) error {
 		buf.Write(idv)
 
 		if i != l-1 {
-			buf.WriteRune(',')
+			buf.WriteString(",")
 		} else {
-			buf.WriteRune('}')
+			buf.WriteString("}")
 		}
 	}
 
 	return nil
 }
 
-
-func MarshalAuthentication(auth interface{}  , buf *bytes.Buffer) error {
+func MarshalAuthentication(auth interface{}, buf *NFCBuffer) error {
 
 	switch auth.(type) {
 	case string:
@@ -727,4 +723,3 @@ func MarshalAuthentication(auth interface{}  , buf *bytes.Buffer) error {
 
 	return nil
 }
-

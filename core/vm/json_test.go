@@ -33,7 +33,7 @@ func (om *OrderedMap) UnmarshalJSON(b []byte) error {
 func (om OrderedMap) MarshalJSON() ([]byte, error) {
 	var b []byte
 	buf := bytes.NewBuffer(b)
-	buf.WriteRune('{')
+	buf.WriteString("{")
 	l := len(om.Order)
 	for i, key := range om.Order {
 		km, err := json.Marshal(key)
@@ -48,11 +48,11 @@ func (om OrderedMap) MarshalJSON() ([]byte, error) {
 		}
 		buf.Write(vm)
 		if i != l-1 {
-			buf.WriteRune(',')
+			buf.WriteString(",")
 		}
 		fmt.Println(buf.String())
 	}
-	buf.WriteRune('}')
+	buf.WriteString("}")
 	fmt.Println(buf.String())
 	return buf.Bytes(), nil
 }
