@@ -1,5 +1,5 @@
 {
-  "@context" : [ "https://www.w3.org/ns/did/v1", "https://ns.elastos.org/did/v1", "https://w3id.org/security/v1" ],
+  "@context" : [ "a\u03084a", "https://www.w3.org/ns/did/v1", "https://ns.elastos.org/did/v1", "https://w3id.org/security/v1" ],
   "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ",
   "publicKey":[
     {
