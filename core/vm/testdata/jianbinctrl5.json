@@ -1,5 +1,5 @@
 {
-  "@context" : [ "a\u03084a", "https://www.w3.org/ns/did/v1", "https://ns.elastos.org/did/v1", "https://w3id.org/security/v1" ],
+  "@context" : ["4<3", ",3>4", ",2\u003e1", ",1\u003c2", "a&b", ",c\u0026d", "a\u03084a", "https://www.w3.org/ns/did/v1", "https://ns.elastos.org/did/v1", "https://w3id.org/security/v1" ],
   "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ",
   "publicKey":[
     {
@@ -113,7 +113,7 @@
   ],
   "verifiableCredential":[
     {
-      "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://ns.elastos.org/credentials/v1", "https://ns.elastos.org/credentials/profile/v1", "https://ns.elastos.org/credentials/email/v1" ],
+      "@context" : ["4<3", ",3>4", ",2\u003e1", ",1\u003c2", "a&b", ",c\u0026d", "a\u03084a", "https://www.w3.org/2018/credentials/v1", "https://ns.elastos.org/credentials/v1", "https://ns.elastos.org/credentials/profile/v1", "https://ns.elastos.org/credentials/email/v1" ],
       "id":"did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ#crdential-3",
       "type":[
         "SelfProclaimedCredential",
@@ -126,7 +126,14 @@
         "id": "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ",
         "nickname":"woohah",
         "nation":"Singapore",
-        "language":"English"
+        "language":"English",
+        "data": "4<3, 3>4, 2\u003e1, 1\u003c2, a&b, c\u0026d, a\u03084a",
+        "a&b": "testdata",
+        "c\u0026d": "testdata",
+        "4<3": "testdata",
+        "3>4": "testdata",
+        "3\u003c4": "testdata",
+        "4\u003e3": "testdata"
       },
       "proof":{
         "type":"ECDSAsecp256r1",
