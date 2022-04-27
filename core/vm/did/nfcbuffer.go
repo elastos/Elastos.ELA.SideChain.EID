@@ -2,7 +2,7 @@ package did
 
 import (
 	"bytes"
-	"encoding/json"
+
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -19,7 +19,7 @@ func (buf *NFCBuffer) WriteString(s string) (n int, err error) {
 }
 
 func (buf *NFCBuffer) WriteKey(key string) error {
-	sig, err := json.Marshal(key)
+	sig, err := JSONMarshal(key)
 	if err != nil {
 		return err
 	}
