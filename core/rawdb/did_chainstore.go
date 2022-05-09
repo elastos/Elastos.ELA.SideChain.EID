@@ -56,12 +56,15 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	buffer = bytes.NewReader(log.Data)
 	err = operation.Deserialize(buffer, did.DIDVersion)
 	if err != nil {
+		fmt.Println("PersistRegisterDIDTx operation.Deserialize err", "err", err)
 		return err
 	}
 	isDID := uint64(0)
 	if did.IsDID(operation.DIDDoc.ID, operation.DIDDoc.PublicKey) {
 		isDID = 1
 	}
+	fmt.Println("PersistRegisterDIDTx ","ID", operation.DIDDoc.ID)
+
 	idKey := []byte{}
 	//customized id store lower
 	if isDID != 1{
@@ -72,10 +75,13 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 
 	expiresHeight, err := TryGetExpiresHeight(operation.DIDDoc.Expires, blockHeight, blockTimeStamp)
 	if err != nil {
+		fmt.Println("PersistRegisterDIDTx TryGetExpiresHeight err","ID", operation.DIDDoc.ID, "err", err)
 		return err
 	}
 
 	if err := PersistRegisterDIDExpiresHeight(db, idKey, expiresHeight); err != nil {
+		fmt.Println("PersistRegisterDIDTx PersistRegisterDIDExpiresHeight err","ID", operation.DIDDoc.ID, "err", err)
+
 		return err
 	}
 
@@ -84,6 +90,8 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 		return err
 	}
 	if err := persistRegisterDIDTxHash(db, idKey, *thash); err != nil {
+		fmt.Println("PersistRegisterDIDTx persistRegisterDIDTxHash err","ID", operation.DIDDoc.ID, "err", err)
+
 		return err
 	}
 
@@ -94,9 +102,11 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 
 
 	if err := PersistIsDID(db, idKey, isDID); err != nil {
+		fmt.Println("PersistRegisterDIDTx PersistIsDID err","ID", operation.DIDDoc.ID, "err", err)
+
 		return err
 	}
-	fmt.Println("PersistRegisterDIDTx end")
+	fmt.Println("PersistRegisterDIDTx end","ID", operation.DIDDoc.ID)
 
 	return nil
 }

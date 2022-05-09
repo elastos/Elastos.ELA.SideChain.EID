@@ -465,34 +465,44 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 	var err error
 	for _, receipt := range receipts {
 		if receipt.Status != 1 {
+			log.Info("WriteDIDReceipts ", "receipt.Status", receipt.Status, "receipt.TxHash", receipt.TxHash.String())
 			continue
 		}
 		operation := receipt.DIDLog.Operation
 		switch operation {
 		case did.Create_DID_Operation, did.Update_DID_Operation, did.Transfer_DID_Operation:
 			if err = PersistRegisterDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, number, btime); err != nil{
-				log.Crit("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err)
+				log.Error("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
+				log.Crit("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 
 		case did.Deactivate_DID_Operation:
 			if err = PersistDeactivateDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, receipt.TxHash); err != nil{
-				log.Crit("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err)
+				log.Error("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
+
+				log.Crit("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 		case did.Declare_Verifiable_Credential_Operation:
 			if err := PersistVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
 				 number, btime, receipt.TxHash); err != nil {
-				log.Crit("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err)
+				log.Error("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err, "receipt.TxHash", receipt.TxHash.String())
+
+				log.Crit("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 		case did.Revoke_Verifiable_Credential_Operation:
 			if err := PersistRevokeVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
 				number, btime, receipt.TxHash); err != nil {
-				log.Crit("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err)
+				log.Error("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err, "receipt.TxHash", receipt.TxHash.String())
+
+				log.Crit("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 		}
 
 
 	}
 	if err != nil {
+		log.Error("WriteDIDReceipts Failed to persist did receipt ", "err", err)
+
 		log.Crit("WriteDIDReceipts Failed to persist did receipt ", "err", err)
 	}
 }

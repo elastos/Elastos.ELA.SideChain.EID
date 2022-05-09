@@ -1225,11 +1225,15 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 			rawdb.WriteBody(batch, block.Hash(), block.NumberU64(), block.Body())
 			rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receiptChain[i])
 			rawdb.WriteTxLookupEntries(batch, block)
+			log.Info("writeLive before WriteDIDReceipts ", "block.NumberU64()", block.NumberU64(), "block.Hash()", block.Hash())
+
 			rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receiptChain[i], block.NumberU64(), block.Time())
+			log.Info("writeLive after WriteDIDReceipts ", "block.NumberU64()", block.NumberU64(), "block.Hash()", block.Hash())
 
 			stats.processed++
 			if batch.ValueSize() >= ethdb.IdealBatchSize {
 				if err := batch.Write(); err != nil {
+					log.Error("writeLive batch.Write() ", "err ", err, "batch.ValueSize()", batch.ValueSize())
 					return 0, err
 				}
 				size += batch.ValueSize()
@@ -1239,6 +1243,8 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 		if batch.ValueSize() > 0 {
 			size += batch.ValueSize()
 			if err := batch.Write(); err != nil {
+				log.Error("writeLive batch.Write() 2", "err ", err, "batch.ValueSize()", batch.ValueSize())
+
 				return 0, err
 			}
 		}
@@ -1404,6 +1410,8 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 	}
 
 	// Write other block data using a batch.
+	log.Info("writeBlockWithState begin", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
+
 	batch := bc.db.NewBatch()
 	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
 	rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receipts, block.NumberU64(), block.Time())
@@ -1415,6 +1423,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		go func() {
 			bc.dangerousFeed.Send(DangerousChainSideEvent{})
 		}()
+		log.Error("writeBlockWithState err1111", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 		return SideStatTy, err
 	}
 
@@ -1444,6 +1453,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		// Reorganise the chain if the parent is not the head block
 		if block.ParentHash() != currentBlock.Hash() {
 			if err := bc.reorg(currentBlock, block); err != nil {
+				log.Error("writeBlockWithState err0", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 				return NonStatTy, err
 			}
 		}
@@ -1455,8 +1465,10 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		status = SideStatTy
 	}
 	if err := batch.Write(); err != nil {
+		log.Error("writeBlockWithState err2222 NonStatTy", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 		return NonStatTy, err
 	}
+	log.Info("writeBlockWithState end", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 
 	// Set new head.
 	if status == CanonStatTy {
