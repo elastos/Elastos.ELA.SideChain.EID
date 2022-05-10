@@ -596,7 +596,7 @@ func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 	rawdb.WriteBlock(bc.db, genesis)
 
 	bc.genesisBlock = genesis
-	bc.insert(bc.genesisBlock)
+	bc.insert(bc.db,bc.genesisBlock)
 	bc.currentBlock.Store(bc.genesisBlock)
 	headBlockGauge.Update(int64(bc.genesisBlock.NumberU64()))
 
@@ -668,13 +668,13 @@ func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 // or if they are on a different side chain.
 //
 // Note, this function assumes that the `mu` mutex is held!
-func (bc *BlockChain) insert(block *types.Block) {
+func (bc *BlockChain) insert(db ethdb.KeyValueWriter,block *types.Block) {
 	// If the block is on a side chain or an unknown one, force other heads onto it too
 	updateHeads := rawdb.ReadCanonicalHash(bc.db, block.NumberU64()) != block.Hash()
 
 	// Add the block to the canonical chain number scheme and mark as the head
-	rawdb.WriteCanonicalHash(bc.db, block.Hash(), block.NumberU64())
-	rawdb.WriteHeadBlockHash(bc.db, block.Hash())
+	rawdb.WriteCanonicalHash(db, block.Hash(), block.NumberU64())
+	rawdb.WriteHeadBlockHash(db, block.Hash())
 
 	bc.currentBlock.Store(block)
 	headBlockGauge.Update(int64(block.NumberU64()))
@@ -682,7 +682,7 @@ func (bc *BlockChain) insert(block *types.Block) {
 	// If the block is better than our head or is on a different chain, force update heads
 	if updateHeads {
 		bc.hc.SetCurrentHeader(block.Header())
-		rawdb.WriteHeadFastBlockHash(bc.db, block.Hash())
+		rawdb.WriteHeadFastBlockHash(db, block.Hash())
 
 		bc.currentFastBlock.Store(block)
 		headFastBlockGauge.Update(int64(block.NumberU64()))
@@ -1316,7 +1316,7 @@ func (bc *BlockChain) writeKnownBlock(block *types.Block) error {
 	// Preimages here is empty, ignore it.
 	rawdb.WriteTxLookupEntries(bc.db, block)
 
-	bc.insert(block)
+	bc.insert(bc.db,block)
 	return nil
 }
 
@@ -1348,7 +1348,6 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 	if err := bc.hc.WriteTd(block.Hash(), block.NumberU64(), externTd); err != nil {
 		return NonStatTy, err
 	}
-	rawdb.WriteBlock(bc.db, block)
 
 	root, err := state.Commit(bc.chainConfig.IsEIP158(block.Number()))
 	if err != nil {
@@ -1464,20 +1463,26 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 	} else {
 		status = SideStatTy
 	}
+	//write block with batch
+	rawdb.WriteBlock(batch, block)
+
+
+	// Set new head.
+	if status == CanonStatTy {
+		//use batch instead
+		bc.insert(batch, block)
+	}
 	if err := batch.Write(); err != nil {
 		log.Error("writeBlockWithState err2222 NonStatTy", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 		return NonStatTy, err
 	}
 	log.Info("writeBlockWithState end", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 
-	// Set new head.
-	if status == CanonStatTy {
-		bc.insert(block)
-	}
 	bc.futureBlocks.Remove(block.Hash())
 	go func() {
 		bc.OnSyncHeader(block.Header())
 	}()
+
 	return status, nil
 }
 
@@ -2125,7 +2130,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	// taking care of the proper incremental order.
 	for i := len(newChain) - 1; i >= 1; i-- {
 		// Insert the block in the canonical way, re-writing history
-		bc.insert(newChain[i])
+		bc.insert(bc.db,newChain[i])
 
 		// Collect reborn logs due to chain reorg
 		collectLogs(newChain[i].Hash(), false)
