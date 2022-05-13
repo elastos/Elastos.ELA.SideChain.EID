@@ -1331,6 +1331,8 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 // writeBlockWithState writes the block and all associated state to the database,
 // but is expects the chain mutex to be held.
 func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB) (status WriteStatus, err error) {
+	log.Info("writeBlockWithState begin", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
+
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
@@ -1409,7 +1411,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 	}
 
 	// Write other block data using a batch.
-	log.Info("writeBlockWithState begin", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
+	log.Info("writeBlockWithState before WriteReceipts", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 
 	batch := bc.db.NewBatch()
 	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
@@ -1476,12 +1478,12 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		log.Error("writeBlockWithState err2222 NonStatTy", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 		return NonStatTy, err
 	}
-	log.Info("writeBlockWithState end", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 
 	bc.futureBlocks.Remove(block.Hash())
 	go func() {
 		bc.OnSyncHeader(block.Header())
 	}()
+	log.Info("writeBlockWithState end", "block.Hash()", block.Hash(), "block.NumberU64()", block.NumberU64())
 
 	return status, nil
 }
