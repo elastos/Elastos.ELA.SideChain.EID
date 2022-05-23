@@ -881,6 +881,8 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 }
 
 func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
+	fmt.Println("RequiredGas", "input", string(input))
+
 	data := getData(input, 32, uint64(len(input))-32)
 	p := new(did.DIDPayload)
 	if err := json.Unmarshal(data, p); err != nil {
@@ -910,6 +912,10 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 			p.Serialize(buf, did.DIDVersion)
 			//if it is normal did  lenth is 0
 			ID := payloadInfo.ID
+			fmt.Println("RequiredGas", "ID", ID)
+			fmt.Println("RequiredGas", "buf.Bytes()", string(buf.Bytes()))
+			fmt.Println("RequiredGas", "p.GetData()", string( p.GetData()))
+
 			if isDID {
 				ID = ""
 			}
