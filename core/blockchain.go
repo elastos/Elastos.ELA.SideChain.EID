@@ -1227,7 +1227,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 			rawdb.WriteTxLookupEntries(batch, block)
 			log.Info("writeLive before WriteDIDReceipts ", "block.NumberU64()", block.NumberU64(), "block.Hash()", block.Hash())
 
-			rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receiptChain[i], block.NumberU64(), block.Time())
+			rawdb.WriteDIDReceipts(batch.(ethdb.KeyValueWriter), bc.db.(ethdb.KeyValueReader), receiptChain[i], block.NumberU64(), block.Time())
 			log.Info("writeLive after WriteDIDReceipts ", "block.NumberU64()", block.NumberU64(), "block.Hash()", block.Hash())
 
 			stats.processed++
@@ -1415,7 +1415,8 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 
 	batch := bc.db.NewBatch()
 	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
-	rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receipts, block.NumberU64(), block.Time())
+	//rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receipts, block.NumberU64(), block.Time())
+	rawdb.WriteDIDReceipts(batch.(ethdb.KeyValueWriter), bc.db.(ethdb.KeyValueReader), receipts, block.NumberU64(), block.Time())
 
 	isToMany := bc.isToManyEvilSigners(block.Header())
 	if isToMany {

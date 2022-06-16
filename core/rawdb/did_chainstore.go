@@ -47,7 +47,7 @@ var (
 	ERR_LEVELDB_NOT_FOUND = errors.New("leveldb: not found")
 )
 
-func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight uint64,
+func PersistRegisterDIDTx(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, log *types.DIDLog, blockHeight uint64,
 	blockTimeStamp uint64) error {
 	fmt.Println("PersistRegisterDIDTx begin")
 	var err error
@@ -79,7 +79,7 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 		return err
 	}
 
-	if err := PersistRegisterDIDExpiresHeight(db, idKey, expiresHeight); err != nil {
+	if err := PersistRegisterDIDExpiresHeight(db,reader, idKey, expiresHeight); err != nil {
 		fmt.Println("PersistRegisterDIDTx PersistRegisterDIDExpiresHeight err","ID", operation.DIDDoc.ID, "err", err)
 
 		return err
@@ -87,9 +87,10 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 
 	thash, err := elaCom.Uint256FromBytes(log.TxHash.Bytes())
 	if err != nil {
+		fmt.Println("PersistRegisterDIDTx Uint256FromBytes err","TxHash", log.TxHash, "err", err)
 		return err
 	}
-	if err := persistRegisterDIDTxHash(db, idKey, *thash); err != nil {
+	if err := persistRegisterDIDTxHash(db,reader, idKey, *thash); err != nil {
 		fmt.Println("PersistRegisterDIDTx persistRegisterDIDTxHash err","ID", operation.DIDDoc.ID, "err", err)
 
 		return err
@@ -111,7 +112,7 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 	return nil
 }
 
-func PersistIsDID(db ethdb.KeyValueStore, idKey []byte, isDID uint64) error {
+func PersistIsDID(db ethdb.KeyValueWriter, idKey []byte, isDID uint64) error {
 	key := []byte{byte(IX_ISDID)}
 	key = append(key, idKey...)
 
@@ -122,7 +123,7 @@ func PersistIsDID(db ethdb.KeyValueStore, idKey []byte, isDID uint64) error {
 	return db.Put(key, buf.Bytes())
 }
 
-func IsDID(db ethdb.KeyValueStore, did string) (bool, error) {
+func IsDID(db ethdb.KeyValueReader, did string) (bool, error) {
 	idKey := new(bytes.Buffer)
 	idKey.WriteString(did)
 
@@ -212,11 +213,11 @@ func  GetCredentialExpiresHeight(db ethdb.KeyValueStore,idKey []byte) (uint32, e
 	return expiresBlockHeight, nil
 }
 
-func PersistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
+func PersistRegisterDIDExpiresHeight(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, idKey []byte,
 	expiresHeight uint64) error {
 	key := []byte{byte(IX_DIDExpiresHeight)}
 	key = append(key, idKey...)
-	data, err := db.Get(key)
+	data, err := reader.Get(key)
 	if err != nil {
 		if err.Error() != ERR_LEVELDB_NOT_FOUND.Error() && err.Error() != ERR_NOT_FOUND.Error() {
 			return err
@@ -260,11 +261,11 @@ func PersistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
 
 // key                                                    value
 //IX_VerifiableCredentialRevoked+ credentialID             controller
-func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte, revokerID string) error {
+func persistVerifyCredentialRevoked(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, credentialID []byte, revokerID string) error {
 	key := []byte{byte(IX_VerifiableCredentialRevoked)}
 	key = append(key, credentialID...)
 
-	data, err := db.Get(key)
+	data, err := reader.Get(key)
 	if err != nil {
 		if err.Error() != ERR_LEVELDB_NOT_FOUND.Error() && err.Error() != ERR_NOT_FOUND.Error() {
 			return err
@@ -310,11 +311,11 @@ func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte,
 	return db.Put(key, buf.Bytes())
 }
 
-func persistRegisterDIDTxHash(db ethdb.KeyValueStore, idKey []byte, txHash elaCom.Uint256) error {
+func persistRegisterDIDTxHash(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, idKey []byte, txHash elaCom.Uint256) error {
 	key := []byte{byte(IX_DIDTXHash)}
 	key = append(key, idKey...)
 
-	data, err := db.Get(key)
+	data, err := reader.Get(key)
 	if err != nil {
 		if err.Error() != ERR_LEVELDB_NOT_FOUND.Error() && err.Error() != ERR_NOT_FOUND.Error() {
 			return err
@@ -608,7 +609,7 @@ func IsURIHasPrefix(id string) bool {
 	return strings.HasPrefix(id, did.DID_ELASTOS_PREFIX)
 }
 
-func isCustomizeDIDExist(db ethdb.KeyValueStore,ID string)(bool,error){
+func isCustomizeDIDExist(db ethdb.KeyValueReader,ID string)(bool,error){
 	lowerID := strings.ToLower(ID)
 	fmt.Println("lowerID", lowerID)
 	isDID, err := IsDID(db, lowerID)
@@ -618,13 +619,13 @@ func isCustomizeDIDExist(db ethdb.KeyValueStore,ID string)(bool,error){
 	return !isDID, nil
 }
 
-func PersistDeactivateDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, thash common.Hash) error {
-	ok, err :=IsDID(db, log.DID)
+func PersistDeactivateDIDTx(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, log *types.DIDLog, thash common.Hash) error {
+	ok, err :=IsDID(reader, log.DID)
 	fmt.Println("PersistDeactivateDIDTx","DID" ,log.DID, "ok", ok, "err", err)
 	if err != nil{
 		if err.Error() == ERR_LEVELDB_NOT_FOUND.Error() || err.Error() == ERR_NOT_FOUND.Error()  {
 			//custDID
-			_, err := isCustomizeDIDExist(db, log.DID)
+			_, err := isCustomizeDIDExist(reader, log.DID)
 			fmt.Println("PersistDeactivateDIDTx isCustomizeDIDExist err", err)
 			if err != nil {
 				return err
@@ -771,6 +772,8 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 }
 
 func DeleteDIDLog(db ethdb.KeyValueStore, didLog *types.DIDLog) error {
+	fmt.Println("DeleteDIDLog begin", "didLog.DID",didLog.DID)
+
 	if didLog == nil {
 		return errors.New("didLog is nil")
 	}
@@ -796,6 +799,8 @@ func DeleteDIDLog(db ethdb.KeyValueStore, didLog *types.DIDLog) error {
 			return err
 		}
 	}
+	fmt.Println("DeleteDIDLog end", "didLog.DID",didLog.DID)
+
 	return nil
 }
 
@@ -954,6 +959,8 @@ func rollbackVerifiableCredentialExpiresHeight(db ethdb.KeyValueStore,
 }
 
 func rollbackRegisterDIDLog(db ethdb.KeyValueStore, idKey []byte, txhash common.Hash) error {
+	fmt.Println("rollbackRegisterDIDLog begin", "idKey",string(idKey))
+	defer 	fmt.Println("rollbackRegisterDIDLog end", "idKey",string(idKey))
 
 	key := []byte{byte(IX_DIDTXHash)}
 	key = append(key, idKey...)
@@ -1010,6 +1017,7 @@ func rollbackRegisterDIDLog(db ethdb.KeyValueStore, idKey []byte, txhash common.
 	if _, err := r.WriteTo(buf); err != nil {
 		return err
 	}
+
 	return db.Put(key, buf.Bytes())
 }
 
@@ -1093,7 +1101,7 @@ func getCredentialOwner(credentialSubject interface{})string{
 }
 
 //persistVerifiableCredentialTx
-func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
+func PersistVerifiableCredentialTx(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, log *types.DIDLog,
 	blockHeight uint64, blockTimeStamp uint64, thash common.Hash) error {
 	var err error
 	var buffer *bytes.Reader
@@ -1105,7 +1113,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	}
 	id := payload.CredentialDoc.ID
 	contrl, uri := did.GetController(id)
-	ok, err :=isDID(db,contrl)
+	ok, err :=isDID(reader,contrl)
 	if err != nil {
 		return err
 	}
@@ -1122,14 +1130,14 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 		return err
 	}
 
-	if err := persistVerifiableCredentialExpiresHeight(db, idKey, expiresHeight); err != nil {
+	if err := persistVerifiableCredentialExpiresHeight(db,reader, idKey, expiresHeight); err != nil {
 		return err
 	}
 	txhash, err := elaCom.Uint256FromBytes(thash.Bytes())
 	if err != nil {
 		return err
 	}
-	if err := persisterifiableCredentialTxHash(db, idKey, txhash); err != nil {
+	if err := persisterifiableCredentialTxHash(db,reader, idKey, txhash); err != nil {
 		return err
 	}
 	//didPayload is persisted in receipt
@@ -1140,7 +1148,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	//reocrd owner's credential id
 	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation{
 		owner := getCredentialOwner(payload.CredentialDoc.CredentialSubject)
-		ok, err :=isDID(db,owner)
+		ok, err :=isDID(reader,owner)
 		if err != nil {
 			return err
 		}
@@ -1149,7 +1157,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 			owner = strings.ToLower(owner)
 		}
 		fmt.Println("PersistVerifiableCredentialTx","owner", owner, "verifyCred.ID", verifyCred.ID)
-		if err := persistDIDVerifCredentials(db, []byte(owner), verifyCred.ID); err != nil {
+		if err := persistDIDVerifCredentials(db,reader, []byte(owner), verifyCred.ID); err != nil {
 			return err
 		}
 	}
@@ -1158,7 +1166,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 }
 
 //persistVerifiableCredentialTx
-func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
+func PersistRevokeVerifiableCredentialTx(writer ethdb.KeyValueWriter,reader ethdb.KeyValueReader, log *types.DIDLog,
 	blockHeight uint64, blockTimeStamp uint64, thash common.Hash) error {
 	var err error
 	var buffer *bytes.Reader
@@ -1171,7 +1179,7 @@ func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDL
 	// check is ID is customized or did
 	credID := log.DID
 	contrl, uri := did.GetController(credID)
-	isOwnerDID, err :=isDID(db,contrl)
+	isOwnerDID, err :=isDID(reader,contrl)
 	if err != nil {
 		return err
 	}
@@ -1190,24 +1198,24 @@ func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDL
 	if err != nil {
 		return err
 	}
-	if err := persisterifiableCredentialTxHash(db, credIDKey, txhash); err != nil {
+	if err := persisterifiableCredentialTxHash(writer, reader,credIDKey, txhash); err != nil {
 		return err
 	}
 	fmt.Println("PersistRevokeVerifiableCredentialTx", "credID", credID, "revokerID", revokerID)
 
-	if err = persistVerifyCredentialRevoked(db, credIDKey,revokerID); err != nil{
+	if err = persistVerifyCredentialRevoked(writer,reader, credIDKey,revokerID); err != nil{
 		return err
 	}
 
 	return nil
 }
 
-func persistVerifiableCredentialExpiresHeight(db ethdb.KeyValueStore,
+func persistVerifiableCredentialExpiresHeight(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader,
 	idKey []byte, expiresHeight uint64) error {
 	key := []byte{byte(IX_VerifiableCredentialExpiresHeight)}
 	key = append(key, idKey...)
 
-	data, err := db.Get(key)
+	data, err := reader.Get(key)
 	if err != nil {
 		if err.Error() != ERR_LEVELDB_NOT_FOUND.Error() && err.Error() != ERR_NOT_FOUND.Error() {
 			return err
@@ -1248,12 +1256,12 @@ func persistVerifiableCredentialExpiresHeight(db ethdb.KeyValueStore,
 	return db.Put(key, buf.Bytes())
 }
 
-func persisterifiableCredentialTxHash(db ethdb.KeyValueStore,
+func persisterifiableCredentialTxHash(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader,
 	idKey []byte, txHash *elaCom.Uint256) error {
 	key := []byte{byte(IX_VerifiableCredentialTXHash)}
 	key = append(key, idKey...)
 
-	data, err := db.Get(key)
+	data, err := reader.Get(key)
 	if err != nil {
 		if err.Error() != ERR_LEVELDB_NOT_FOUND.Error() && err.Error() != ERR_NOT_FOUND.Error() {
 			return err
@@ -1311,11 +1319,11 @@ func persistVerifiableCredentialPayload(db ethdb.KeyValueStore,
 
 
 
-func persistDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte, credentilaID string) error {
+func persistDIDVerifCredentials(db ethdb.KeyValueWriter,reader ethdb.KeyValueReader, idKey []byte, credentilaID string) error {
 	key := []byte{byte(IX_DIDVerifiableCredentials)}
 	key = append(key, idKey...)
 
-	data, err := db.Get(key)
+	data, err := reader.Get(key)
 	if err != nil {
 		if err.Error() != ERR_LEVELDB_NOT_FOUND.Error() && err.Error() != ERR_NOT_FOUND.Error() {
 			return err
@@ -1447,7 +1455,7 @@ func GetAllDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte,skip,limit i
 	return &credentials, nil
 }
 
-func isDID(db ethdb.KeyValueStore, ID string)(bool, error){
+func isDID(db ethdb.KeyValueReader, ID string)(bool, error){
 	ret, err :=IsDID(db, ID)
 	if err!= nil {
 		if err.Error() == ERR_LEVELDB_NOT_FOUND.Error() || err.Error() == ERR_NOT_FOUND.Error()  {

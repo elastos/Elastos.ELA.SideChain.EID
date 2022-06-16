@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain/service"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
@@ -15,6 +14,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain/service"
 	elacom "github.com/elastos/Elastos.ELA/common"
 
 	"github.com/stretchr/testify/assert"
@@ -89,7 +89,8 @@ func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 			tx1.Serialize(buf, did.DIDVersion)
 
 			statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
-			err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}), 0, 100)
+			db := statedb.Database().TrieDB().DiskDB()
+			err1 := rawdb.PersistRegisterDIDTx(db.(ethdb.KeyValueStore),db.(ethdb.KeyValueReader), statedb.GetDIDLog(common.Hash{}), 0, 100)
 			assert.NoError(t, err1)
 			statedb.RemoveDIDLog(common.Hash{})
 		}
@@ -139,7 +140,8 @@ func TestChangUser2DocAndSaveToJsonJianBin2_Update(t *testing.T) {
 		statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
 		receipt := getCreateDIDReceipt(*user1TX)
 		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash1, 0, types.Receipts{receipt})
-		user1Err := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash1), 0, 0)
+		db := statedb.Database().TrieDB().DiskDB()
+		user1Err := rawdb.PersistRegisterDIDTx(db.(ethdb.KeyValueStore),db.(ethdb.KeyValueReader), statedb.GetDIDLog(hash1), 0, 0)
 		assert.NoError(t, user1Err)
 		statedb.RemoveDIDLog(hash1)
 
