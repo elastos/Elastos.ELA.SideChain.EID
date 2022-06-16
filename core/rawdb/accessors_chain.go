@@ -461,7 +461,7 @@ func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
 	}
 }
 
-func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, btime uint64)  {
+func WriteDIDReceipts(writer ethdb.KeyValueWriter,reader ethdb.KeyValueReader, receipts types.Receipts, number, btime uint64)  {
 	var err error
 	for _, receipt := range receipts {
 		if receipt.Status != 1 {
@@ -471,26 +471,26 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 		operation := receipt.DIDLog.Operation
 		switch operation {
 		case did.Create_DID_Operation, did.Update_DID_Operation, did.Transfer_DID_Operation:
-			if err = PersistRegisterDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, number, btime); err != nil{
+			if err = PersistRegisterDIDTx(writer,reader, &receipt.DIDLog, number, btime); err != nil{
 				log.Error("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 				log.Crit("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 
 		case did.Deactivate_DID_Operation:
-			if err = PersistDeactivateDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, receipt.TxHash); err != nil{
+			if err = PersistDeactivateDIDTx(writer,reader, &receipt.DIDLog, receipt.TxHash); err != nil{
 				log.Error("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 
 				log.Crit("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 		case did.Declare_Verifiable_Credential_Operation:
-			if err := PersistVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
+			if err := PersistVerifiableCredentialTx(writer,reader, &receipt.DIDLog,
 				 number, btime, receipt.TxHash); err != nil {
 				log.Error("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 
 				log.Crit("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 			}
 		case did.Revoke_Verifiable_Credential_Operation:
-			if err := PersistRevokeVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
+			if err := PersistRevokeVerifiableCredentialTx(writer,reader, &receipt.DIDLog,
 				number, btime, receipt.TxHash); err != nil {
 				log.Error("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err, "receipt.TxHash", receipt.TxHash.String())
 
