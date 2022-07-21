@@ -1107,7 +1107,16 @@ func TestRevokeCustomizedDIDVerifiableCredentialTx(t *testing.T) {
 	statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
 	receipt := getCreateDIDReceipt(*tx1)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), common.Hash{}, 0, types.Receipts{receipt})
-	err1 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}),
+
+	thash, err := elacom.Uint256FromBytes(common.Hash{}.Bytes())
+	if err != nil {
+		fmt.Println("PersistRegisterDIDTx Uint256FromBytes err","thash", thash, "err", err)
+	}
+	rawdb.PersistRegisterDIDPayload(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), *thash,tx1)
+
+
+	db := statedb.Database().TrieDB().DiskDB()
+	err1 := rawdb.PersistRegisterDIDTx(db.(ethdb.KeyValueStore), statedb.GetDIDLog(common.Hash{}),
 		100, 123456)
 	assert.NoError(t, err1)
 	statedb.RemoveDIDLog(common.Hash{})
@@ -1124,7 +1133,14 @@ func TestRevokeCustomizedDIDVerifiableCredentialTx(t *testing.T) {
 	statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
 	receipt = getCreateDIDReceipt(*tx2)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx2hash, 0, types.Receipts{receipt})
-	err2 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx2hash),
+
+	thash2, err := elacom.Uint256FromBytes(tx2hash.Bytes())
+	if err != nil {
+		fmt.Println("PersistRegisterDIDTx Uint256FromBytes err","thash2", thash2, "err", err)
+	}
+	rawdb.PersistRegisterDIDPayload(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), *thash2,tx2)
+
+	err2 := rawdb.PersistRegisterDIDTx(db.(ethdb.KeyValueStore), statedb.GetDIDLog(tx2hash),
 		100, 123456)
 	assert.NoError(t, err2)
 	statedb.RemoveDIDLog(tx2hash)
@@ -1137,7 +1153,13 @@ func TestRevokeCustomizedDIDVerifiableCredentialTx(t *testing.T) {
 	statedb.AddDIDLog(id1, did.Create_DID_Operation, buf.Bytes())
 	receipt = getCreateDIDReceipt(*CustomizedDIDTx1)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx3hash, 0, types.Receipts{receipt})
-	err3 := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx3hash),
+	thash3, err := elacom.Uint256FromBytes(tx3hash.Bytes())
+	if err != nil {
+		fmt.Println("PersistRegisterDIDTx Uint256FromBytes err","thash3", thash3, "err", err)
+	}
+	rawdb.PersistRegisterDIDPayload(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), *thash3,CustomizedDIDTx1)
+
+	err3 := rawdb.PersistRegisterDIDTx(db.(ethdb.KeyValueStore), statedb.GetDIDLog(tx3hash),
 		100, 123456)
 	assert.NoError(t, err3)
 	statedb.RemoveDIDLog(tx3hash)
@@ -1158,6 +1180,12 @@ func TestRevokeCustomizedDIDVerifiableCredentialTx(t *testing.T) {
 	statedb.AddDIDLog(credentialID, did.Declare_Verifiable_Credential_Operation, buf.Bytes())
 	receipt = getDeclareDIDReceipt(*verifableCredentialTx)
 	rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), tx4Hash, 0, types.Receipts{receipt})
+	thash4, err := elacom.Uint256FromBytes(tx4Hash.Bytes())
+	if err != nil {
+		fmt.Println("PersistRegisterDIDTx Uint256FromBytes err","thash4", thash4, "err", err)
+	}
+	rawdb.PersistRegisterDIDPayload(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), *thash4,verifableCredentialTx)
+
 	err4 := rawdb.PersistVerifiableCredentialTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(tx4Hash), 100, 123456, tx4Hash)
 	assert.NoError(t, err4)
 
