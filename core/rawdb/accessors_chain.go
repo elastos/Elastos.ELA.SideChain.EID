@@ -489,7 +489,7 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 				logFun("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err)
 			}
 		case did.Revoke_Verifiable_Credential_Operation:
-			if err := PersistRevokeVerifiableCredentialTx(db, &receipt.DIDLog,
+			if err = PersistRevokeVerifiableCredentialTx(db, &receipt.DIDLog,
 				number, btime, receipt.TxHash); err != nil {
 				logFun("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err)
 			}

@@ -88,10 +88,9 @@ func PersistRegisterDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, blockHeight
 		return err
 	}
 
-	// didPayload is persisted in receipt
-	//if err := persistRegisterDIDPayload(db, *thash, operation); err != nil {
-	//	return err
-	//}
+	if err := PersistRegisterDIDPayload(db, *thash, operation); err != nil {
+		return err
+	}
 
 	if err := PersistIsDID(db, idKey, isDID); err != nil {
 		return err
@@ -348,6 +347,25 @@ func persistRegisterDIDTxHash(db ethdb.KeyValueStore, idKey []byte, txHash elaCo
 	return db.Put(key, buf.Bytes())
 }
 
+func getDiDPayloadFromDB( db ethdb.KeyValueStore,txHash elaCom.Uint256)(*did.DIDPayload, error){
+	keyPayload := []byte{byte(IX_DIDPayload)}
+	keyPayload = append(keyPayload, txHash.Bytes()...)
+
+	dataPayload, err := db.Get(keyPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	tempOperation := new(did.DIDPayload)
+	r := bytes.NewReader(dataPayload)
+	err = tempOperation.Deserialize(r, did.DIDVersion)
+	if err != nil {
+		return nil, http.NewError(int(service.ResolverInternalError),
+			"tempOperation Deserialize failed")
+	}
+	return tempOperation,nil
+}
+
 func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_DIDTXHash)}
 	key = append(key, idKey...)
@@ -372,29 +390,11 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chain
 		return nil, err
 	}
 
-	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-	if recp == nil {
-		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-			if recps.Len() > 0 {
-				recp = recps[0]
-			}
-		}
+	tempOperation, err := getDiDPayloadFromDB(db,txHash)
+	if err != nil {
+		return nil, err
 	}
 
-	if recp == nil {
-		return nil, ERR_READ_RECEIPT
-	}
-	if recp.DIDLog.DID == "" {
-		return nil, ERR_NOT_DIDRECEIPT
-	}
-	tempOperation := new(did.DIDPayload)
-	r = bytes.NewReader(recp.DIDLog.Data)
-	err = tempOperation.Deserialize(r, did.DIDVersion)
-	if err != nil {
-		return nil, http.NewError(int(service.ResolverInternalError),
-			"tempOperation Deserialize failed")
-	}
 	tempTxData := new(did.DIDTransactionData)
 	tempTxData.TXID = txHash.String()
 	tempTxData.Operation = *tempOperation
@@ -418,29 +418,11 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.C
 		return nil, err
 	}
 
-	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-	if recp == nil {
-		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-			if recps.Len() > 0 {
-				recp = recps[0]
-			}
-		}
-	}
-
-	if recp == nil {
-		return nil, ERR_READ_RECEIPT
-	}
-	if recp.DIDLog.DID == "" {
-		return nil, ERR_NOT_DEACTIVATERECEIPT
-	}
-
-	tempOperation := new(did.DIDPayload)
-	r = bytes.NewReader(recp.DIDLog.Data)
-	err = tempOperation.Deserialize(r, did.DIDVersion)
+	tempOperation, err := getDiDPayloadFromDB(db,txHash)
 	if err != nil {
-		return nil, errors.New("[DIDPayload], tempOperation Deserialize failed")
+		return nil, err
 	}
+
 	tempTxData := new(did.DIDTransactionData)
 	tempTxData.TXID = txHash.String()
 	tempTxData.Operation = *tempOperation
@@ -481,26 +463,11 @@ func GetAllDIDTxTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chai
 		if err := txHash.Deserialize(r); err != nil {
 			return nil, err
 		}
-		thash := common.BytesToHash(txHash.Bytes())
-		if txn, _, _, _ := ReadTransaction(db.(ethdb.Database), common.BytesToHash(txHash.Bytes())); txn == nil {
-			return nil, ERR_READ_TX
-		}
-
-		recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-		if recp == nil {
-			return nil, ERR_READ_RECEIPT
-		}
-
-		if recp.DIDLog.DID == "" {
-			return nil, ERR_NOT_DIDRECEIPT
-		}
-		tempOperation := new(did.DIDPayload)
-		r := bytes.NewReader(recp.DIDLog.Data)
-		err = tempOperation.Deserialize(r, did.DIDVersion)
+		tempOperation, err := getDiDPayloadFromDB(db,txHash)
 		if err != nil {
-			return nil, http.NewError(int(service.InvalidTransaction),
-				"payloaddid Deserialize failed")
+			return nil, err
 		}
+
 		tempTxData := new(did.DIDTransactionData)
 		tempTxData.TXID = txHash.String()
 		tempTxData.Operation = *tempOperation
@@ -585,7 +552,7 @@ func GetLastCustomizedDIDTxData(db ethdb.KeyValueStore, idKey []byte) (*did.DIDT
 	return tempTxData, nil
 }
 
-func persistRegisterDIDPayload(db ethdb.KeyValueStore, txHash elaCom.Uint256, p *did.DIDPayload) error {
+func PersistRegisterDIDPayload(db ethdb.KeyValueWriter, txHash elaCom.Uint256, p *did.DIDPayload) error {
 	key := []byte{byte(IX_DIDPayload)}
 	key = append(key, txHash.Bytes()...)
 
@@ -667,29 +634,11 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 		}
 		//keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
 		//keyPayload = append(keyPayload, txHash.Bytes()...)
-		thash := common.BytesToHash(txHash.Bytes())
-		recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-		if recp == nil {
-			if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-				if recps.Len() > 0 {
-					recp = recps[0]
-				}
-			}
+		vcPayload, err := getDiDPayloadFromDB(db,txHash)
+		if err != nil {
+			return nil, err
 		}
 
-		if recp == nil {
-			return nil, ERR_READ_RECEIPT
-		}
-		if recp.DIDLog.DID == "" {
-			return nil, ERR_NOT_DIDRECEIPT
-		}
-		vcPayload := new(did.DIDPayload)
-		r := bytes.NewReader(recp.DIDLog.Data)
-		err = vcPayload.Deserialize(r, did.VerifiableCredentialVersion)
-		if err != nil {
-			return nil, http.NewError(int(service.InvalidTransaction),
-				"verifiable credential payload Deserialize failed")
-		}
 		tempTxData := new(did.VerifiableCredentialTxData)
 		tempTxData.TXID = txHash.String()
 		if vcPayload.CredentialDoc != nil {
@@ -727,29 +676,9 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 	//keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
 	//keyPayload = append(keyPayload, txHash.Bytes()...)
 
-	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-	if recp == nil {
-		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-			if recps.Len() > 0 {
-				recp = recps[0]
-			}
-		}
-	}
-
-	if recp == nil {
-		return nil, ERR_READ_RECEIPT
-	}
-	if recp.DIDLog.DID == "" {
-		return nil, ERR_NOT_DIDRECEIPT
-	}
-
-	credentialPayload := new(did.DIDPayload)
-	r = bytes.NewReader(recp.DIDLog.Data)
-	err = credentialPayload.Deserialize(r, did.VerifiableCredentialVersion)
+	credentialPayload, err := getDiDPayloadFromDB(db,txHash)
 	if err != nil {
-		return nil, http.NewError(int(service.ResolverInternalError),
-			"tempOperation Deserialize failed")
+		return nil, err
 	}
 	tempTxData := new(did.DIDTransactionData)
 	tempTxData.TXID = txHash.String()
@@ -979,9 +908,9 @@ func rollbackRegisterDIDLog(db ethdb.KeyValueStore, idKey []byte, txhash common.
 		return errors.New("not rollback the last one")
 	}
 
-	//keyPayload := []byte{byte(IX_DIDPayload)}
-	//keyPayload = append(keyPayload, txHash.Bytes()...)
-	//db.Delete(keyPayload)
+	keyPayload := []byte{byte(IX_DIDPayload)}
+	keyPayload = append(keyPayload, txHash.Bytes()...)
+	db.Delete(keyPayload)
 
 	//rollback expires height
 	err = rollbackRegisterDIDExpiresHeight(db, idKey)

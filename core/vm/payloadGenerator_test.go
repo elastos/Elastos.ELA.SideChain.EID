@@ -135,7 +135,7 @@ func TestChangUser2DocAndSaveToJsonJianBin2_Update(t *testing.T) {
 		buf := new(bytes.Buffer)
 		user1TX.Serialize(buf, did.DIDVersion)
 		statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
-		receipt := getCreateDIDReceipt(*user1TX)
+		receipt := getCreateDIDReceipt(*user1TX, hash1)
 		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash1, 0, types.Receipts{receipt}, 0)
 		user1Err := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash1), 0, 0)
 		assert.NoError(t, user1Err)
