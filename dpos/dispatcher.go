@@ -40,11 +40,12 @@ type Dispatcher struct {
 	finishedBlockSealHash   common.Uint256
 	finishedProposal        common.Uint256
 
-	mu sync.RWMutex
+	mu         sync.RWMutex
+	proposalMu sync.RWMutex
 }
 
 func (d *Dispatcher) ProcessProposal(id peer.PID, proposal *payload.DPOSProposal) (err error, isSendReject bool, handled bool) {
-	Info("[ProcessProposal] start ", proposal.Hash().String() , "peerID", id.String(), "Sponsor", common.BytesToHexString(proposal.Sponsor))
+	Info("[ProcessProposal] start ", proposal.Hash().String(), "peerID", id.String(), "Sponsor", common.BytesToHexString(proposal.Sponsor))
 	defer Info("[ProcessProposal] end", proposal.Hash().String())
 	self := bytes.Equal(id[:], proposal.Sponsor)
 	Info("is self", self)
@@ -98,9 +99,13 @@ func (d *Dispatcher) GetFinishedProposal() common.Uint256 {
 }
 
 func (d *Dispatcher) setProcessingProposal(p *payload.DPOSProposal) (finished bool) {
-	d.processingProposal = p
 	Info("setProcessingProposal start")
-	defer Info("setProcessingProposal end")
+	d.proposalMu.Lock()
+	defer func() {
+		d.proposalMu.Unlock()
+		Info("setProcessingProposal end")
+	}()
+	d.processingProposal = p
 	for _, v := range d.pendingVotes {
 		if v.ProposalHash.IsEqual(p.Hash()) {
 			_, finished, _ := d.ProcessVote(v)
@@ -300,11 +305,17 @@ func (d *Dispatcher) ProducerIsOnDuty() bool {
 }
 
 func (d *Dispatcher) GetProcessingProposal() *payload.DPOSProposal {
+	d.proposalMu.Lock()
+	defer d.proposalMu.Unlock()
 	return d.processingProposal
 }
 
-func (d *Dispatcher) GetNeedConnectProducers() []peer.PID {
-	return d.consensusView.GetNeedConnectArbiters()
+func (d *Dispatcher) GetNextNeedConnectArbiters() []peer.PID {
+	return d.consensusView.GetNextNeedConnectArbiters()
+}
+
+func (d *Dispatcher) GetCurrentNeedConnectArbiters() []peer.PID {
+	return d.consensusView.getCurrentNeedConnectArbiters()
 }
 
 func (d *Dispatcher) OnChangeView() {
@@ -320,10 +331,14 @@ func (d *Dispatcher) GetConsensusView() *ConsensusView {
 }
 
 func (d *Dispatcher) HelpToRecoverAbnormal(id peer.PID, height uint64, currentHeight uint64) *dmsg.ConsensusStatus {
-	Info("[HelpToRecoverAbnormal] peer id:", common.BytesToHexString(id[:]))
+	Info("[HelpToRecoverAbnormal]  peer id:", common.BytesToHexString(id[:]))
 
 	if height > currentHeight {
 		Warn("Requesting height greater than current processing height")
+		return nil
+	}
+	if len(d.consensusView.GetProducers()) <= 0 {
+		Warn("Requesting chain is pow state")
 		return nil
 	}
 	status := &dmsg.ConsensusStatus{}
@@ -356,6 +371,9 @@ func (d *Dispatcher) HelpToRecoverAbnormal(id peer.PID, height uint64, currentHe
 }
 
 func (d *Dispatcher) RecoverAbnormal(status *dmsg.ConsensusStatus, medianTime int64) {
+	if status == nil {
+		return
+	}
 	status.ViewStartTime = dtime.Int64ToTime(medianTime)
 	if medianTime != 0 {
 		offset, offsetTime := d.consensusView.calculateOffsetTime(status.ViewStartTime, d.timeSource.AdjustedTime())
@@ -393,7 +411,8 @@ func (d *Dispatcher) RecoverFromConsensusStatus(status *dmsg.ConsensusStatus) er
 	d.consensusView.ResetView(uint64(status.ViewStartTime.Unix()))
 	d.consensusView.isDposOnDuty = d.consensusView.ProducerIsOnDuty(d.consensusView.publicKey)
 	d.consensusView.SetWorkingHeight(status.WorkingHeight)
-	Info("\n\n\n\n \n\n\n\n -------[End RecoverFromConsensusStatus]-------- startTime", d.consensusView.GetViewStartTime(), "WorkingHeight", status.WorkingHeight)
+	d.consensusView.UpdateDutyIndex(d.finishedHeight)
+	Info("\n\n\n\n \n\n\n\n -------[End RecoverFromConsensusStatus]-------- startTime", d.consensusView.GetViewStartTime(), "WorkingHeight", status.WorkingHeight, "dutyIndex", d.GetConsensusView().GetDutyIndex())
 	d.consensusView.DumpInfo()
 	Info("\n\n\n\n \n\n\n\n")
 	return nil

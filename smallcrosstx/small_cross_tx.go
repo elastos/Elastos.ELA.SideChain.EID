@@ -12,8 +12,8 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	elatx "github.com/elastos/Elastos.ELA/core/transaction"
 
-	elaType "github.com/elastos/Elastos.ELA/core/types"
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
 )
 
@@ -60,9 +60,9 @@ func OnSmallCrossTx(arbiters []string, total int, signature, rawTx string,
 	if err != nil {
 		return err
 	}
-
-	var txn elaType.Transaction
-	err = txn.Deserialize(bytes.NewReader(buff))
+	r := bytes.NewReader(buff)
+	txn, err := elatx.GetTransactionByBytes(r)
+	err = txn.Deserialize(r)
 	if err != nil {
 		log.Error("[Small-Transfer] Decode transaction error", err.Error())
 		return err
@@ -120,7 +120,7 @@ func OnSmallCrossTx(arbiters []string, total int, signature, rawTx string,
 	if count >= maxSignCount {
 		smallCrossTxMsgMap[rawTx] = true
 		delete(verifiedArbiter, txn.Hash().String())
-		eventMux.Post(events.CmallCrossTx{Tx: &txn})
+		eventMux.Post(events.CmallCrossTx{Tx: txn})
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func GetMaxArbitersSign(total int) int {
 }
 
 func OnReceivedSmallCroTxFromDirectNet(arbiters [][]byte, total int, signature,
-										rawTx string, blockHeight uint64) {
+	rawTx string, blockHeight uint64) {
 	list := make([]string, len(arbiters))
 	for i, arbiter := range arbiters {
 		list[i] = common.Bytes2Hex(arbiter)

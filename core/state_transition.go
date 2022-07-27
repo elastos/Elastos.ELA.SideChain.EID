@@ -23,6 +23,7 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge_abi"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
@@ -32,7 +33,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/withdrawfailedtx"
 
-	elaType "github.com/elastos/Elastos.ELA/core/types"
+	elatx "github.com/elastos/Elastos.ELA/core/transaction"
 )
 
 var (
@@ -92,7 +93,7 @@ func IntrinsicGas(data []byte, contractCreation, isEIP155 bool, isEIP2028 bool) 
 	} else {
 		gas = params.TxGas
 	}
-	rawTxid, _, _ , _:= spv.IsSmallCrossTxByData(data)
+	rawTxid, _, _, _ := spv.IsSmallCrossTxByData(data)
 	if rawTxid != "" {
 		return gas, nil
 	}
@@ -253,7 +254,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 			isRefundWithdrawTx = true
 		} else {
 			isSmallRechargeTx := false
-			verified:= false
+			verified := false
 			rawTxID := ""
 			if len(msg.Data()) > 32 {
 				isSmallRechargeTx, verified, rawTxID, err = st.dealSmallCrossTx()
@@ -283,7 +284,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 								usedGas = 0
 								failed = false
 								if err == nil {
-									log.Error("fee is not enough ：", "fee", fee.String(), "need",ethfee.String(), "vmerr", vmerr)
+									log.Error("fee is not enough ：", "fee", fee.String(), "need", ethfee.String(), "vmerr", vmerr)
 									err = ErrGasLimitReached
 								}
 								evm.StateDB.RevertToSnapshot(snapshot)
@@ -365,7 +366,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		ret, st.gas, vmerr = evm.Call(sender, st.to(), st.data, st.gas, st.value)
 	}
 	if vmerr != nil {
-		log.Info("VM returned with error", "err", vmerr)
+		log.Info("VM returned with error", "err", vmerr, "ret", string(ret))
 		// The only possible consensus-error would be if there wasn't
 		// sufficient balance to make the transfer happen. The first
 		// balance transfer may never fail.
@@ -416,16 +417,46 @@ func (st *StateTransition) dealSmallCrossTx() (isSmallCrossTx, verifyed bool, tx
 		verifyed = false
 		return isSmallCrossTx, verifyed, rawTxid, err
 	}
-
-	var txn elaType.Transaction
-	err = txn.Deserialize(bytes.NewReader(buff))
+	r := bytes.NewReader(buff)
+	txn, err := elatx.GetTransactionByBytes(r)
 	if err != nil {
-		log.Error("[Small-Transfer] Decode transaction error", err.Error())
+		log.Error("[dealSmallCrossTx] Invalid data from GetTransactionByBytes")
+		return isSmallCrossTx, verifyed, rawTxid, err
+	}
+	err = txn.Deserialize(r)
+	if err != nil {
+		log.Error("[dealSmallCrossTx] Decode transaction error", err.Error())
 		verifyed = false
 		return isSmallCrossTx, verifyed, rawTxid, err
 	}
 	spv.NotifySmallCrossTx(txn)
 	return isSmallCrossTx, verifyed, rawTxid, err
+}
+
+func (st *StateTransition) isSetArbiterListMethod() (bool, error) {
+	eabi, err := chainbridge_abi.GetSetArbitersABI()
+	if err != nil {
+		return false, err
+	}
+	method, exist := eabi.Methods["setArbiterList"]
+	if !exist {
+		return false, errors.New("setArbiterList method not in abi json")
+	}
+
+	return bytes.HasPrefix(st.msg.Data(), method.ID()), nil
+}
+
+func (st *StateTransition) isSetManualArbiterMethod() (bool, error) {
+	eabi, err := chainbridge_abi.SetManualArbiterABI()
+	if err != nil {
+		return false, err
+	}
+	method, exist := eabi.Methods["setManualArbiter"]
+	if !exist {
+		return false, errors.New("setManualArbiter method not in abi json")
+	}
+
+	return bytes.HasPrefix(st.msg.Data(), method.ID()), nil
 }
 
 func (st *StateTransition) refundGas() {

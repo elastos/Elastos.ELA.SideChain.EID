@@ -248,7 +248,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 	// Hard disconnect at the networking layer
 	if peer != nil {
-		events.Notify(dpos.ETDonePeer, peer)
+		go events.Notify(dpos.ETDonePeer, peer)
 		peer.Peer.Disconnect(p2p.DiscUselessPeer)
 	}
 }
@@ -273,22 +273,23 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping Ethereum protocol")
 
-	pm.txsSub.Unsubscribe()        // quits txBroadcastLoop
+	pm.txsSub.Unsubscribe() // quits txBroadcastLoop
+	log.Info("Stopping Ethereum protocol 11111111")
 	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
 	pm.noMorePeers <- struct{}{}
-
+	log.Info("Stopping Ethereum protocol 33333333")
 	// Quit fetcher, txsyncLoop.
 	close(pm.quitSync)
-
+	log.Info("Stopping Ethereum protocol 4444444")
 	// Disconnect existing sessions.
 	// This also closes the gate for any new registrations on the peer set.
 	// sessions which are already established but not added to pm.peers yet
 	// will exit when they try to register.
 	pm.peers.Close()
-
+	log.Info("Stopping Ethereum protocol 555555")
 	// Wait for all peer handler goroutines and the loops to come down.
 	pm.wg.Wait()
 
@@ -306,7 +307,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-	p.Log().Debug("Ethereum peer connected", "name", p.Name())
+	p.Log().Info("Ethereum peer connected", "name", p.Name())
 
 	// Execute the Ethereum handshake
 	var (
@@ -751,7 +752,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		events.Notify(dpos.ETElaMsg, &dpos.MsgEvent{
 			ElaMsg: elaMsg,
-			Peer:  	p,
+			Peer:   p,
 		})
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

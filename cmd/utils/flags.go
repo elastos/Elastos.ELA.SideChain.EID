@@ -801,27 +801,42 @@ var (
 	OldDIDMigrateHeightFlag = cli.Uint64Flag{
 		Name:  "olddidmigrateheight",
 		Usage: "before this height OldDIDMigrateAddrFlag can migate old did",
-		Value: 34560,//48 hours
+		Value: 34560, //48 hours
 	}
 	DocArraySortHeightFlag = cli.Uint64Flag{
 		Name:  "docarraysortheight",
 		Usage: "after this height DocArraySortHeight doc array need sort",
-		Value: 0,//todo
+		Value: 0, //todo
 	}
 	CheckCustomizeDIDBeginHeightFlag = cli.Uint64Flag{
 		Name:  "checkcustomizedidbeginheight",
 		Usage: "after this height CheckCustomizeDIDBeginHeight check custdid",
-		Value: 0,//todo
+		Value: 0, //todo
 	}
 	OldDIDMigrateAddrFlag = cli.StringFlag{
 		Name:  "olddidmigrateaddr",
 		Usage: "configue old did migrate address",
 		Value: "0xFEca85Ac94C1c9ef6e1293fc1F94486305420D7f",
 	}
+	PbftMinerAddress = cli.StringFlag{
+		Name:  "pbft.miner.address",
+		Usage: "miner's account to receive transaction's fee",
+		Value: "",
+	}
 	DynamicArbiter = cli.Uint64Flag{
 		Name:  "spv.arbiter.height",
 		Usage: "configue the offset blocks to pre-connect to switch to pbft consensus",
-		Value: 0,
+		Value: 1034900,
+	}
+	FrozenAccount = cli.StringSliceFlag{
+		Name:  "frozen.account.list",
+		Usage: "config the frozen account list",
+		Value: &cli.StringSlice{},
+	}
+	//xxl add update Arbiter List To Layer1 define param
+	UpdateArbiterListToLayer1Flag = cli.BoolFlag{
+		Name:  "updateArbiterListToLayer1",
+		Usage: "add data feed node for abiter reading",
 	}
 )
 
@@ -1131,6 +1146,7 @@ func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *eth.Config) {
 	if ctx.GlobalIsSet(MinerEtherbaseFlag.Name) {
 		etherbase = ctx.GlobalString(MinerEtherbaseFlag.Name)
 	}
+	cfg.PbftMinerAddress = MakeMinerCoinbaseAddress(ctx)
 	// Convert the etherbase into an address and configure it
 	if etherbase != "" {
 		if ks != nil {
@@ -1161,6 +1177,27 @@ func MakePasswordList(ctx *cli.Context) []string {
 		lines[i] = strings.TrimRight(lines[i], "\r")
 	}
 	return lines
+}
+
+func MakeMinerCoinbaseAddress(ctx *cli.Context) string {
+	path := ctx.GlobalString(PbftMinerAddress.Name)
+	if path == "" {
+		return ""
+	}
+	if common.IsHexAddress(path) {
+		return path
+	}
+	text, err := ioutil.ReadFile(path)
+	if err != nil {
+		Fatalf("Failed to read pbft.miner.address file: %v", err)
+	}
+	address := strings.TrimRight(string(text), "\r")
+	address = strings.TrimRight(string(address), "\n")
+	if !common.IsHexAddress(address) {
+		panic(fmt.Sprintf("pbft.miner.address is not ethereum format:%s", address))
+	}
+
+	return address
 }
 
 // MakeDposPasswordList reads password lines from the file specified by the global --password flag.
@@ -1582,10 +1619,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.OldDIDMigrateAddr = ctx.GlobalString(OldDIDMigrateAddrFlag.Name)
 	cfg.DocArraySortHeight = new(big.Int).SetUint64(ctx.GlobalUint64(DocArraySortHeightFlag.Name))
 	cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(ctx.GlobalUint64(CheckCustomizeDIDBeginHeightFlag.Name))
-
-
-
 	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
+	cfg.FrozenAccountList = make([]string, 0)
 	// Override any default configs for hard coded networks.
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
@@ -1610,6 +1645,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(3649000)
 		}
 
+		if !ctx.GlobalIsSet(FrozenAccount.Name) {
+			ctx.GlobalSet(FrozenAccount.Name, "0x6527946c8b26cc203f9674a5e1d8178beeed70c1")
+		}
+		cfg.ArbiterListContract = ""
 	case ctx.GlobalBool(RinkebyFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 24
@@ -1620,15 +1659,16 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "rinkeby", "geth")
 		}
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
-			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(0)
 		}
 
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
-			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
 		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
 			cfg.DynamicArbiterHeight = 2
 		}
+		cfg.ArbiterListContract = ""
 	case ctx.GlobalBool(GoerliFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 25
@@ -1639,11 +1679,11 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "goerli", "geth")
 		}
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
-			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(0)
 		}
 
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
-			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
@@ -1675,12 +1715,21 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
-			cfg.OldDIDMigrateHeight =  new(big.Int).SetUint64(0)
+			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(0)
 		}
 
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
-			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
+	default: //main net
+		ctx.GlobalSet(FrozenAccount.Name, "0x93c3A8051b8ba814eB5FB22d655681720E6a4d74")
+		ctx.GlobalSet(FrozenAccount.Name, "0x4a9a0cC103199F67730bdC61337d192788858874")
+		cfg.ArbiterListContract = "mainnet"
+	}
+	list := ctx.StringSlice(FrozenAccount.Name)
+	for _, account := range list {
+		acc := common.HexToAddress(account)
+		cfg.FrozenAccountList = append(cfg.FrozenAccountList, acc.String())
 	}
 	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
 	log.Info("SetEthConfig", "cfg.CheckCustomizeDIDBeginHeight ", cfg.CheckCustomizeDIDBeginHeight)
@@ -1850,7 +1899,7 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 	}
 	var engine consensus.Engine
 	if config.Pbft != nil {
-		engine = pbft.New(config.Pbft, config.PbftKeyStore, []byte(config.PbftKeyStorePassWord), stack.ResolvePath(""), config.PBFTBlock.Uint64())
+		engine = pbft.New(config, stack.ResolvePath(""))
 	} else if config.Clique != nil {
 		engine = clique.New(config.Clique, chainDb)
 	} else {

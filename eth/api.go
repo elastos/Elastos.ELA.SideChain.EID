@@ -35,6 +35,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/ethapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/trie"
@@ -140,6 +141,7 @@ func (api *PrivateMinerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
 
 // SetEtherbase sets the etherbase of the miner
 func (api *PrivateMinerAPI) SetEtherbase(etherbase common.Address) bool {
+	log.Info(">>>>>>>>> setEtherbase by rpc", "etherbase", etherbase.String())
 	api.e.SetEtherbase(etherbase)
 	return true
 }

@@ -81,6 +81,8 @@ var (
 	// than some meaningful limit a user might use. This is not a consensus error
 	// making the transaction invalid, rather a DOS protection.
 	ErrOversizedData = errors.New("oversized data")
+
+	ErrFrozenAccount = errors.New("is frozen account")
 )
 
 var (
@@ -608,7 +610,20 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.Gas() < intrGas && !isMigrateDID {
 		return ErrIntrinsicGas
 	}
+	if pool.IsFrozenAccount(from) {
+		return ErrFrozenAccount
+	}
 	return nil
+}
+
+func (pool *TxPool) IsFrozenAccount(from common.Address) bool {
+	list := pool.chainconfig.FrozeAccountList
+	for _, account := range list {
+		if from.String() == account {
+			return true
+		}
+	}
+	return false
 }
 
 // add validates a transaction and inserts it into the non-executable queue for later
@@ -628,7 +643,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	}
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		log.Error("Discarding invalid transaction", "hash", hash, "err", err)
 		invalidTxMeter.Mark(1)
 		return false, err
 	}
@@ -881,11 +896,11 @@ func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) ([]error,
 		if tx.To() != nil {
 			to := *tx.To()
 			var blackAddr common.Address
-			if  to == blackAddr {
+			if to == blackAddr {
 				if crosschain.IsRechargeTx(tx) {
 					txhash := ""
 					if len(tx.Data()) == 32 {
-						txhash =  hexutil.Encode(tx.Data())
+						txhash = hexutil.Encode(tx.Data())
 					} else {
 						txhash, _, _, _ = spv.IsSmallCrossTxByData(tx.Data())
 					}
@@ -1009,7 +1024,7 @@ func UptxhashIndex(pool *TxPool, tx *types.Transaction) bool {
 		var blackaddr common.Address
 		if crosschain.IsRechargeTx(tx) {
 			txhash := ""
-			if len(tx.Data()) == 32{
+			if len(tx.Data()) == 32 {
 				txhash = hexutil.Encode(tx.Data())
 			} else {
 				txhash, _, _, _ = spv.IsSmallCrossTxByData(tx.Data())

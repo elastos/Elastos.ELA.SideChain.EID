@@ -1641,7 +1641,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 	switch {
 	// First block is pruned, insert as sidechain and reorg only if TD grows enough
 	case err == consensus.ErrPrunedAncestor:
-		log.Debug("Pruned ancestor, inserting as sidechain", "number", block.Number(), "hash", block.Hash())
+		log.Info("Pruned ancestor, inserting as sidechain", "number", block.Number(), "hash", block.Hash())
 		return bc.insertSideChain(block, it)
 
 	// First block is future, shove it (and all children) to the future queue (unknown ancestor)
@@ -1724,7 +1724,10 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 		if !bc.cacheConfig.TrieCleanNoPrefetch {
 			if followup, err := it.peek(); followup != nil && err == nil {
 				go func(start time.Time) {
-					throwaway, _ := state.New(parent.Root, bc.stateCache)
+					throwaway, errmsg := state.New(parent.Root, bc.stateCache)
+					if errmsg != nil {
+						log.Error("state new db error", "root", parent.Root.String(), "err", errmsg)
+					}
 					bc.prefetcher.Prefetch(followup, throwaway, bc.vmConfig, &followupInterrupt)
 
 					blockPrefetchExecuteTimer.Update(time.Since(start))
@@ -1788,7 +1791,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 
 		switch status {
 		case CanonStatTy:
-			log.Debug("Inserted new block", "number", block.Number(), "hash", block.Hash(),
+			log.Info("Inserted new block", "number", block.Number(), "hash", block.Hash(),
 				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "gas", block.GasUsed(),
 				"elapsed", common.PrettyDuration(time.Since(start)),
 				"root", block.Root())
@@ -1801,7 +1804,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 			bc.gcproc += proctime
 
 		case SideStatTy:
-			log.Debug("Inserted forked block", "number", block.Number(), "hash", block.Hash(),
+			log.Info("Inserted forked block", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
 				"txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()),
 				"root", block.Root())
@@ -1857,7 +1860,8 @@ func (bc *BlockChain) OnSyncHeader(header *types.Header) {
 			producer := common.Hex2Bytes(v)
 			copy(producers[i][:], producer[:])
 		}
-		go events.Notify(events.ETDirectPeersChanged, producers)
+		go events.Notify(events.ETDirectPeersChangedV2,
+			&peer.PeersInfo{CurrentPeers: producers, NextPeers: []peer.PID{}})
 	}
 	if height >= cfg.PBFTBlock.Uint64() && bc.engine != bc.pbftEngine {
 		bc.engineChange.Send(EngineChangeEvent{})
@@ -1968,7 +1972,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 		// memory here.
 		if len(blocks) >= 2048 || memory > 64*1024*1024 {
 			log.Info("Importing heavy sidechain segment", "blocks", len(blocks), "start", blocks[0].NumberU64(), "end", block.NumberU64())
-			if _, _, _, err := bc.insertChain(blocks, false); err != nil {
+			if _, _, _, err := bc.insertChain(blocks, true); err != nil {
 				return 0, nil, nil, err
 			}
 			blocks, memory = blocks[:0], 0
@@ -1982,7 +1986,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 	}
 	if len(blocks) > 0 {
 		log.Info("Importing sidechain segment", "start", blocks[0].NumberU64(), "end", blocks[len(blocks)-1].NumberU64())
-		return bc.insertChain(blocks, false)
+		return bc.insertChain(blocks, true)
 	}
 	return 0, nil, nil, nil
 }
