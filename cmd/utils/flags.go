@@ -808,6 +808,11 @@ var (
 		Usage: "after this height DocArraySortHeight doc array need sort",
 		Value: 0, //todo
 	}
+	NotEscHTMLHeightFlag = cli.Uint64Flag{
+		Name:  "noteschtmlheight",
+		Usage: "after this height NotEscHTMLHeight not Escape HTML",
+		Value: 0, //todo
+	}
 	CheckCustomizeDIDBeginHeightFlag = cli.Uint64Flag{
 		Name:  "checkcustomizedidbeginheight",
 		Usage: "after this height CheckCustomizeDIDBeginHeight check custdid",
@@ -1618,6 +1623,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(ctx.GlobalUint64(OldDIDMigrateHeightFlag.Name))
 	cfg.OldDIDMigrateAddr = ctx.GlobalString(OldDIDMigrateAddrFlag.Name)
 	cfg.DocArraySortHeight = new(big.Int).SetUint64(ctx.GlobalUint64(DocArraySortHeightFlag.Name))
+	cfg.NotEscHTMLHeight = new(big.Int).SetUint64(ctx.GlobalUint64(NotEscHTMLHeightFlag.Name))
+
 	cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(ctx.GlobalUint64(CheckCustomizeDIDBeginHeightFlag.Name))
 	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
 	cfg.FrozenAccountList = make([]string, 0)
@@ -1638,6 +1645,11 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(2854640)
 		}
+		//todo
+		if !ctx.GlobalIsSet(NotEscHTMLHeightFlag.Name) {
+			cfg.NotEscHTMLHeight = new(big.Int).SetUint64(6439216)
+		}
+
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
 			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(1)
 		}
@@ -1665,6 +1677,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
+		//todo
+		if !ctx.GlobalIsSet(NotEscHTMLHeightFlag.Name) {
+			cfg.NotEscHTMLHeight = new(big.Int).SetUint64(0)
+		}
 		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
 			cfg.DynamicArbiterHeight = 2
 		}
@@ -1684,6 +1700,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
+		}
+		//todo
+		if !ctx.GlobalIsSet(NotEscHTMLHeightFlag.Name) {
+			cfg.NotEscHTMLHeight = new(big.Int).SetUint64(0)
 		}
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
@@ -1721,10 +1741,18 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
+		//todo
+		if !ctx.GlobalIsSet(NotEscHTMLHeightFlag.Name) {
+			cfg.NotEscHTMLHeight = new(big.Int).SetUint64(0)
+		}
 	default: //main net
 		ctx.GlobalSet(FrozenAccount.Name, "0x93c3A8051b8ba814eB5FB22d655681720E6a4d74")
 		ctx.GlobalSet(FrozenAccount.Name, "0x4a9a0cC103199F67730bdC61337d192788858874")
 		cfg.ArbiterListContract = "mainnet"
+		//todo
+		if !ctx.GlobalIsSet(NotEscHTMLHeightFlag.Name) {
+			cfg.NotEscHTMLHeight = new(big.Int).SetUint64(6439216)
+		}
 	}
 	list := ctx.StringSlice(FrozenAccount.Name)
 	for _, account := range list {
@@ -1733,7 +1761,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	}
 	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
 	log.Info("SetEthConfig", "cfg.CheckCustomizeDIDBeginHeight ", cfg.CheckCustomizeDIDBeginHeight)
-
+	log.Info("SetEthConfig", "cfg.NotEscHTMLHeight ", cfg.NotEscHTMLHeight)
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.

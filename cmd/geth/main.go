@@ -179,6 +179,7 @@ var (
 		utils.OldDIDMigrateAddrFlag,
 		utils.OldDIDMigrateHeightFlag,
 		utils.DocArraySortHeightFlag,
+		utils.NotEscHTMLHeightFlag,
 		utils.CheckCustomizeDIDBeginHeightFlag,
 		utils.PbftMinerAddress,
 		utils.DynamicArbiter,
