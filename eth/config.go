@@ -175,6 +175,7 @@ type Config struct {
 	OldDIDMigrateAddr     string
 	OldDIDMigrateHeight   *big.Int
 	DocArraySortHeight    *big.Int
+	NoEscHTMLHeight		  *big.Int
 	CheckCustomizeDIDBeginHeight *big.Int
 	DynamicArbiterHeight uint64
 	FrozenAccountList    []string
