@@ -7,16 +7,20 @@ import (
 	"sort"
 )
 
+var NoEscHTML bool
+
 func JSONMarshal(t interface{}) ([]byte, error) {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return nil, err
 	}
-
-	return notEscapeHTML(data), nil
+	if NoEscHTML {
+		return noEscapeHTML(data), nil
+	}
+	return data, nil
 }
 
-func notEscapeHTML(data []byte) []byte {
+func noEscapeHTML(data []byte) []byte {
 	data = bytes.Replace(data, []byte("\\u0026"), []byte("&"), -1)
 	data = bytes.Replace(data, []byte("\\u003c"), []byte("<"), -1)
 	data = bytes.Replace(data, []byte("\\u003e"), []byte(">"), -1)
