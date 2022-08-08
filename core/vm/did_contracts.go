@@ -959,6 +959,11 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		}
 	}
 
+	if evm.Context.BlockNumber.Cmp(evm.chainConfig.NoEscHTMLHeight) >= 0 {
+		did.NoEscHTML = true
+	}
+
+
 	data := getData(input, 32, uint64(len(input))-32)
 	p := new(did.DIDPayload)
 	if err := json.Unmarshal(data, p); err != nil {

@@ -179,6 +179,8 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	chainConfig.OldDIDMigrateHeight = config.OldDIDMigrateHeight
 	chainConfig.OldDIDMigrateAddr = config.OldDIDMigrateAddr
 	chainConfig.DocArraySortHeight = config.DocArraySortHeight
+	chainConfig.NoEscHTMLHeight = config.NoEscHTMLHeight
+
 	chainConfig.CheckCustomizeDIDBeginHeight = config.CheckCustomizeDIDBeginHeight
 	log.Info("New", "chainConfig ",chainConfig)
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir

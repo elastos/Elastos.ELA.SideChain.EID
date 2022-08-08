@@ -808,6 +808,11 @@ var (
 		Usage: "after this height DocArraySortHeight doc array need sort",
 		Value: 0,//todo
 	}
+	NoEscHTMLHeightFlag = cli.Uint64Flag{
+		Name:  "noeschtmlheight",
+		Usage: "after this height NoEscHTMLHeight no Escape HTML",
+		Value: 0, //todo
+	}
 	CheckCustomizeDIDBeginHeightFlag = cli.Uint64Flag{
 		Name:  "checkcustomizedidbeginheight",
 		Usage: "after this height CheckCustomizeDIDBeginHeight check custdid",
@@ -1581,11 +1586,17 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(ctx.GlobalUint64(OldDIDMigrateHeightFlag.Name))
 	cfg.OldDIDMigrateAddr = ctx.GlobalString(OldDIDMigrateAddrFlag.Name)
 	cfg.DocArraySortHeight = new(big.Int).SetUint64(ctx.GlobalUint64(DocArraySortHeightFlag.Name))
+	cfg.NoEscHTMLHeight = new(big.Int).SetUint64(ctx.GlobalUint64(NoEscHTMLHeightFlag.Name))
+
 	cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(ctx.GlobalUint64(CheckCustomizeDIDBeginHeightFlag.Name))
 
 
 
 	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
+	//todo
+	if !ctx.GlobalIsSet(NoEscHTMLHeightFlag.Name) {
+		cfg.NoEscHTMLHeight = new(big.Int).SetUint64(6439216)
+	}
 	// Override any default configs for hard coded networks.
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
@@ -1603,6 +1614,11 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(2854640)
 		}
+		//todo
+		if !ctx.GlobalIsSet(NoEscHTMLHeightFlag.Name) {
+			cfg.NoEscHTMLHeight = new(big.Int).SetUint64(6439216)
+		}
+
 		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
 			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(1)
 		}
@@ -1626,6 +1642,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 		}
+		//todo
+		if !ctx.GlobalIsSet(NoEscHTMLHeightFlag.Name) {
+			cfg.NoEscHTMLHeight = new(big.Int).SetUint64(0)
+		}
 		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
 			cfg.DynamicArbiterHeight = 2
 		}
@@ -1644,6 +1664,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
+		}
+		//todo
+		if !ctx.GlobalIsSet(NoEscHTMLHeightFlag.Name) {
+			cfg.NoEscHTMLHeight = new(big.Int).SetUint64(0)
 		}
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
@@ -1681,10 +1705,14 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight =  new(big.Int).SetUint64(0)
 		}
+		//todo
+		if !ctx.GlobalIsSet(NoEscHTMLHeightFlag.Name) {
+			cfg.NoEscHTMLHeight = new(big.Int).SetUint64(0)
+		}
 	}
 	log.Info("SetEthConfig", "cfg.DocArraySortHeight ", cfg.DocArraySortHeight)
 	log.Info("SetEthConfig", "cfg.CheckCustomizeDIDBeginHeight ", cfg.CheckCustomizeDIDBeginHeight)
-
+	log.Info("SetEthConfig", "cfg.NoEscHTMLHeight ", cfg.NoEscHTMLHeight)
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.
