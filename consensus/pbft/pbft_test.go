@@ -7,7 +7,6 @@ package pbft
 
 import (
 	"bytes"
-
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"math/rand"
@@ -41,7 +40,7 @@ func TestReimportMirroredState(t *testing.T) {
 		db     = rawdb.NewMemoryDatabase()
 		key, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		addr   = crypto.PubkeyToAddress(key.PublicKey)
-		engine = New(cfg, PbftProtocolChanges.PbftKeyStore, []byte(PbftProtocolChanges.PbftKeyStorePassWord), "", PbftProtocolChanges.PBFTBlock.Uint64())
+		engine = New(PbftProtocolChanges, "")
 		signer = new(types.HomesteadSigner)
 	)
 	engine.IsCurrent = func() bool {
@@ -60,7 +59,7 @@ func TestReimportMirroredState(t *testing.T) {
 	chain, _ := core.NewBlockChain(db, nil, PbftProtocolChanges, engine, engine, vm.Config{}, nil)
 	defer chain.Stop()
 
-	blocks, _ := core.GenerateChain(PbftProtocolChanges, genesis, engine, db, 3, func(i int, block *core.BlockGen) {
+	blocks, _ := core.GenerateChain(PbftProtocolChanges, genesis, engine, db, 4, func(i int, block *core.BlockGen) {
 		// We want to simulate an empty middle block, having the same state as the
 		// first one. The last is needs a state change again to force a reorg.
 		if i != 1 {
@@ -91,7 +90,6 @@ func TestReimportMirroredState(t *testing.T) {
 	genspec.MustCommit(db)
 
 	chain, _ = core.NewBlockChain(db, nil, PbftProtocolChanges, engine, engine, vm.Config{}, nil)
-	defer chain.Stop()
 
 	if _, err := chain.InsertChain(blocks[:2]); err != nil {
 		t.Fatalf("failed to insert initial blocks: %v", err)
@@ -99,18 +97,18 @@ func TestReimportMirroredState(t *testing.T) {
 	if head := chain.CurrentBlock().NumberU64(); head != 2 {
 		t.Fatalf("chain head mismatch: have %d, want %d", head, 2)
 	}
-
+	chain.Stop()
 	// Simulate a crash by creating a new chain on top of the database, without
 	// flushing the dirty states out. Insert the last block, trigerring a sidechain
 	// reimport.
-	engine = New(cfg, PbftProtocolChanges.PbftKeyStore, []byte(PbftProtocolChanges.PbftKeyStorePassWord), "", PbftProtocolChanges.PBFTBlock.Uint64())
+	engine = New(PbftProtocolChanges, "")
 	chain, _ = core.NewBlockChain(db, nil, PbftProtocolChanges, engine, engine, vm.Config{}, nil)
 	defer chain.Stop()
 
 	if _, err := chain.InsertChain(blocks[2:]); err != nil {
 		t.Fatalf("failed to insert final block: %v", err)
 	}
-	if head := chain.CurrentBlock().NumberU64(); head != 3 {
+	if head := chain.CurrentBlock().NumberU64(); head != 4 {
 		t.Fatalf("chain head mismatch: have %d, want %d", head, 3)
 	}
 }
@@ -148,11 +146,11 @@ func TestChangeEngine(t *testing.T) {
 	cliqueCfg := &params.CliqueConfig{Period: 0, Epoch: 30000}
 	var (
 		PbftProtocolChanges = &params.ChainConfig{OldChainID: big.NewInt(1), ChainID: big.NewInt(20), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP150Hash: common.Hash{}, EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ChainIDBlock: big.NewInt(0), ByzantiumBlock: big.NewInt(0), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: nil, EWASMBlock: nil, PBFTBlock: big.NewInt(10), Ethash: nil, Clique: cliqueCfg, Pbft: cfg, BlackContractAddr: "", PassBalance: 0, EvilSignersJournalDir: "", PreConnectOffset: 1, PbftKeyStore: "test/keystore.dat", PbftKeyStorePassWord: "123"}
-		db     = rawdb.NewMemoryDatabase()
-		key, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-		addr   = crypto.PubkeyToAddress(key.PublicKey)
-		engine = clique.New(PbftProtocolChanges.Clique, db)
-		diffInTurn = big.NewInt(2)
+		db                  = rawdb.NewMemoryDatabase()
+		key, _              = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+		addr                = crypto.PubkeyToAddress(key.PublicKey)
+		engine              = clique.New(PbftProtocolChanges.Clique, db)
+		diffInTurn          = big.NewInt(2)
 	)
 	engine.SetFakeDiff(true)
 	genspec := &core.Genesis{

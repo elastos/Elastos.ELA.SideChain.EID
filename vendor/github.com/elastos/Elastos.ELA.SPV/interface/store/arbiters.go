@@ -375,7 +375,7 @@ func (c *arbiters) GetRevertInfo() []RevertInfo {
 	if len(c.revertPOSCache) == 0 {
 		var err error
 		pos, err = c.getCurrentRevertPositions()
-		if err!= nil && err != leveldb.ErrNotFound {
+		if err != nil && err != leveldb.ErrNotFound {
 			return pos
 		}
 		c.revertPOSCache = pos
@@ -393,7 +393,7 @@ func (c *arbiters) GetConsensusAlgorithmByHeight(height uint32) (byte, error) {
 	if len(c.revertPOSCache) == 0 {
 		var err error
 		pos, err = c.getCurrentRevertPositions()
-		if err!= nil && err != leveldb.ErrNotFound {
+		if err != nil && err != leveldb.ErrNotFound {
 			return 0, err
 		}
 		c.revertPOSCache = pos
@@ -422,6 +422,7 @@ func (c *arbiters) BatchPutRevertTransaction(batch *leveldb.Batch, workingHeight
 		isRollback = true
 	}
 	batch.Put(BKTRevertPosition, uint32toBytes(workingHeight))
+
 	if !isRollback {
 		posCache, err := c.getCurrentRevertPositions()
 		if err != nil && err != leveldb.ErrNotFound {

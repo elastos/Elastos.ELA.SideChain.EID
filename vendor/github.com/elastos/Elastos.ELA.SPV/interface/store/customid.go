@@ -6,7 +6,8 @@ import (
 	"sync"
 
 	"github.com/elastos/Elastos.ELA/common"
-	"github.com/elastos/Elastos.ELA/core/types"
+	elacommon "github.com/elastos/Elastos.ELA/core/types/common"
+	it "github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/dpos/state"
@@ -732,13 +733,13 @@ func (c *customID) RollbackBatch(batch *leveldb.Batch) error {
 	return nil
 }
 
-func (c *customID) BatchPutRetSideChainDepositCoinTx(tx *types.Transaction, batch *leveldb.Batch) error {
+func (c *customID) BatchPutRetSideChainDepositCoinTx(tx it.Transaction, batch *leveldb.Batch) error {
 	c.Lock()
 	defer c.Unlock()
-	for _, output := range tx.Outputs {
+	for _, output := range tx.Outputs() {
 
 		//if this output is not OTReturnSideChainDepositCoin
-		if output.Type != types.OTReturnSideChainDepositCoin {
+		if output.Type != elacommon.OTReturnSideChainDepositCoin {
 			continue
 		}
 		outputPayload, ok := output.Payload.(*outputpayload.ReturnSideChainDeposit)
@@ -754,12 +755,12 @@ func (c *customID) BatchPutRetSideChainDepositCoinTx(tx *types.Transaction, batc
 	return nil
 }
 
-func (c *customID) BatchDeleteRetSideChainDepositCoinTx(tx *types.Transaction, batch *leveldb.Batch) error {
+func (c *customID) BatchDeleteRetSideChainDepositCoinTx(tx it.Transaction, batch *leveldb.Batch) error {
 	c.Lock()
 	defer c.Unlock()
-	for _, output := range tx.Outputs {
+	for _, output := range tx.Outputs() {
 		//if this output is not OTReturnSideChainDepositCoin
-		if output.Type != types.OTReturnSideChainDepositCoin {
+		if output.Type != elacommon.OTReturnSideChainDepositCoin {
 			continue
 		}
 		outputPayload, ok := output.Payload.(*outputpayload.ReturnSideChainDeposit)

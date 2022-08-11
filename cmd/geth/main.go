@@ -31,9 +31,12 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	chainbridge_core "github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/pbft"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/console"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
@@ -178,7 +181,10 @@ var (
 		utils.DocArraySortHeightFlag,
 		utils.NoEscHTMLHeightFlag,
 		utils.CheckCustomizeDIDBeginHeightFlag,
+		utils.PbftMinerAddress,
 		utils.DynamicArbiter,
+		utils.FrozenAccount,
+		utils.UpdateArbiterListToLayer1Flag,
 	}
 
 	rpcFlags = []cli.Flag{
@@ -324,7 +330,7 @@ func prepare(ctx *cli.Context) {
 	cache := ctx.GlobalInt(utils.CacheFlag.Name)
 	gogc := math.Max(20, math.Min(100, 100/(float64(cache)/1024)))
 
-	log.Debug("Sanitizing Go's GC trigger", "percent", int(gogc))
+	log.Info("Sanitizing Go's GC trigger", "percent", int(gogc))
 	godebug.SetGCPercent(int(gogc))
 
 	// Start metrics export if enabled
@@ -404,7 +410,7 @@ func startSpv(ctx *cli.Context, stack *node.Node) {
 		SpvDataDir = filepath.Join(node.DefaultDataDir(), "testnet")
 	case ctx.GlobalBool(utils.RinkebyFlag.Name):
 		SpvDataDir = filepath.Join(node.DefaultDataDir(), "rinkeby")
-	case  ctx.GlobalBool(utils.GoerliFlag.Name):
+	case ctx.GlobalBool(utils.GoerliFlag.Name):
 		SpvDataDir = filepath.Join(node.DefaultDataDir(), "goerli")
 	default:
 		SpvDataDir = node.DefaultDataDir()
@@ -466,7 +472,7 @@ func startSpv(ctx *cli.Context, stack *node.Node) {
 		}
 	}
 
-	spv.GetDefaultSingerAddr = func() (common.Address) {
+	spv.GetDefaultSingerAddr = func() common.Address {
 		var addr common.Address
 		if wallets := stack.AccountManager().Wallets(); len(wallets) > 0 {
 			if accounts := wallets[0].Accounts(); len(accounts) > 0 {
@@ -481,7 +487,7 @@ func startSpv(ctx *cli.Context, stack *node.Node) {
 	if err != nil {
 		log.Error("Attach client: ", "err", err)
 	}
-	if spvService, err := spv.NewService(spvCfg,client, stack.EventMux(), dynamicArbiterHeight); err != nil {
+	if spvService, err := spv.NewService(spvCfg, client, stack.EventMux(), dynamicArbiterHeight); err != nil {
 		utils.Fatalf("SPV service init error: %v", err)
 	} else {
 		MinedBlockSub := stack.EventMux().Subscribe(events.MinedBlockEvent{})
@@ -505,15 +511,22 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 
 	// Unlock any account specifically requested
 	unlockAccounts(ctx, stack)
-
+	// Start auxiliary services if enabled
+	var ethereum *eth.Ethereum
+	if ctx.GlobalString(utils.SyncModeFlag.Name) != "light" {
+		if err := stack.Service(&ethereum); err != nil {
+			utils.Fatalf("Ethereum service not running: %v", err)
+		}
+		initChainBridge(ctx, stack, ethereum.BlockChain())
+	}
 	//start the SPV service
 	//log.Info(fmt.Sprintf("Starting SPV service with config: %+v \n", *spvCfg))
 	startSpv(ctx, stack)
 	SetDIDParams(ctx, stack)
 	startSmallCrossTx(ctx, stack)
 	// Register wallet event handlers to open and auto-derive wallets
-	events := make(chan accounts.WalletEvent, 16)
-	stack.AccountManager().Subscribe(events)
+	evts := make(chan accounts.WalletEvent, 16)
+	stack.AccountManager().Subscribe(evts)
 
 	// Create a client to interact with local geth node.
 	rpcClient, err := stack.Attach()
@@ -549,7 +562,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			}
 		}
 		// Listen for wallet event till termination
-		for event := range events {
+		for event := range evts {
 			switch event.Kind {
 			case accounts.WalletArrived:
 				if err := event.Wallet.Open(""); err != nil {
@@ -598,16 +611,12 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}()
 	}
 
-	// Start auxiliary services if enabled
 	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
 		// Mining only makes sense if a full Ethereum node is running
 		if ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
 		}
-		var ethereum *eth.Ethereum
-		if err := stack.Service(&ethereum); err != nil {
-			utils.Fatalf("Ethereum service not running: %v", err)
-		}
+
 		// Set the gas price to the limits from the CLI and start mining
 		gasprice := utils.GlobalBig(ctx, utils.MinerLegacyGasPriceFlag.Name)
 		if ctx.IsSet(utils.MinerGasPriceFlag.Name) {
@@ -623,6 +632,43 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			if err := ethereum.StartMining(threads); err != nil {
 				utils.Fatalf("Failed to start mining: %v", err)
 			}
+		}
+		go startLayer2(ethereum.BlockChain())
+	}
+
+	//xxl add update Arbiter List To Layer1 get param
+	isUpdateAbiterToLayer1 := ctx.GlobalBool(utils.UpdateArbiterListToLayer1Flag.Name)
+	log.Info("xxl isUpdateAbiterToLayer1 flag is ", "isUpdateAbiterToLayer1", isUpdateAbiterToLayer1)
+	if isUpdateAbiterToLayer1 {
+		log.Info("xxl StartUpdateNode ")
+		chainbridge_core.StartUpdateNode()
+	}
+}
+
+func initChainBridge(ctx *cli.Context, stack *node.Node, blockChain *core.BlockChain) {
+	accPath := ""
+	if wallets := stack.AccountManager().Wallets(); len(wallets) > 0 {
+		accPath = wallets[0].URL().Path
+	}
+	if accPath == "" {
+		log.Info("is common sync node")
+	}
+	password := ""
+	passwords := utils.MakePasswordList(ctx)
+	if len(passwords) > 0 {
+		password = passwords[0]
+	} else {
+		log.Info("is common sync node, no password")
+	}
+	engine := blockChain.GetDposEngine().(*pbft.Pbft)
+	chainbridge_core.Init(engine, stack, accPath, password)
+}
+
+func startLayer2(blockChain *core.BlockChain) {
+	engine := blockChain.GetDposEngine().(*pbft.Pbft)
+	if engine.GetProducer() != nil {
+		if chainbridge_core.Start() {
+			engine.AnnounceDAddr()
 		}
 	}
 }
@@ -676,7 +722,7 @@ func startSmallCrossTx(ctx *cli.Context, stack *node.Node) {
 		datadir = filepath.Join(node.DefaultDataDir(), "testnet")
 	case ctx.GlobalBool(utils.RinkebyFlag.Name):
 		datadir = filepath.Join(node.DefaultDataDir(), "rinkeby")
-	case  ctx.GlobalBool(utils.GoerliFlag.Name):
+	case ctx.GlobalBool(utils.GoerliFlag.Name):
 		datadir = filepath.Join(node.DefaultDataDir(), "goerli")
 	default:
 		datadir = node.DefaultDataDir()

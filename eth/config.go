@@ -163,13 +163,14 @@ type Config struct {
 	PassBalance uint64
 
 	// evil signer events jouranl local path
-	EvilSignersJournalDir  string
+	EvilSignersJournalDir string
 
-	PreConnectOffset uint64
-	PbftKeyStore string
+	PreConnectOffset     uint64
+	PbftKeyStore         string
 	PbftKeyStorePassWord string
-	PbftIPAddress string
-	PbftDPosPort uint16
+	PbftMinerAddress     string
+	PbftIPAddress        string
+	PbftDPosPort         uint16
 
 	OldDIDMigrateAddr     string
 	OldDIDMigrateHeight   *big.Int
@@ -177,4 +178,7 @@ type Config struct {
 	NoEscHTMLHeight		  *big.Int
 	CheckCustomizeDIDBeginHeight *big.Int
 	DynamicArbiterHeight uint64
+	FrozenAccountList    []string
+
+	ArbiterListContract string
 }

@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	_interface "github.com/elastos/Elastos.ELA.SPV/interface"
 	"math/big"
 	"runtime"
 	"sync"
@@ -31,6 +30,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi/bind"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/blocksigner"
+	chainbridge_core "github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
@@ -60,8 +60,11 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 
+	_interface "github.com/elastos/Elastos.ELA.SPV/interface"
+
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	elapeer "github.com/elastos/Elastos.ELA/dpos/p2p/peer"
+	eevents "github.com/elastos/Elastos.ELA/events"
 	"github.com/elastos/Elastos.ELA/p2p/msg"
 )
 
@@ -80,7 +83,7 @@ type Ethereum struct {
 
 	// Channel for shutting down the service
 	shutdownChan chan bool
-	stopChan chan bool
+	stopChan     chan bool
 
 	// Handlers
 	txPool          *core.TxPool
@@ -182,7 +185,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	chainConfig.NoEscHTMLHeight = config.NoEscHTMLHeight
 
 	chainConfig.CheckCustomizeDIDBeginHeight = config.CheckCustomizeDIDBeginHeight
-	log.Info("New", "chainConfig ",chainConfig)
+	log.Info("New", "chainConfig ", chainConfig)
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir
 	if len(chainConfig.PbftKeyStore) > 0 {
 		config.PbftKeyStore = chainConfig.PbftKeyStore
@@ -197,7 +200,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	}
 
 	if len(chainConfig.PbftKeyStorePassWord) > 0 {
-	 	config.PbftKeyStorePassWord = chainConfig.PbftKeyStorePassWord
+		config.PbftKeyStorePassWord = chainConfig.PbftKeyStorePassWord
 	} else {
 		chainConfig.PbftKeyStorePassWord = config.PbftKeyStorePassWord
 	}
@@ -218,7 +221,9 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	if config.DynamicArbiterHeight > 0 {
 		chainConfig.DynamicArbiterHeight = config.DynamicArbiterHeight
 	}
-	log.Info("Initialised chain configuration", "config", chainConfig)
+	chainConfig.FrozeAccountList = config.FrozenAccountList
+	chainConfig.BridgeContractAddr = config.ArbiterListContract
+	log.Info("Initialised chain configuration", "config", chainConfig, "config.Miner.Etherbase", config.Miner.Etherbase)
 
 	eth := &Ethereum{
 		config:         config,
@@ -264,7 +269,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 			TrieTimeLimit:       config.TrieTimeout,
 		}
 	)
-	engine := pbft.New(chainConfig.Pbft, chainConfig.PbftKeyStore, []byte(chainConfig.PbftKeyStorePassWord), ctx.ResolvePath(""), chainConfig.GetPbftBlock())
+	engine := pbft.New(chainConfig, ctx.ResolvePath(""))
 	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, chainConfig, eth.engine, engine, vmConfig, eth.shouldPreserve)
 	if err != nil {
 		return nil, err
@@ -307,7 +312,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	engine.IsCurrent = func() bool {
 		progress := eth.Downloader().Progress()
 		curHeight := eth.blockchain.CurrentHeader().Number.Uint64()
-		if engine.IsBadBlock(progress.HighestBlock) && curHeight + 1 == progress.HighestBlock {
+		if engine.IsBadBlock(progress.HighestBlock) && curHeight+1 == progress.HighestBlock {
 			log.Warn(
 				"Highest block is bad block, no sync", "currentBlock", progress.CurrentBlock, "highestBlock", progress.HighestBlock)
 			return true
@@ -335,31 +340,31 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 			atomic.StoreInt32(&issync, 1)
 			eth.protocolManager.BroadcastBlock(block, true)
 			initTime := time.Now()
-			 go func() {
-				 defer atomic.StoreInt32(&issync, 0)
-				 for {
-					 nowBlock := eth.blockchain.CurrentBlock()
-					 if newHeight <= nowBlock.NumberU64() || time.Now().Sub(initTime) > 50 * time.Second {
-					 	break
-					 }
-					 peer := eth.protocolManager.peers.BestPeer()
-					 if peer == nil {
-						 return
-					 }
-					 localTd := eth.blockchain.GetTd(nowBlock.Hash(), nowBlock.NumberU64())
-					 if localTd.Cmp(peer.td) >= 0 {
-					 	log.Info("remove not best peer")
-						 eth.protocolManager.removePeer(peer.id)
-						 peer = eth.protocolManager.peers.BestPeer()
-					 }
+			go func() {
+				defer atomic.StoreInt32(&issync, 0)
+				for {
+					nowBlock := eth.blockchain.CurrentBlock()
+					if newHeight <= nowBlock.NumberU64() || time.Now().Sub(initTime) > 50*time.Second {
+						break
+					}
+					peer := eth.protocolManager.peers.BestPeer()
+					if peer == nil {
+						return
+					}
+					localTd := eth.blockchain.GetTd(nowBlock.Hash(), nowBlock.NumberU64())
+					if localTd.Cmp(peer.td) >= 0 {
+						log.Info("remove not best peer")
+						eth.protocolManager.removePeer(peer.id)
+						peer = eth.protocolManager.peers.BestPeer()
+					}
 
-					 if peer != nil  && localTd.Cmp(peer.td) < 0 {
-						 go eth.protocolManager.synchronise(peer)
-						 log.Info("synchronise from ", "peer", peer.id, "td", peer.td.Uint64(), "localTd", localTd.Uint64())
-					 }
-					 time.Sleep(5 * time.Second)
-				 }
-			 }()
+					if peer != nil && localTd.Cmp(peer.td) < 0 {
+						go eth.protocolManager.synchronise(peer)
+						log.Info("synchronise from ", "peer", peer.id, "td", peer.td.Uint64(), "localTd", localTd.Uint64())
+					}
+					time.Sleep(5 * time.Second)
+				}
+			}()
 
 		}
 	}
@@ -372,10 +377,10 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	}
 	if chainConfig.Pbft != nil {
 		routeCfg := dpos.Config{
-			PID:  dposAccount.PublicKeyBytes(),
-			Addr: fmt.Sprintf("%s:%d", chainConfig.Pbft.IPAddress, chainConfig.Pbft.DPoSPort),
+			PID:        dposAccount.PublicKeyBytes(),
+			Addr:       fmt.Sprintf("%s:%d", chainConfig.Pbft.IPAddress, chainConfig.Pbft.DPoSPort),
 			TimeSource: engine.GetTimeSource(),
-			Sign: dposAccount.Sign,
+			Sign:       dposAccount.Sign,
 			IsCurrent: func() bool {
 				return engine.IsCurrent()
 			},
@@ -421,18 +426,29 @@ func InitCurrentProducers(engine *pbft.Pbft, config *params.ChainConfig, current
 		return
 	}
 	if !config.IsPBFTFork(currentBlock.Number()) {
+		fmt.Println(" >>> is not pbft engine")
 		return
 	}
 	mode := spv.GetCurrentConsensusMode()
 	spvHeight := currentBlock.Nonce()
-	if spvHeight <= 0 && mode == _interface.DPOS && len(engine.GetCurrentProducers()) > 0  {
-		engine.OnInsertBlock(currentBlock)
+	selfDutyIndex := engine.GetSelfDutyIndex()
+	if spvHeight <= 0 && mode == _interface.DPOS && len(engine.GetCurrentProducers()) > 0 {
+		res := engine.OnInsertBlock(currentBlock)
+		blocksigner.SelfIsProducer = engine.IsProducer()
+		log.Info("blocksigner.SelfIsProducer", "", blocksigner.SelfIsProducer)
+		if res {
+			eevents.Notify(dpos.ETUpdateProducers, selfDutyIndex)
+		}
 		return
 	}
-
+	bestSpvHeight := spv.GetSpvHeight()
+	log.Info("", " >>> bestSpvHeight ", bestSpvHeight)
+	if bestSpvHeight > spvHeight {
+		spvHeight = bestSpvHeight
+	}
 	producers, totalProducers, err := spv.GetProducers(spvHeight)
 	if err != nil {
-		log.Info("GetProducers error", "error", err)
+		log.Info("GetProducers error", "error", err, "spvHeight", spvHeight)
 		return
 	}
 	if engine.IsCurrentProducers(producers) {
@@ -443,11 +459,14 @@ func InitCurrentProducers(engine *pbft.Pbft, config *params.ChainConfig, current
 		spvHeight = spv.GetSpvHeight()
 	}
 	blocksigner.SelfIsProducer = false
+	log.Info("UpdateCurrentProducers ", "producer length", len(producers), "spvHeight", spvHeight)
 	engine.UpdateCurrentProducers(producers, totalProducers, spvHeight)
+	spv.InitNextTurnDposInfo()
 	go func() {
 		if engine.AnnounceDAddr() {
 			if engine.IsProducer() {
 				blocksigner.SelfIsProducer = true
+				eevents.Notify(dpos.ETUpdateProducers, selfDutyIndex)
 				engine.Recover()
 			}
 		}
@@ -461,7 +480,7 @@ func SubscriptEvent(eth *Ethereum, engine consensus.Engine) {
 		engineSub := eth.blockchain.SubscribeChangeEnginesEvent(engineChan)
 		go func() {
 			defer engineSub.Unsubscribe()
-			for  {
+			for {
 				select {
 				case <-engineChan:
 					eth.SetEngine(engine)
@@ -480,14 +499,18 @@ func SubscriptEvent(eth *Ethereum, engine consensus.Engine) {
 			chainSub.Unsubscribe()
 			initProducersSub.Unsubscribe()
 		}()
-		for  {
+		for {
 			select {
 			case b := <-blockEvent:
 				if eth.blockchain.Config().IsPBFTFork(b.Block.Number()) {
 					pbftEngine := engine.(*pbft.Pbft)
 					pbftEngine.AccessFutureBlock(b.Block)
-					pbftEngine.OnInsertBlock(b.Block)
+					selfDutyIndex := pbftEngine.GetSelfDutyIndex()
+					res := pbftEngine.OnInsertBlock(b.Block)
 					blocksigner.SelfIsProducer = pbftEngine.IsProducer()
+					if res {
+						eevents.Notify(dpos.ETUpdateProducers, selfDutyIndex)
+					}
 				}
 			case <-initProducersSub.Chan():
 				pbftEngine := engine.(*pbft.Pbft)
@@ -566,6 +589,8 @@ func (s *Ethereum) APIs() []rpc.API {
 		apis = append(apis, s.lesServer.APIs()...)
 	}
 
+	apis = append(apis, chainbridge_core.APIs(s.BlockChain().GetDposEngine().(*pbft.Pbft))...)
+
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
 		{
@@ -624,9 +649,20 @@ func (s *Ethereum) Etherbase() (eb common.Address, err error) {
 	etherbase := s.etherbase
 	s.lock.RUnlock()
 
+	if len(s.config.PbftMinerAddress) > 0 && s.engine == s.blockchain.GetDposEngine() {
+		etherbase = common.HexToAddress(s.config.PbftMinerAddress)
+		s.lock.Lock()
+		s.etherbase = etherbase
+		s.lock.Unlock()
+
+		log.Info("Etherbase configured by user", "address", etherbase.String())
+		return etherbase, nil
+	}
+
 	if etherbase != (common.Address{}) {
 		return etherbase, nil
 	}
+
 	if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
 		if accounts := wallets[0].Accounts(); len(accounts) > 0 {
 			etherbase := accounts[0].Address
@@ -635,7 +671,7 @@ func (s *Ethereum) Etherbase() (eb common.Address, err error) {
 			s.etherbase = etherbase
 			s.lock.Unlock()
 
-			log.Info("Etherbase automatically configured", "address", etherbase)
+			log.Info("Etherbase automatically configured", "address", etherbase.String())
 			return etherbase, nil
 		}
 	}
@@ -711,21 +747,18 @@ func (s *Ethereum) shouldPreserve(block *types.Block) bool {
 				log.Error("new Block is error confirm")
 				return false
 			}
-			if newErr != nil {
-				return true
-			}
 
 			oldNonce := oldBlock.Nonce()
 			newNonce := block.Nonce()
 			log.Info("detected chain fork", "oldNonce", oldNonce, "newNonce", newNonce, "SignersCount", s.engine.SignersCount())
-			if oldNonce > 0 && newNonce > 0 {
+			if oldNonce > 0 && newNonce > 0 && oldNonce != newNonce {
 				return newNonce > oldNonce
 			}
 
 			oldViewOffset := oldConfirm.Proposal.ViewOffset
 			newViewOffset := newConfirm.Proposal.ViewOffset
 			log.Info("detected chain fork", "oldViewOffset", oldViewOffset, "newViewOffset", newViewOffset, "SignersCount", s.engine.SignersCount())
-			return newViewOffset > oldViewOffset
+			//return newViewOffset > oldViewOffset
 		}
 	}
 	return s.isLocalBlock(block)
@@ -860,21 +893,33 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Ethereum protocol.
 func (s *Ethereum) Stop() error {
+	fmt.Println("ethereum stop 111111111")
 	spv.Close()
+	fmt.Println("ethereum stop 222222222")
 	close(s.stopChan)
+	fmt.Println("ethereum stop 3333333333")
 	s.bloomIndexer.Close()
+	fmt.Println("ethereum stop 44444444")
 	s.blockchain.Stop()
+	fmt.Println("ethereum stop 55555555")
 	s.engine.Close()
+	fmt.Println("ethereum stop 666666666")
 	s.protocolManager.Stop()
+	fmt.Println("ethereum stop 77777777")
 	if s.lesServer != nil {
 		s.lesServer.Stop()
+		fmt.Println("ethereum stop 88888888")
 	}
+	fmt.Println("ethereum stop 99999999")
 	s.txPool.Stop()
+	fmt.Println("ethereum stop aaaaaaaaaa")
 	s.miner.Stop()
+	fmt.Println("ethereum stop bbbbbbbbbbb")
 	s.eventMux.Stop()
-
+	fmt.Println("ethereum stop cccccccccc")
 	s.chainDb.Close()
-
+	fmt.Println("ethereum stop ddddddddddd")
 	close(s.shutdownChan)
+	fmt.Println("ethereum stop eeeeeeeeeee")
 	return nil
 }

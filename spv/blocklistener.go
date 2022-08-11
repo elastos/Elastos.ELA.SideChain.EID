@@ -5,12 +5,13 @@ import (
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA.SPV/util"
 
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/dpos_msg"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	eevent "github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 
-	"github.com/elastos/Elastos.ELA/core/types"
+	"github.com/elastos/Elastos.ELA/core/transaction"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/dpos/p2p/peer"
 	"github.com/elastos/Elastos.ELA/events"
@@ -27,9 +28,9 @@ func (param *auxParam) clean() {
 }
 
 type BlockListener struct {
-	blockNumber uint32
-	param       auxParam
-	handle      func(block interface{}) error
+	blockNumber          uint32
+	param                auxParam
+	handle               func(block interface{}) error
 	dynamicArbiterHeight uint64
 }
 
@@ -40,7 +41,8 @@ func (l *BlockListener) NotifyBlock(block *util.Block) {
 	}
 	l.blockNumber = block.Height
 	l.StoreAuxBlock(block)
-	log.Info("BlockListener handle block ", "height", l.blockNumber, "l.dynamicArbiterHeight ", l.dynamicArbiterHeight )
+	log.Info("BlockListener handle block ", "height", l.blockNumber, "l.dynamicArbiterHeight ", l.dynamicArbiterHeight)
+
 	if uint64(l.blockNumber) < l.dynamicArbiterHeight {
 		return
 	}
@@ -89,10 +91,12 @@ func (l *BlockListener) onBlockHandled(block interface{}) {
 		log.Info("----------turn to Dpos mode------------")
 		SpvService.mux.Post(eevent.InitCurrentProducers{})
 		InitNextTurnDposInfo()
+		events.Notify(dpos_msg.ETESCStateChanged, ChainState_DPOS)
 	} else if consensusMode == spv.DPOS && nowConsensus == spv.POW {
 		log.Info("----------turn to POW mode------------")
 		SpvService.mux.Post(eevent.InitCurrentProducers{})
 		InitNextTurnDposInfo()
+		events.Notify(dpos_msg.ETESCStateChanged, ChainState_POW)
 	}
 	if SpvIsWorkingHeight() && nowConsensus != spv.POW {
 		SpvService.mux.Post(eevent.InitCurrentProducers{})
@@ -103,24 +107,24 @@ func (l *BlockListener) onBlockHandled(block interface{}) {
 
 func IsNexturnBlock(block interface{}) bool {
 	b := block.(*util.Block)
-	var tx types.Transaction
+	var tx transaction.BaseTransaction
 	for _, t := range b.Transactions {
 		buf := new(bytes.Buffer)
 		t.Serialize(buf)
 		r := bytes.NewReader(buf.Bytes())
-		tx = types.Transaction{}
+		tx = transaction.BaseTransaction{}
 		tx.Deserialize(r)
-		if tx.TxType == types.NextTurnDPOSInfo {
+		if tx.IsNextTurnDPOSInfoTx() {
 			break
 		}
 	}
 
-	if  tx.TxType != types.NextTurnDPOSInfo {
+	if !tx.IsNextTurnDPOSInfoTx() {
 		log.Info("received not next turn block", "height", b.Height)
 		return false
 	}
 
-	payloadData := tx.Payload.(* payload.NextTurnDPOSInfo)
+	payloadData := tx.Payload().(*payload.NextTurnDPOSInfo)
 
 	if IsOnlyCRConsensus {
 		payloadData.DPOSPublicKeys = make([][]byte, 0)
@@ -154,12 +158,14 @@ func InitNextTurnDposInfo() {
 	if isSameNexturnArbiters(workingHeight, crcArbiters, normalArbiters) {
 		return
 	}
-
-	nextTurnDposInfo = &payload.NextTurnDPOSInfo{
-		WorkingHeight: workingHeight,
-		CRPublicKeys: crcArbiters,
-		DPOSPublicKeys: normalArbiters,
+	nextTurnDposInfo = &NextTurnDPOSInfo{
+		&payload.NextTurnDPOSInfo{
+			WorkingHeight:  workingHeight,
+			CRPublicKeys:   crcArbiters,
+			DPOSPublicKeys: normalArbiters,
+		},
 	}
+
 	peers := DumpNextDposInfo()
 	events.Notify(dpos.ETNextProducers, peers)
 }
@@ -196,7 +202,7 @@ func GetCurrentConsensusMode() spv.ConsensusAlgorithm {
 		return spv.DPOS
 	}
 	spvHeight := uint32(GetSpvHeight())
-	mode , err := SpvService.GetConsensusAlgorithm(spvHeight)
+	mode, err := SpvService.GetConsensusAlgorithm(spvHeight)
 	log.Info("GetCurrentConsensusMode", "error", err, "spvHeight", spvHeight, "Mode", mode)
 	if err != nil {
 		return spv.DPOS
@@ -209,6 +215,13 @@ func DumpNextDposInfo() []peer.PID {
 	log.Info("-------------------CRPublicKeys---------------")
 	peers := make([]peer.PID, 0)
 	if nextTurnDposInfo == nil {
+		nextTurnDposInfo = &NextTurnDPOSInfo{
+			&payload.NextTurnDPOSInfo{
+				WorkingHeight:  0,
+				CRPublicKeys:   make([][]byte, 0),
+				DPOSPublicKeys: make([][]byte, 0),
+			},
+		}
 		return peers
 	}
 	for _, arbiter := range nextTurnDposInfo.CRPublicKeys {
@@ -228,6 +241,30 @@ func DumpNextDposInfo() []peer.PID {
 		}
 		log.Info(common.Bytes2Hex(arbiter) + "\n")
 	}
+
 	log.Info("work height", "height", nextTurnDposInfo.WorkingHeight, "activeCount", len(peers), "count", GetTotalProducersCount())
+	return peers
+}
+
+func GetNextTurnPeers() []peer.PID {
+	peers := make([]peer.PID, 0)
+	if nextTurnDposInfo == nil {
+		return peers
+	}
+	for _, arbiter := range nextTurnDposInfo.CRPublicKeys {
+		if len(arbiter) > 0 {
+			var pid peer.PID
+			copy(pid[:], arbiter)
+			peers = append(peers, pid)
+		}
+	}
+	for _, arbiter := range nextTurnDposInfo.DPOSPublicKeys {
+		if len(arbiter) > 0 {
+			var pid peer.PID
+			copy(pid[:], arbiter)
+			peers = append(peers, pid)
+		}
+	}
+
 	return peers
 }
