@@ -1,6 +1,8 @@
 package events
 
-import it "github.com/elastos/Elastos.ELA/core/types/interfaces"
+import (
+	it "github.com/elastos/Elastos.ELA/core/types/interfaces"
+)
 
 // MinedBlockEvent is posted when a block has been imported.
 type MinedBlockEvent struct{}
