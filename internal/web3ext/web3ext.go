@@ -36,7 +36,42 @@ var Modules = map[string]string{
 	"txpool":     TxpoolJs,
 	"les":        LESJs,
 	"did":        DIDJs,
+	"bridge":     BridgeJs,
 }
+
+const BridgeJs = `
+web3._extend({
+	property: 'bridge',
+	methods: [
+		new web3._extend.Method({
+			name: 'updateArbiters',
+			call: 'bridge_updateArbiters',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getArbiters',
+			call: 'bridge_getArbiters',
+			params: 1,
+		    inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getCollectedArbiterList',
+			call: 'bridge_getCollectedArbiterList',
+		}),
+		new web3._extend.Method({
+			name: 'initArbiterList',
+			call: 'bridge_initArbiterList',
+			params: 3,
+		    inputFormatter: [null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'getSignerAddress',
+			call: 'bridge_getSignerAddress',
+		})
+	]
+});
+`
 
 const ChequebookJs = `
 web3._extend({
@@ -126,6 +161,10 @@ web3._extend({
 	    new web3._extend.Method({
 			name: 'getArbiterPeersInfo',
 			call: 'pbft_getAtbiterPeersInfo',
+		}),
+		new web3._extend.Method({
+			name: 'getAllPeersInfo',
+			call: 'pbft_getAllPeersInfo',
 		}),
 	],
 	properties: [
@@ -587,6 +626,11 @@ web3._extend({
 			call: 'eth_sendInvalidWithdrawTransaction',
 			params: 2,
 		}),
+		new web3._extend.Method({
+			name: 'getFrozenAccounts',
+			call: 'eth_getFrozenAccounts',
+			params: 0,
+		})
 	],
 	properties: [
 		new web3._extend.Property({
@@ -871,6 +915,7 @@ web3._extend({
 	]
 });
 `
+
 //add DIDJs by xxl
 const DIDJs = `
 

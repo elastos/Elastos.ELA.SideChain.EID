@@ -1,7 +1,7 @@
 // Copyright (c) 2017-2020 The Elastos Foundation
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
-// 
+//
 
 /*
 This package provides the DPOS routes(network addresses) protocol, it can
@@ -78,7 +78,8 @@ type Config struct {
 // state stores the DPOS addresses and other additional information tracking
 // addresses syncing status.
 type state struct {
-	peers     map[dp.PID]struct{}
+	dposPeers map[dp.PID]struct{}
+	crPeers   map[dp.PID]struct{}
 	requested map[common.Uint256]struct{}
 	peerCache map[*peer.Peer]*cache
 }
@@ -88,7 +89,8 @@ type newPeerMsg *peer.Peer
 type donePeerMsg *peer.Peer
 
 type peersMsg struct {
-	peers []dp.PID
+	dposPeers []dp.PID
+	crPeers   []dp.PID
 }
 
 type invMsg struct {
@@ -118,15 +120,17 @@ type Routes struct {
 	knownAddr map[common.Uint256]*msg.DAddr
 	knownList *list.List
 
-	queue    chan interface{}
-	announce chan struct{}
-	quit     chan struct{}
+	queue      chan interface{}
+	announce   chan struct{}
+	crAnnounce chan struct{}
+	quit       chan struct{}
 }
 
 // addrHandler is the main handler to syncing the addresses state.
 func (r *Routes) addrHandler() {
 	state := &state{
-		peers:     make(map[dp.PID]struct{}),
+		dposPeers: make(map[dp.PID]struct{}),
+		crPeers:   make(map[dp.PID]struct{}),
 		requested: make(map[common.Uint256]struct{}),
 		peerCache: make(map[*peer.Peer]*cache),
 	}
@@ -134,12 +138,24 @@ func (r *Routes) addrHandler() {
 	// lastAnnounce indicates the time when last announce sent.
 	var lastAnnounce time.Time
 
+	// lastCRAnnounce indicates the time when last cr announce sent.
+	var lastCRAnnounce time.Time
+
 	// scheduleAnnounce schedules an announce according to the delay time.
 	var scheduleAnnounce = func(delay time.Duration) {
 		time.AfterFunc(delay, func() {
 			r.announce <- struct{}{}
 		})
 	}
+
+	// scheduleCRAnnounce schedules an announce according to the delay time.
+	var scheduleCRAnnounce = func(delay time.Duration) {
+		time.AfterFunc(delay, func() {
+			r.crAnnounce <- struct{}{}
+		})
+	}
+
+	ciphers := make(map[string]map[dp.PID][]byte)
 
 out:
 	for {
@@ -160,14 +176,15 @@ out:
 				r.handleDAddr(state, m.peer, m.msg)
 
 			case peersMsg:
-				r.handlePeersMsg(state, m.peers)
+				r.handlePeersMsg(state, m.dposPeers, m.crPeers)
+
 			}
 
 		// Handle the announce request.
 		case <-r.announce:
 			// This may be a retry or delayed announce, and the DPoS producers
 			// have been changed.
-			_, ok := state.peers[r.pid]
+			_, ok := state.dposPeers[r.pid]
 			if !ok {
 				// Waiting status must reset here or the announce will never
 				// work again.
@@ -197,7 +214,82 @@ out:
 			// Reset waiting state to 0(false).
 			atomic.StoreInt32(&r.waiting, 0)
 
-			for pid := range state.peers {
+			for pid := range state.dposPeers {
+				// Do not create address for self.
+				if r.pid.Equal(pid) {
+					continue
+				}
+
+				pubKey, err := crypto.DecodePoint(pid[:])
+				if err != nil {
+					continue
+				}
+
+				var cipher []byte
+				if pidc, ok := ciphers[r.addr]; ok {
+					if c, ok := pidc[pid]; ok {
+						cipher = c
+					}
+				}
+
+				if len(cipher) == 0 {
+					// Generate DAddr for the given PID.
+					cipher, err = crypto.Encrypt(pubKey, []byte(r.addr))
+					if err != nil {
+						log.Warnf("encrypt addr %s failed %s", r.addr, err)
+						continue
+					}
+					ciphers[r.addr] = make(map[dp.PID][]byte)
+					ciphers[r.addr][pid] = cipher
+				}
+
+				addr := msg.DAddr{
+					PID:       r.pid,
+					Timestamp: r.cfg.TimeSource.AdjustedTime(),
+					Encode:    pid,
+					Cipher:    cipher,
+				}
+				addr.Signature = r.sign(addr.Data())
+
+				// Append and relay the local address.
+				r.appendAddr(&addr)
+			}
+
+			// Handle the announce request.
+		case <-r.crAnnounce:
+			// This may be a retry or delayed announce, and the DPoS producers
+			// have been changed.
+			_, ok := state.crPeers[r.pid]
+			if !ok {
+				// Waiting status must reset here or the announce will never
+				// work again.
+				atomic.StoreInt32(&r.waiting, 0)
+				continue
+			}
+
+			// Do not announce address if connected peers not enough.
+			if len(state.peerCache) < minPeersToAnnounce {
+				// Retry announce after the retry duration.
+				scheduleCRAnnounce(retryAnnounceDuration)
+				continue
+			}
+
+			// Do not announce address too frequent.
+			now := time.Now()
+			if lastCRAnnounce.Add(minAnnounceDuration).After(now) {
+				// Calculate next announce time and schedule an announce.
+				nextAnnounce := minAnnounceDuration - now.Sub(lastCRAnnounce)
+				scheduleCRAnnounce(nextAnnounce)
+				continue
+			}
+
+			// Update last announce time.
+			lastCRAnnounce = now
+
+			// Reset waiting state to 0(false).
+			atomic.StoreInt32(&r.waiting, 0)
+
+			for pid := range state.crPeers {
 				// Do not create address for self.
 				if r.pid.Equal(pid) {
 					continue
@@ -236,6 +328,7 @@ cleanup:
 		select {
 		case <-r.queue:
 		case <-r.announce:
+		case <-r.crAnnounce:
 		default:
 			break cleanup
 		}
@@ -247,6 +340,10 @@ func (r *Routes) appendAddr(m *msg.DAddr) {
 
 	// Append received addr into known addr index.
 	r.addrMtx.Lock()
+	if _, ok := r.addrIndex[m.PID]; !ok {
+		r.addrMtx.Unlock()
+		return
+	}
 	r.addrIndex[m.PID][m.Encode] = hash
 	r.knownAddr[hash] = m
 	if len(r.knownAddr) > maxKnownAddrs {
@@ -281,6 +378,20 @@ func (r *Routes) announceAddr() {
 	r.announce <- struct{}{}
 }
 
+func (r *Routes) announceCRAddr() {
+	// Ignore if BlockChain not sync to current.
+	if !r.cfg.IsCurrent() {
+		return
+	}
+
+	// Refuse new announce if a previous announce is waiting,
+	// this is to reduce unnecessary announce.
+	if !atomic.CompareAndSwapInt32(&r.waiting, 0, 1) {
+		return
+	}
+	r.crAnnounce <- struct{}{}
+}
+
 func (r *Routes) handleNewPeer(s *state, p *peer.Peer) {
 	// Create state for the new peer.
 	s.peerCache[p] = &cache{requested: make(map[common.Uint256]struct{})}
@@ -302,8 +413,25 @@ func (r *Routes) handleDonePeer(s *state, p *peer.Peer) {
 	}
 }
 
-func (r *Routes) handlePeersMsg(state *state, peers []dp.PID) {
+func (r *Routes) handlePeersMsg(state *state, dposPeers []dp.PID, crPeers []dp.PID) {
+
 	// Compare current peers and new peers to find the difference.
+	peers := append(dposPeers, crPeers...)
+	var newDPoSPeers = make(map[dp.PID]struct{})
+	var newCRPeers = make(map[dp.PID]struct{})
+	var hasNewCRPeers, hasNewDPoSPeers bool
+	for _, pid := range dposPeers {
+		newDPoSPeers[pid] = struct{}{}
+		if _, ok := state.dposPeers[pid]; !ok {
+			hasNewDPoSPeers = true
+		}
+	}
+	for _, pid := range crPeers {
+		newCRPeers[pid] = struct{}{}
+		if _, ok := state.crPeers[pid]; !ok {
+			hasNewCRPeers = true
+		}
+	}
 	var newPeers = make(map[dp.PID]struct{})
 	for _, pid := range peers {
 		newPeers[pid] = struct{}{}
@@ -321,7 +449,13 @@ func (r *Routes) handlePeersMsg(state *state, peers []dp.PID) {
 
 	// Remove peers that not in new peers list.
 	var delPeers []dp.PID
-	for pid := range state.peers {
+	for pid := range state.dposPeers {
+		if _, ok := newPeers[pid]; ok {
+			continue
+		}
+		delPeers = append(delPeers, pid)
+	}
+	for pid := range state.crPeers {
 		if _, ok := newPeers[pid]; ok {
 			continue
 		}
@@ -345,14 +479,32 @@ func (r *Routes) handlePeersMsg(state *state, peers []dp.PID) {
 		r.addrMtx.Unlock()
 	}
 
+	var isDPoSArbiter, isCRArbiter bool
+	for _, p := range dposPeers {
+		if r.pid == p {
+			isDPoSArbiter = true
+			break
+		}
+	}
+	for _, p := range crPeers {
+		if r.pid == p {
+			isCRArbiter = true
+			break
+		}
+	}
+	//_, wasArbiter := state.dposPeers[r.pid]
+	//_, wasCRArbiter := state.crPeers[r.pid]
+
 	// Update peers list.
-	_, isArbiter := newPeers[r.pid]
-	_, wasArbiter := state.peers[r.pid]
-	state.peers = newPeers
+	state.dposPeers = newDPoSPeers
+	state.crPeers = newCRPeers
 
 	// Announce address into P2P network if we become arbiter.
-	if isArbiter && !wasArbiter {
+	if isDPoSArbiter && hasNewDPoSPeers {
 		r.announceAddr()
+	}
+	if isCRArbiter && hasNewCRPeers {
+		r.announceCRAddr()
 	}
 }
 
@@ -474,8 +626,9 @@ func (r *Routes) handleDAddr(s *state, p *peer.Peer, m *msg.DAddr) {
 		return
 	}
 
-	_, ok := s.peers[m.PID]
-	if !ok {
+	_, isCRPeers := s.crPeers[m.PID]
+	_, isDPoSPeers := s.dposPeers[m.PID]
+	if !isCRPeers && !isDPoSPeers {
 		log.Debugf("PID not in arbiter list")
 
 		// Peers may have disagree with the current producers, so some times we
@@ -574,26 +727,30 @@ func New(cfg *Config) *Routes {
 	copy(pid[:], cfg.PID)
 
 	r := Routes{
-		pid:       pid,
-		cfg:       cfg,
-		addr:      cfg.Addr,
-		sign:      cfg.Sign,
-		addrIndex: make(map[dp.PID]map[dp.PID]common.Uint256),
-		knownAddr: make(map[common.Uint256]*msg.DAddr),
-		knownList: list.New(),
-		queue:     make(chan interface{}, 125),
-		announce:  make(chan struct{}, 1),
-		quit:      make(chan struct{}),
+		pid:        pid,
+		cfg:        cfg,
+		addr:       cfg.Addr,
+		sign:       cfg.Sign,
+		addrIndex:  make(map[dp.PID]map[dp.PID]common.Uint256),
+		knownAddr:  make(map[common.Uint256]*msg.DAddr),
+		knownList:  list.New(),
+		queue:      make(chan interface{}, 125),
+		announce:   make(chan struct{}, 1),
+		crAnnounce: make(chan struct{}, 1),
+		quit:       make(chan struct{}),
 	}
 
-	queuePeers := func(peers []dp.PID) {
-		r.queue <- peersMsg{peers: peers}
+	queuePeers := func(dposPeers []dp.PID, crPeers []dp.PID) {
+		r.queue <- peersMsg{dposPeers: dposPeers, crPeers: crPeers}
 	}
 
 	events.Subscribe(func(e *events.Event) {
 		switch e.Type {
 		case events.ETDirectPeersChanged:
-			go queuePeers(e.Data.([]dp.PID))
+			peersInfo := e.Data.(*dp.PeersInfo)
+			peers := peersInfo.CurrentPeers
+			peers = append(peers, peersInfo.NextPeers...)
+			go queuePeers(peers, peersInfo.CRPeers)
 		}
 	})
 	return &r

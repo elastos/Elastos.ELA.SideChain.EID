@@ -69,6 +69,10 @@ func (v *ConsensusView) GetProducers() [][]byte {
 	return v.producers.GetProducers()
 }
 
+func (v *ConsensusView) GetTotalArbiterCount() int {
+	return v.producers.totalProducers
+}
+
 func (v *ConsensusView) GetSpvHeight() uint64 {
 	return v.producers.spvHeight
 }
@@ -88,19 +92,30 @@ func (v *ConsensusView) ChangeCurrentProducers(changeHeight uint64, spvHeight ui
 	v.producers.ChangeCurrentProducers(changeHeight, spvHeight)
 }
 
+func (v *ConsensusView) ProducerIndex(signer []byte) int {
+	if len(signer) <= 0 {
+		return -1
+	}
+	return v.producers.ProducerIndex(signer)
+}
+
 func (v *ConsensusView) SetWorkingHeight(workingHeight uint64) {
 	v.producers.SetWorkingHeight(workingHeight)
 }
 
-func (v *ConsensusView) GetNeedConnectArbiters() []peer.PID {
-	return v.producers.GetNeedConnectArbiters()
+func (v *ConsensusView) getCurrentNeedConnectArbiters() []peer.PID {
+	return v.producers.getCurrentNeedConnectArbiters()
 }
 
-func (v *ConsensusView) UpdateNextProducers(producers []peer.PID, totalCount int){
+func (v *ConsensusView) GetNextNeedConnectArbiters() []peer.PID {
+	return v.producers.GetNextNeedConnectArbiters()
+}
+
+func (v *ConsensusView) UpdateNextProducers(producers []peer.PID, totalCount int) {
 	v.producers.UpdateNextProducers(producers, totalCount)
 }
 
-func (v *ConsensusView) IsSameProducers(curProducers[][]byte) bool {
+func (v *ConsensusView) IsSameProducers(curProducers [][]byte) bool {
 	v.producers.mtx.Lock()
 	defer v.producers.mtx.Unlock()
 	nextProducers := v.producers.nextProducers
@@ -123,7 +138,7 @@ func (v *ConsensusView) IsSameProducers(curProducers[][]byte) bool {
 	return true
 }
 
-func (v *ConsensusView) IsCurrentProducers(curProducers[][]byte) bool {
+func (v *ConsensusView) IsCurrentProducers(curProducers [][]byte) bool {
 	v.producers.mtx.Lock()
 	defer v.producers.mtx.Unlock()
 	producers := v.producers.producers

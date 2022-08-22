@@ -19,6 +19,7 @@ import (
 	ethCommon "github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethclient"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/leveldb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
@@ -31,11 +32,15 @@ import (
 
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/common/config"
-	core "github.com/elastos/Elastos.ELA/core/types"
+	elatx "github.com/elastos/Elastos.ELA/core/transaction"
+	elacom "github.com/elastos/Elastos.ELA/core/types/common"
+	"github.com/elastos/Elastos.ELA/core/types/functions"
+	it "github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
 	"github.com/elastos/Elastos.ELA/elanet/filter"
+	eevents "github.com/elastos/Elastos.ELA/events"
 )
 
 var (
@@ -93,9 +98,16 @@ const (
 	// Fixed height of ela chain height with LitterEnd encode
 	ExtraElaHeight = 8
 
-	blockDiff = 6
+	GASLimtScale = 10
+	blockDiff    = 6
 
 	IsOnlyCRConsensus = true
+)
+
+const (
+	ChainState_DPOS = iota
+	ChainState_POW
+	ChainState_Error
 )
 
 //type MinedBlockEvent struct{}
@@ -125,6 +137,13 @@ func SpvDbInit(spvdataDir string) {
 		return
 	}
 	spvTransactiondb = db
+
+	// Initialize functions
+	functions.GetTransactionByTxType = elatx.GetTransaction
+	functions.GetTransactionByBytes = elatx.GetTransactionByBytes
+	functions.CreateTransaction = elatx.CreateTransaction
+	functions.GetTransactionParameters = elatx.GetTransactionparameters
+	config.DefaultParams = config.GetDefaultParams()
 }
 
 //Spv service initialization
@@ -231,9 +250,10 @@ func MinedBroadcastLoop(minedBlockSub *event.TypeMuxSubscription,
 				atomic.StoreInt32(&candSend, 0)
 			}
 			accessFailedRechargeTx()
+			go eevents.Notify(dpos.ETOnDutyEvent, nil)
 		case obj := <-smallCrossTxSub.Chan():
 			if evt, ok := obj.Data.(events.CmallCrossTx); ok {
-				NotifySmallCrossTx(*evt.Tx)
+				NotifySmallCrossTx(evt.Tx)
 			}
 		case _ = <-stopChn:
 			return
@@ -241,7 +261,7 @@ func MinedBroadcastLoop(minedBlockSub *event.TypeMuxSubscription,
 	}
 }
 
-func accessFailedRechargeTx()  {
+func accessFailedRechargeTx() {
 	failedMutex.Lock()
 	defer failedMutex.Unlock()
 	for height, txs := range failedTxList {
@@ -278,7 +298,7 @@ func (s *Service) VerifyTransaction(tx *types.Transaction) error {
 	case types.RechargeToSideChainPayloadVersion0:
 
 		proof := new(bloom.MerkleProof)
-		mainChainTransaction := new(core.Transaction)
+		mainChainTransaction := new(elatx.BaseTransaction)
 
 		reader := bytes.NewReader(payload.MerkleProof)
 		if err := proof.Deserialize(reader); err != nil {
@@ -290,7 +310,7 @@ func (s *Service) VerifyTransaction(tx *types.Transaction) error {
 			return errors.New("[VerifyTransaction] RechargeToSideChain mainChainTransaction deserialize failed")
 		}
 
-		if err := s.SPVService.VerifyTransaction(*proof, *mainChainTransaction); err != nil {
+		if err := s.SPVService.VerifyTransaction(*proof, mainChainTransaction); err != nil {
 			return errors.New("[VerifyTransaction] SPV module verify transaction failed.")
 		}
 
@@ -326,15 +346,15 @@ func (l *listener) Address() string {
 	return l.address
 }
 
-func (l *listener) Type() core.TxType {
-	return core.TransferCrossChainAsset
+func (l *listener) Type() elacom.TxType {
+	return elacom.TransferCrossChainAsset
 }
 
 func (l *listener) Flags() uint64 {
 	return spv.FlagNotifyInSyncing | spv.FlagNotifyConfirmed
 }
 
-func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx core.Transaction) {
+func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx it.Transaction) {
 	// Submit transaction receipt
 	log.Info("========================================================================================")
 	log.Info("mainchain transaction info")
@@ -346,15 +366,16 @@ func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx core.Tr
 	}
 	fee, addr, output := FindOutputFeeAndaddressByTxHash(tx.Hash().String())
 	var blackAddr ethCommon.Address
-	if fee.Cmp(new(big.Int)) <= 0  && output.Cmp(new(big.Int)) <= 0 && addr == blackAddr {
-		savePayloadInfo(tx, l)
+	if fee.Cmp(new(big.Int)) <= 0 && output.Cmp(new(big.Int)) <= 0 && addr == blackAddr {
+		savePayloadInfo(tx.(*elatx.TransferCrossChainAssetTransaction), l)
 	} else {
 		log.Info("all ready received this cross transaction")
 	}
 	l.service.SubmitTransactionReceipt(id, tx.Hash()) // give spv service a receipt, Indicates receipt of notice
+	log.Info("------------------------------------Notify END----------------------------------------------------")
 }
 
-func NotifySmallCrossTx(tx core.Transaction) {
+func NotifySmallCrossTx(tx it.Transaction) {
 	fee, addr, output := FindOutputFeeAndaddressByTxHash(tx.Hash().String())
 	var blackAddr ethCommon.Address
 	if fee.Cmp(new(big.Int)) > 0 || output.Cmp(new(big.Int)) > 0 || addr != blackAddr {
@@ -371,10 +392,10 @@ func NotifySmallCrossTx(tx core.Transaction) {
 	savePayloadInfo(tx, nil)
 }
 
-func OnReceivedRechargeTx(tx core.Transaction) error {
-	output := make([]*core.Output, 0)
-	for _, v := range tx.Outputs {
-		if v.Type != core.OTCrossChain {
+func OnReceivedRechargeTx(tx it.Transaction) error {
+	output := make([]*elacom.Output, 0)
+	for _, v := range tx.Outputs() {
+		if v.Type != elacom.OTCrossChain {
 			continue
 		}
 		op, ok := v.Payload.(*outputpayload.CrossChainOutput)
@@ -396,7 +417,7 @@ func OnReceivedRechargeTx(tx core.Transaction) error {
 	return nil
 }
 
-func saveOutputPayload(outputs []*core.Output, txHash string) error {
+func saveOutputPayload(outputs []*elacom.Output, txHash string) error {
 	var fees []string
 	var address []string
 	var amounts []string
@@ -465,28 +486,28 @@ func saveOutputPayload(outputs []*core.Output, txHash string) error {
 
 //
 //savePayloadInfo save and send spv perception
-func savePayloadInfo(elaTx core.Transaction, l *listener) {
-	if elaTx.PayloadVersion >= payload.TransferCrossChainVersionV1 {
+func savePayloadInfo(elaTx it.Transaction, l *listener) {
+	if elaTx.PayloadVersion() >= payload.TransferCrossChainVersionV1 {
 		err := OnReceivedRechargeTx(elaTx)
 		if err != nil {
 			log.Error("new recharge tx resolve error", "error", err)
 		}
 		return
 	}
-	nr := bytes.NewReader(elaTx.Payload.Data(elaTx.PayloadVersion))
+	nr := bytes.NewReader(elaTx.Payload().Data(elaTx.PayloadVersion()))
 	p := new(payload.TransferCrossChainAsset)
-	p.Deserialize(nr, elaTx.PayloadVersion)
+	p.Deserialize(nr, elaTx.PayloadVersion())
 	var fees []string
 	var address []string
 	var outputs []string
 	for i, amount := range p.CrossChainAmounts {
-		v, err := SafeFixed64Minus(elaTx.Outputs[i].Value, amount)
+		v, err := SafeFixed64Minus(elaTx.Outputs()[i].Value, amount)
 		if err != nil {
 			log.Error("SafeFixed64Minus error", "error", err)
 			continue
 		}
 		fees = append(fees, v.String())
-		outputs = append(outputs, elaTx.Outputs[i].Value.String())
+		outputs = append(outputs, elaTx.Outputs()[i].Value.String())
 		address = append(address, p.CrossChainAddresses[i])
 	}
 	addr := strings.Join(address, ",")
@@ -669,7 +690,15 @@ func SendTransaction(from ethCommon.Address, elaTx string, fee *big.Int) (err er
 			return errmsg, false
 		}
 		if !res {
-			return errors.New("verifyed small cross chain transaction failed"), true
+			userfee, addr, output := FindOutputFeeAndaddressByTxHash(elaTx)
+			var blackAddr ethCommon.Address
+			if userfee.Cmp(new(big.Int)) <= 0 && output.Cmp(new(big.Int)) <= 0 && addr == blackAddr {
+				return errors.New("verifyed small cross chain transaction failed"), false
+			} else {
+				log.Info("send small cross chain transaction by spv", "elatx", elaTx)
+				data, err = common.HexStringToBytes(elaTx)
+			}
+
 		}
 	} else {
 		data, err = common.HexStringToBytes(elaTx)
@@ -687,6 +716,7 @@ func SendTransaction(from ethCommon.Address, elaTx string, fee *big.Int) (err er
 		err = errors.New("is failed tx, can't to send")
 		return err, true
 	}
+	log.Error("IpcClient EstimateGas:", "data", len(data), "main txhash", elaTx)
 	var blackAddr ethCommon.Address
 	msg := ethereum.CallMsg{From: from, To: &blackAddr, Data: data, GasPrice: big.NewInt(1)}
 	gasLimit, err := ipcClient.EstimateGas(context.Background(), msg)
@@ -718,7 +748,6 @@ func SendTransaction(from ethCommon.Address, elaTx string, fee *big.Int) (err er
 		log.Error("gasLimit is zero:", "main txhash", elaTx)
 		return err, false
 	}
-
 	if atomic.LoadInt32(&candSend) == 0 {
 		err = errors.New("canSend is 0")
 		return err, false
@@ -730,7 +759,7 @@ func SendTransaction(from ethCommon.Address, elaTx string, fee *big.Int) (err er
 		log.Info("Cross chain Transaction failed", "elaTx", elaTx, "ethTh", hash.String(), "gasLimit", gasLimit, "price", price.String())
 		return err, true
 	}
-	log.Info("Cross chain Transaction", "elaTx", elaTx, "ethTh", hash.String(), "gasLimit", gasLimit)
+	log.Info("Cross chain Transaction", "elaTx", elaTx, "ethTh", hash.String(), "gasLimit", gasLimit, "price.String()", price.String())
 	return nil, true
 }
 
@@ -1110,11 +1139,16 @@ func SendEvilProof(addr ethCommon.Address, info interface{}) {
 func GetArbiters() ([]string, int, error) {
 	producers := make([]string, 0)
 	if PbftEngine != nil {
-		list := PbftEngine.GetCurrentProducers()
+		spvHeight := PbftEngine.CurrentBlock().Nonce()
+		if spvHeight == 0 {
+			producers = PbftEngine.GetPbftConfig().Producers
+			return producers, len(producers), nil
+		}
+		list, totalProducers, err := GetProducers(spvHeight)
 		for _, p := range list {
 			producers = append(producers, common.BytesToHexString(p))
 		}
-		return producers, PbftEngine.SignersCount(), nil
+		return producers, totalProducers, err
 	}
 	return producers, 0, errors.New("pbftEngine is nil")
 }
@@ -1146,7 +1180,7 @@ func IsSmallCrossTxByData(data []byte) (string, string, []string, uint64) {
 }
 
 func VerifySmallCrossTx(rawTxID, rawTx string, signatures []string,
-					    blockHeight uint64) (bool, error) {
+	blockHeight uint64) (bool, error) {
 	if PbftEngine == nil {
 		return false, errors.New("PbftEngine is nil")
 	}
@@ -1221,10 +1255,13 @@ func GetClient() *ethclient.Client {
 }
 
 func Close() {
+	fmt.Println("spv close 111111")
 	spvdb := SpvService.GetDatabase()
 	if spvdb != nil {
+		fmt.Println("spv close 2222222")
 		spvdb.Close()
 		close(stopChn)
 		SpvService.Stop()
 	}
+	fmt.Println("spv close 33333333")
 }

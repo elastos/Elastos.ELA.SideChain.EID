@@ -6,6 +6,7 @@
 package pbft
 
 import (
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
 )
@@ -26,6 +27,20 @@ func (a *API) AnnounceDAddr() uint64 {
 
 func (a *API) GetAtbiterPeersInfo() []peerInfo {
 	return a.pbft.GetAtbiterPeersInfo()
+}
+
+func (a *API) GetAllPeersInfo() []peerInfo {
+	peers := a.pbft.GetAllArbiterPeersInfo()
+	result := make([]peerInfo, 0)
+	for _, peer := range peers {
+		pid := peer.PID[:]
+		result = append(result, peerInfo{
+			NodePublicKey: common.Bytes2Hex(pid),
+			IP:            peer.Addr,
+			ConnState:     peer.State.String(),
+		})
+	}
+	return result
 }
 
 func (a *API) Dispatcher() *dpos.Dispatcher {

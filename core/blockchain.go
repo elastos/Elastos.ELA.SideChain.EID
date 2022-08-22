@@ -109,6 +109,8 @@ const (
 	//  The following incompatible database changes were added:
 	//    * Use freezer as the ancient database to maintain all ancient data
 	BlockChainVersion uint64 = 7
+
+	IrreversibleHeight int = 6
 )
 
 // CacheConfig contains the configuration values for the trie caching/pruning
@@ -1641,7 +1643,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 	switch {
 	// First block is pruned, insert as sidechain and reorg only if TD grows enough
 	case err == consensus.ErrPrunedAncestor:
-		log.Debug("Pruned ancestor, inserting as sidechain", "number", block.Number(), "hash", block.Hash())
+		log.Info("Pruned ancestor, inserting as sidechain", "number", block.Number(), "hash", block.Hash())
 		return bc.insertSideChain(block, it)
 
 	// First block is future, shove it (and all children) to the future queue (unknown ancestor)
@@ -1714,6 +1716,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 			parent = bc.GetHeader(block.ParentHash(), block.NumberU64()-1)
 		}
 		statedb, err := state.New(parent.Root, bc.stateCache)
+
 		if err != nil {
 			return it.index, events, coalescedLogs, err
 		}
@@ -1724,7 +1727,10 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 		if !bc.cacheConfig.TrieCleanNoPrefetch {
 			if followup, err := it.peek(); followup != nil && err == nil {
 				go func(start time.Time) {
-					throwaway, _ := state.New(parent.Root, bc.stateCache)
+					throwaway, errmsg := state.New(parent.Root, bc.stateCache)
+					if errmsg != nil {
+						log.Error("state new db error", "state.new", "errmsg", errmsg, "throwaway", throwaway, "parent.root", parent.Root.String(), "parent", parent.Hash().String())
+					}
 					bc.prefetcher.Prefetch(followup, throwaway, bc.vmConfig, &followupInterrupt)
 
 					blockPrefetchExecuteTimer.Update(time.Since(start))
@@ -1788,7 +1794,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 
 		switch status {
 		case CanonStatTy:
-			log.Debug("Inserted new block", "number", block.Number(), "hash", block.Hash(),
+			log.Info("Inserted new block", "number", block.Number(), "hash", block.Hash(),
 				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "gas", block.GasUsed(),
 				"elapsed", common.PrettyDuration(time.Since(start)),
 				"root", block.Root())
@@ -1801,7 +1807,7 @@ func (bc *BlockChain) insertBlockChain(chain types.Blocks, verifySeals bool, eng
 			bc.gcproc += proctime
 
 		case SideStatTy:
-			log.Debug("Inserted forked block", "number", block.Number(), "hash", block.Hash(),
+			log.Info("Inserted forked block", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
 				"txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()),
 				"root", block.Root())
@@ -1857,7 +1863,8 @@ func (bc *BlockChain) OnSyncHeader(header *types.Header) {
 			producer := common.Hex2Bytes(v)
 			copy(producers[i][:], producer[:])
 		}
-		go events.Notify(events.ETDirectPeersChanged, producers)
+		go events.Notify(events.ETDirectPeersChanged,
+			&peer.PeersInfo{CurrentPeers: producers, NextPeers: []peer.PID{}})
 	}
 	if height >= cfg.PBFTBlock.Uint64() && bc.engine != bc.pbftEngine {
 		bc.engineChange.Send(EngineChangeEvent{})
@@ -1968,7 +1975,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 		// memory here.
 		if len(blocks) >= 2048 || memory > 64*1024*1024 {
 			log.Info("Importing heavy sidechain segment", "blocks", len(blocks), "start", blocks[0].NumberU64(), "end", block.NumberU64())
-			if _, _, _, err := bc.insertChain(blocks, false); err != nil {
+			if _, _, _, err := bc.insertChain(blocks, true); err != nil {
 				return 0, nil, nil, err
 			}
 			blocks, memory = blocks[:0], 0
@@ -1982,7 +1989,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 	}
 	if len(blocks) > 0 {
 		log.Info("Importing sidechain segment", "start", blocks[0].NumberU64(), "end", blocks[len(blocks)-1].NumberU64())
-		return bc.insertChain(blocks, false)
+		return bc.insertChain(blocks, true)
 	}
 	return 0, nil, nil, nil
 }
@@ -1999,10 +2006,11 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		deletedTxs types.Transactions
 		addedTxs   types.Transactions
 
-		deletedLogs []*types.Log
-		rebirthLogs []*types.Log
+		deletedLogs    []*types.Log
+		rebirthLogs    []*types.Log
 		deleteDIDLogs  []*types.DIDLog
 		rebirthDIDLogs []*types.DIDLog
+		currentHeight  = newBlock.Number()
 
 		// collectLogs collects the logs that were generated during the
 		// processing of the block that corresponds with the given hash.
@@ -2099,14 +2107,23 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		log.Error("Impossible reorg, please file an issue", "oldnum", oldBlock.Number(), "oldhash", oldBlock.Hash(), "newnum", newBlock.Number(), "newhash", newBlock.Hash())
 	}
 	//elastos is clique
-	if blocksigner.GetBlockSignersCount() > 6 && len(oldChain) > blocksigner.GetBlockSignersCount()/2 {
-		msg := "danger chain detected, more than n/2 :"
-		log.Error(msg, "singerCount", blocksigner.GetBlockSignersCount()/2, "number", commonBlock.Number(), "hash", commonBlock.Hash(),
-			"drop", len(oldChain), "dropfrom", oldChain[0].Hash(), "add", len(newChain), "addfrom", newChain[0].Hash())
-		defer func() {
-			bc.dangerousFeed.Send(DangerousChainSideEvent{})
-		}()
-		return fmt.Errorf("Dangerous new chain")
+	if !bc.chainConfig.IsPBFTFork(currentHeight) {
+		if blocksigner.GetBlockSignersCount() > 6 && len(oldChain) > blocksigner.GetBlockSignersCount()/2 {
+			msg := "danger chain detected, more than n/2 :"
+			log.Error(msg, "singerCount", blocksigner.GetBlockSignersCount()/2, "number", commonBlock.Number(), "hash", commonBlock.Hash(),
+				"drop", len(oldChain), "dropfrom", oldChain[0].Hash(), "add", len(newChain), "addfrom", newChain[0].Hash())
+			defer func() {
+				bc.dangerousFeed.Send(DangerousChainSideEvent{})
+			}()
+			return fmt.Errorf("Dangerous new chain")
+		}
+	} else {
+		if bc.engine.SignersCount() > 0 && len(oldChain) >= IrreversibleHeight {
+			defer func() {
+				bc.dangerousFeed.Send(DangerousChainSideEvent{})
+			}()
+			return fmt.Errorf("final confirm chain , from:%d, to:%d", oldChain[0].NumberU64(), oldChain[len(oldChain)-1].NumberU64())
+		}
 	}
 
 	// Insert the new chain(except the head block(reverse order)),
@@ -2444,7 +2461,6 @@ func (bc *BlockChain) isToManyEvilSigners(header *types.Header) bool {
 		return false
 	}
 	if bc.chainConfig.IsPBFTFork(header.Number) {
-		//TODO dpos double sign verify
 		return false
 	}
 	return IsNeedStopChain(header, headerOld, bc.engine, bc.evilSigners, bc.journal)

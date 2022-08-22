@@ -1,8 +1,9 @@
 package spv
 
 import (
+	"bytes"
 	"errors"
-
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
@@ -10,8 +11,13 @@ import (
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 )
 
+type NextTurnDPOSInfo struct {
+	*payload.NextTurnDPOSInfo
+}
+
 var (
-	nextTurnDposInfo *payload.NextTurnDPOSInfo
+	nextTurnDposInfo *NextTurnDPOSInfo
+	zero             = common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000000000")
 )
 
 func GetTotalProducersCount() int {
@@ -41,7 +47,10 @@ func GetProducers(elaHeight uint64) ([][]byte, int, error) {
 	producers := make([][]byte, 0)
 	totalCount := 0
 	if SpvService == nil {
-		return producers, totalCount,  errors.New("spv is not start")
+		return producers, totalCount, errors.New("spv is not start")
+	}
+	if GetCurrentConsensusMode() == spv.POW {
+		return producers, totalCount, nil
 	}
 	if GetCurrentConsensusMode() == spv.POW {
 		return producers, totalCount, nil
@@ -53,13 +62,9 @@ func GetProducers(elaHeight uint64) ([][]byte, int, error) {
 	if IsOnlyCRConsensus {
 		normalArbitrs = make([][]byte, 0)
 	}
+
 	for _, arbiter := range crcArbiters {
-		if len(arbiter) > 0 {
-			producers = append(producers, arbiter)
-		}
-	}
-	for _, arbiter := range normalArbitrs {
-		if len(arbiter) > 0 {
+		if len(arbiter) > 0 && bytes.Compare(zero, arbiter) != 0 {
 			producers = append(producers, arbiter)
 		}
 	}
@@ -70,7 +75,7 @@ func GetProducers(elaHeight uint64) ([][]byte, int, error) {
 	return producers, totalCount, nil
 }
 
-func GetSpvHeight() uint64  {
+func GetSpvHeight() uint64 {
 	if SpvService != nil && SpvService.GetBlockListener() != nil {
 		header, err := SpvService.HeaderStore().GetBest()
 		if err != nil {
@@ -82,9 +87,13 @@ func GetSpvHeight() uint64  {
 	return 0
 }
 
-func GetWorkingHeight() uint32  {
+func GetWorkingHeight() uint32 {
 	if nextTurnDposInfo != nil {
 		return nextTurnDposInfo.WorkingHeight
 	}
 	return 0
+}
+
+func GetSpvService() *Service {
+	return SpvService
 }

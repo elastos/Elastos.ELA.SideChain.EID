@@ -10,11 +10,13 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/dpos/p2p/peer"
+
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 var defaultCRCSignerNumber = 12
+var zero = common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000000000")
 
 type Producers struct {
 	totalProducers int
@@ -30,7 +32,7 @@ type Producers struct {
 
 func NewProducers(producers [][]byte, startHeight uint64) *Producers {
 	producer := &Producers{
-		dutyIndex:   0,
+		dutyIndex:     0,
 		workingHeight: startHeight,
 	}
 	defaultCRCSignerNumber = len(producers)
@@ -52,13 +54,18 @@ func (p *Producers) ChangeCurrentProducers(changeHeight uint64, spvHeight uint64
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 	p.producers = make([][]byte, len(p.nextProducers))
+
 	for i, signer := range p.nextProducers {
+		if bytes.Equal(signer[:], zero) {
+			continue
+		}
 		p.producers[i] = make([]byte, len(signer))
 		copy(p.producers[i][:], signer[:])
 	}
 	p.SetWorkingHeight(changeHeight)
 	p.totalProducers = p.nextTotalProducers
 	p.spvHeight = spvHeight
+
 }
 
 func (p *Producers) SetWorkingHeight(changeHeight uint64) {
@@ -72,7 +79,7 @@ func (p *Producers) UpdateNextProducers(producers []peer.PID, totalCount int) er
 	sort.Slice(producers, func(i, j int) bool {
 		return bytes.Compare(producers[i][:], producers[j][:]) < 0
 	})
-
+	p.nextProducers = []peer.PID{}
 	p.nextProducers = make([]peer.PID, len(producers))
 	copy(p.nextProducers[:], producers[:])
 	p.nextTotalProducers = totalCount
@@ -82,26 +89,43 @@ func (p *Producers) UpdateNextProducers(producers []peer.PID, totalCount int) er
 func (p *Producers) GetNeedConnectArbiters() []peer.PID {
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
-	pids := make(map[string]peer.PID)
+	pids := make([]peer.PID, 0)
 	for _, producer := range p.producers {
-		key := common.BytesToHexString(producer)
 		var pid peer.PID
 		copy(pid[:], producer)
-		pids[key] = pid
+		pids = append(pids, pid)
 	}
 
 	for _, producer := range p.nextProducers {
-		key := common.BytesToHexString(producer[:])
 		var pid peer.PID
 		copy(pid[:], producer[:])
-		pids[key] = pid
+		pids = append(pids, pid)
 	}
+	return pids
+}
 
-	peers := make([]peer.PID, 0, len(pids))
-	for _, pid := range pids {
-		peers = append(peers, pid)
+func (p *Producers) getCurrentNeedConnectArbiters() []peer.PID {
+	p.mtx.Lock()
+	defer p.mtx.Unlock()
+	pids := make([]peer.PID, 0)
+	for _, producer := range p.producers {
+		var pid peer.PID
+		copy(pid[:], producer)
+		pids = append(pids, pid)
 	}
-	return peers
+	return pids
+}
+
+func (p *Producers) GetNextNeedConnectArbiters() []peer.PID {
+	p.mtx.Lock()
+	defer p.mtx.Unlock()
+	pids := make([]peer.PID, 0)
+	for _, producer := range p.nextProducers {
+		var pid peer.PID
+		copy(pid[:], producer[:])
+		pids = append(pids, pid)
+	}
+	return pids
 }
 
 func (p *Producers) UpdateDutyIndex(height uint64) uint32 {
@@ -132,6 +156,17 @@ func (p *Producers) IsProducers(signer []byte) bool {
 		}
 	}
 	return false
+}
+
+func (p *Producers) ProducerIndex(signer []byte) int {
+	p.mtx.Lock()
+	defer p.mtx.Unlock()
+	for index, producer := range p.producers {
+		if bytes.Equal(producer, signer) {
+			return index
+		}
+	}
+	return -1
 }
 
 func (p *Producers) GetMajorityCount() int {

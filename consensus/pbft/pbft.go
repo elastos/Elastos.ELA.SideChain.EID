@@ -9,8 +9,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
 	"io"
 	"math/big"
+	"math/rand"
 	"path/filepath"
 	"strings"
 	"time"
@@ -93,21 +95,22 @@ var (
 
 // Pbft is a consensus engine based on Byzantine fault-tolerant algorithm
 type Pbft struct {
-	datadir     string
-	cfg         params.PbftConfig
-	dispatcher  *dpos.Dispatcher
-	confirmCh   chan *payload.Confirm
-	unConfirmCh chan *payload.Confirm
-	account     daccount.Account
-	network     *dpos.Network
-	blockPool   *dpos.BlockPool
-	chain       *core.BlockChain
-	timeSource  dtime.MedianTimeSource
+	datadir       string
+	cfg           params.PbftConfig
+	dispatcher    *dpos.Dispatcher
+	confirmCh     chan *payload.Confirm
+	unConfirmCh   chan *payload.Confirm
+	account       daccount.Account
+	bridgeAccount crypto.Keypair
+	network       *dpos.Network
+	blockPool     *dpos.BlockPool
+	chain         *core.BlockChain
+	timeSource    dtime.MedianTimeSource
 
 	// IsCurrent returns whether BlockChain synced to best height.
-	IsCurrent func() bool
-	StartMine func()
-	OnDuty func()
+	IsCurrent          func() bool
+	StartMine          func()
+	OnDuty             func()
 	OnInsertChainError func(id peer.PID, block *types.Block, err error)
 
 	requestedBlocks    map[common.Hash]struct{}
@@ -123,23 +126,27 @@ type Pbft struct {
 	isRecovering   bool
 }
 
-func New(cfg *params.PbftConfig, pbftKeystore string, password []byte, dataDir string, dposStartHeight uint64) *Pbft {
+func New(chainConfig *params.ChainConfig, dataDir string) *Pbft {
 	logpath := filepath.Join(dataDir, "/logs/dpos")
 	dposPath := filepath.Join(dataDir, "/network/dpos")
 	if strings.LastIndex(dataDir, "/") == len(dataDir)-1 {
 		dposPath = filepath.Join(dataDir, "network/dpos")
 		logpath = filepath.Join(dataDir, "logs/dpos")
 	}
+	cfg := chainConfig.Pbft
 	if cfg == nil {
 		dpos.InitLog(0, 0, 0, logpath)
 		return &Pbft{}
 	}
+	pbftKeystore := chainConfig.PbftKeyStore
+	password := []byte(chainConfig.PbftKeyStorePassWord)
 	dpos.InitLog(cfg.PrintLevel, cfg.MaxPerLogSize, cfg.MaxLogsSize, logpath)
 	producers := make([][]byte, len(cfg.Producers))
 	for i, v := range cfg.Producers {
 		producers[i] = common.Hex2Bytes(v)
 	}
 	account, err := dpos.GetDposAccount(pbftKeystore, password)
+	var bridgeAccount crypto.Keypair
 	if err != nil {
 		if string(password) == "" {
 			fmt.Println("create dpos account error:", err.Error(), "pbftKeystore:", pbftKeystore, "password")
@@ -147,6 +154,15 @@ func New(cfg *params.PbftConfig, pbftKeystore string, password []byte, dataDir s
 			fmt.Println("create dpos account error:", err.Error(), "pbftKeystore:", pbftKeystore, "password", string(password))
 		}
 		//can't return, because common node need verify use this engine
+	} else {
+		bridgeAccount, err = dpos.GetBridgeAccount(pbftKeystore, password)
+		if err != nil {
+			if string(password) == "" {
+				fmt.Println("create GetArbiterAccount error:", err.Error(), "pbftKeystore:", pbftKeystore, "password")
+			} else {
+				fmt.Println("create GetArbiterAccount error:", err.Error(), "pbftKeystore:", pbftKeystore, "password", string(password))
+			}
+		}
 	}
 	medianTimeSouce := dtime.NewMedianTime()
 
@@ -156,6 +172,7 @@ func New(cfg *params.PbftConfig, pbftKeystore string, password []byte, dataDir s
 		confirmCh:          make(chan *payload.Confirm),
 		unConfirmCh:        make(chan *payload.Confirm),
 		account:            account,
+		bridgeAccount:      bridgeAccount,
 		requestedBlocks:    make(map[common.Hash]struct{}),
 		requestedProposals: make(map[ecom.Uint256]struct{}),
 		statusMap:          make(map[uint32]map[string]*dmsg.ConsensusStatus),
@@ -170,15 +187,16 @@ func New(cfg *params.PbftConfig, pbftKeystore string, password []byte, dataDir s
 	if account != nil {
 		accpubkey = account.PublicKeyBytes()
 		network, err := dpos.NewNetwork(&dpos.NetworkConfig{
-			IPAddress:   cfg.IPAddress,
-			Magic:       cfg.Magic,
-			DefaultPort: cfg.DPoSPort,
-			Account:     account,
-			MedianTime:  medianTimeSouce,
-			MaxNodePerHost: cfg.MaxNodePerHost,
-			Listener:    pbft,
-			DataPath:    dposPath,
-			PublicKey:   accpubkey,
+			IPAddress:        cfg.IPAddress,
+			Magic:            cfg.Magic,
+			DefaultPort:      cfg.DPoSPort,
+			Account:          account,
+			MedianTime:       medianTimeSouce,
+			MaxNodePerHost:   cfg.MaxNodePerHost,
+			Listener:         pbft,
+			DataPath:         dposPath,
+			PublicKey:        accpubkey,
+			GetCurrentHeight: pbft.GetMainChainHeight,
 			AnnounceAddr: func() {
 				events.Notify(dpos.ETAnnounceAddr, nil)
 			},
@@ -191,21 +209,26 @@ func New(cfg *params.PbftConfig, pbftKeystore string, password []byte, dataDir s
 		pbft.subscribeEvent()
 	}
 	pbft.dispatcher = dpos.NewDispatcher(producers, pbft.onConfirm, pbft.onUnConfirm,
-		10*time.Second, accpubkey, medianTimeSouce, pbft, dposStartHeight)
+		10*time.Second, accpubkey, medianTimeSouce, pbft, chainConfig.GetPbftBlock())
 	return pbft
+}
+
+func (p *Pbft) GetMainChainHeight(pid peer.PID) uint64 {
+	return spv.GetSpvHeight()
 }
 
 func (p *Pbft) subscribeEvent() {
 	events.Subscribe(func(e *events.Event) {
 		switch e.Type {
 		case events.ETDirectPeersChanged:
-			go p.network.UpdatePeers(e.Data.([]peer.PID))
+			peersInfo := e.Data.(*peer.PeersInfo)
+			go p.network.UpdatePeers(peersInfo.CurrentPeers, peersInfo.NextPeers)
 		case dpos.ETNewPeer:
 			count := len(p.network.GetActivePeers())
 			log.Info("new peer accept", "active peer count", count)
 			height := p.chain.CurrentHeader().Number.Uint64()
 			cfg := p.chain.Config()
-			if height >= cfg.PBFTBlock.Uint64() -cfg.PreConnectOffset && height < cfg.PBFTBlock.Uint64() {
+			if cfg.PBFTBlock != nil && height >= cfg.PBFTBlock.Uint64()-cfg.PreConnectOffset && height < cfg.PBFTBlock.Uint64() {
 				log.Info("before change engine AnnounceDAddr")
 				go p.AnnounceDAddr()
 			}
@@ -221,7 +244,7 @@ func (p *Pbft) subscribeEvent() {
 		case dpos.ETOnSPVHeight:
 			height := e.Data.(uint32)
 			if spv.GetWorkingHeight() >= height {
-				if uint64(spv.GetWorkingHeight() - height) <= p.chain.Config().PreConnectOffset {
+				if uint64(spv.GetWorkingHeight()-height) <= p.chain.Config().PreConnectOffset {
 					curProducers := p.dispatcher.GetConsensusView().GetProducers()
 					isSame := p.dispatcher.GetConsensusView().IsSameProducers(curProducers)
 					if !isSame {
@@ -246,11 +269,11 @@ func (p *Pbft) subscribeEvent() {
 	})
 }
 
-func (p *Pbft) IsSameProducers(curProducers[][]byte) bool {
+func (p *Pbft) IsSameProducers(curProducers [][]byte) bool {
 	return p.dispatcher.GetConsensusView().IsSameProducers(curProducers)
 }
 
-func (p *Pbft) IsCurrentProducers(curProducers[][]byte) bool {
+func (p *Pbft) IsCurrentProducers(curProducers [][]byte) bool {
 	return p.dispatcher.GetConsensusView().IsCurrentProducers(curProducers)
 }
 
@@ -262,7 +285,7 @@ func (p *Pbft) GetPbftConfig() params.PbftConfig {
 	return p.cfg
 }
 
-func (p *Pbft) CurrentBlock () *types.Block {
+func (p *Pbft) CurrentBlock() *types.Block {
 	if p.chain == nil {
 		return nil
 	}
@@ -355,7 +378,7 @@ func (p *Pbft) verifyHeader(chain consensus.ChainReader, header *types.Header, p
 	}
 	log.Info("verify header HasConfirmed", "seal:", seal, "height", header.Number)
 	if !seal && p.dispatcher.GetFinishedHeight() == number {
-		log.Info("verify header already confirm block")
+		log.Warn("verify header already confirm block")
 		return ErrAlreadyConfirmedBlock
 	}
 
@@ -414,9 +437,9 @@ func (p *Pbft) verifySeal(chain consensus.ChainReader, header *types.Header, par
 			return nil
 		}
 
-		log.Info("verify seal chain fork", "oldViewOffset", oldConfirm.Proposal.ViewOffset, "newViewOffset", confirm.Proposal.ViewOffset, "height", number)
-		if confirm.Proposal.ViewOffset < oldConfirm.Proposal.ViewOffset {
-			return errChainForkBlock
+		if confirm.Proposal.ViewOffset < oldConfirm.Proposal.ViewOffset && number < chain.CurrentHeader().Number.Uint64() {
+			log.Warn("verify seal chain fork", "oldViewOffset", oldConfirm.Proposal.ViewOffset, "newViewOffset", confirm.Proposal.ViewOffset, "height", number)
+			//return errChainForkBlock
 		}
 		if confirm.Proposal.ViewOffset == oldConfirm.Proposal.ViewOffset && oldHeader.Hash() != header.Hash() {
 			return errDoubleSignBlock
@@ -448,18 +471,17 @@ func (p *Pbft) Prepare(chain consensus.ChainReader, header *types.Header) error 
 		return ErrConsensusIsRunning
 	}
 	p.Start(parent.Time)
+	header.Time = parent.Time + p.period
+	if header.Time < nowTime {
+		header.Time = nowTime
+		p.dispatcher.ResetView(nowTime)
+	}
 	if !p.IsOnduty() {
 		return ErrSignerNotOnduty
 	}
 	if header.Number.Uint64() <= p.dispatcher.GetFinishedHeight() {
 		return ErrAlreadyConfirmedBlock
 	}
-	header.Time = parent.Time + p.period
-	if header.Time < nowTime {
-		header.Time = nowTime
-		p.dispatcher.ResetView(nowTime)
-	}
-
 	return nil
 }
 
@@ -494,7 +516,7 @@ func (p *Pbft) Seal(chain consensus.ChainReader, block *types.Block, results cha
 		return ErrWaitRecoverStatus
 	}
 
-	parent := chain.GetHeader(block.ParentHash(), block.NumberU64() - 1)
+	parent := chain.GetHeader(block.ParentHash(), block.NumberU64()-1)
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
@@ -542,6 +564,12 @@ func (p *Pbft) Seal(chain consensus.ChainReader, block *types.Block, results cha
 		return nil
 	}
 	finalBlock := block.WithSeal(header)
+	testcr01 := common.Hex2Bytes("03e435ccd6073813917c2d841a0815d21301ec3286bc1412bb5b099178c68a10b6")
+	if bytes.Equal(testcr01, p.account.PublicKeyBytes()) {
+		randdelay := rand.Int() % 20
+		fmt.Println(">>>>>>> zxb randdelay", time.Duration(randdelay)*time.Second, "hash", finalBlock.Hash().String(), "height", finalBlock.NumberU64())
+		time.Sleep(time.Duration(randdelay) * time.Second)
+	}
 	go func() {
 		select {
 		case results <- finalBlock:
@@ -734,8 +762,8 @@ func (p *Pbft) Recover() {
 	p.isRecovering = true
 	for {
 		if p.IsCurrent() && len(p.network.GetActivePeers()) > 0 &&
-			p.dispatcher.GetConsensusView().HasArbitersMinorityCount(len(p.network.GetActivePeers())) {
-			log.Info("----- PostRecoverTask --------")
+			p.dispatcher.GetConsensusView().HasProducerMajorityCount(len(p.network.GetActivePeers())) {
+			log.Info("----- PostRecoverTask --------", "GetActivePeers", len(p.network.GetActivePeers()), "total", len(p.dispatcher.GetConsensusView().GetProducers()))
 			p.network.PostRecoverTask()
 			p.isRecovering = false
 			return
@@ -760,6 +788,10 @@ func (p *Pbft) IsProducer() bool {
 
 func (p *Pbft) SetBlockChain(chain *core.BlockChain) {
 	p.chain = chain
+}
+
+func (p *Pbft) GetBlockChain() *core.BlockChain {
+	return p.chain
 }
 
 func (p *Pbft) broadConfirmMsg(confirm *payload.Confirm, height uint64) {
@@ -847,4 +879,12 @@ func (p *Pbft) IsBadBlock(height uint64) bool {
 		}
 	}
 	return false
+}
+
+func (p *Pbft) GetDposAccount() daccount.Account {
+	return p.account
+}
+
+func (p *Pbft) IsOnDuty() bool {
+	return p.dispatcher.ProducerIsOnDuty()
 }
