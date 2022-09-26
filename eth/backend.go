@@ -185,6 +185,9 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	chainConfig.CheckCustomizeDIDBeginHeight = config.CheckCustomizeDIDBeginHeight
 	log.Info("New", "chainConfig ", chainConfig)
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir
+	if chainConfig.Pbft != nil && chainConfig.Pbft.DPoSV2StartHeight <= 0 { //if config is set, use config value
+		chainConfig.Pbft.DPoSV2StartHeight = config.DPoSV2StartHeight
+	}
 	if len(chainConfig.PbftKeyStore) > 0 {
 		config.PbftKeyStore = chainConfig.PbftKeyStore
 	} else {

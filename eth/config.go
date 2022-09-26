@@ -171,13 +171,14 @@ type Config struct {
 	PbftMinerAddress     string
 	PbftIPAddress        string
 	PbftDPosPort         uint16
+	DPoSV2StartHeight    uint32
 
-	OldDIDMigrateAddr     string
-	OldDIDMigrateHeight   *big.Int
-	DocArraySortHeight    *big.Int
+	OldDIDMigrateAddr            string
+	OldDIDMigrateHeight          *big.Int
+	DocArraySortHeight           *big.Int
 	CheckCustomizeDIDBeginHeight *big.Int
-	DynamicArbiterHeight uint64
-	FrozenAccountList    []string
+	DynamicArbiterHeight         uint64
+	FrozenAccountList            []string
 
 	ArbiterListContract string
 }
