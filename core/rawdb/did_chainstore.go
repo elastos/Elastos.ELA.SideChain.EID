@@ -365,6 +365,25 @@ func getDiDPayloadFromDB( db ethdb.KeyValueStore,txHash elaCom.Uint256)(*did.DID
 	return tempOperation,nil
 }
 
+func getVerifiableCredentialPayloadFromDB( db ethdb.KeyValueStore,txHash elaCom.Uint256)(*did.DIDPayload, error){
+	keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
+	keyPayload = append(keyPayload, txHash.Bytes()...)
+
+	dataPayload, err := db.Get(keyPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	tempOperation := new(did.DIDPayload)
+	r := bytes.NewReader(dataPayload)
+	err = tempOperation.Deserialize(r, did.DIDVersion)
+	if err != nil {
+		return nil, http.NewError(int(service.ResolverInternalError),
+			"tempOperation Deserialize failed")
+	}
+	return tempOperation,nil
+}
+
 func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_DIDTXHash)}
 	key = append(key, idKey...)
@@ -631,7 +650,7 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 		}
 		//keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
 		//keyPayload = append(keyPayload, txHash.Bytes()...)
-		vcPayload, err := getDiDPayloadFromDB(db,txHash)
+		vcPayload, err := getVerifiableCredentialPayloadFromDB(db,txHash)
 		if err != nil {
 			return nil, err
 		}
@@ -673,7 +692,7 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 	//keyPayload := []byte{byte(IX_VerifiableCredentialPayload)}
 	//keyPayload = append(keyPayload, txHash.Bytes()...)
 
-	credentialPayload, err := getDiDPayloadFromDB(db,txHash)
+	credentialPayload, err := getVerifiableCredentialPayloadFromDB(db,txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -1049,9 +1068,9 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 		return err
 	}
 	//didPayload is persisted in receipt
-	//if err := persistVerifiableCredentialPayload(db, txhash, payload); err != nil {
-	//	return err
-	//}
+	if err := persistVerifiableCredentialPayload(db, txhash, payload); err != nil {
+		return err
+	}
 	//only declare credentials will be stored
 	//reocrd owner's credential id
 	if payload.Header.Operation == did.Declare_Verifiable_Credential_Operation {
