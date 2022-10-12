@@ -343,10 +343,10 @@ func (n *Network) DumpPeersInfo() []*p2p.PeerInfo {
 
 func NewNetwork(cfg *NetworkConfig) (*Network, error) {
 	network := &Network{
-		listener:         cfg.Listener,
-		publicKey:        cfg.PublicKey,
-		announceAddr:     cfg.AnnounceAddr,
-		GetCurrentHeight: cfg.GetCurrentHeight,
+		listener:     cfg.Listener,
+		publicKey:    cfg.PublicKey,
+		announceAddr: cfg.AnnounceAddr,
+		//GetCurrentHeight: cfg.GetCurrentHeight,
 
 		messageQueue:   make(chan *messageItem, 10000),
 		quit:           make(chan bool),
@@ -360,21 +360,21 @@ func NewNetwork(cfg *NetworkConfig) (*Network, error) {
 	var pid peer.PID
 	copy(pid[:], cfg.Account.PublicKeyBytes())
 	server, err := p2p.NewServer(&p2p.Config{
-		DataDir:           cfg.DataPath,
-		PID:               pid,
-		EnableHub:         true,
-		Localhost:         cfg.IPAddress,
-		MagicNumber:       cfg.Magic,
-		DefaultPort:       cfg.DefaultPort,
-		TimeSource:        cfg.MedianTime,
-		MaxNodePerHost:    cfg.MaxNodePerHost,
-		CreateMessage:     createMessage,
-		HandleMessage:     network.handleMessage,
-		PingNonce:         network.GetCurrentHeight,
-		PongNonce:         network.GetCurrentHeight,
-		Sign:              cfg.Account.Sign,
-		StateNotifier:     notifier,
-		DPoSV2StartHeight: cfg.DPoSV2StartHeight,
+		DataDir:        cfg.DataPath,
+		PID:            pid,
+		EnableHub:      true,
+		Localhost:      cfg.IPAddress,
+		MagicNumber:    cfg.Magic,
+		DefaultPort:    cfg.DefaultPort,
+		TimeSource:     cfg.MedianTime,
+		MaxNodePerHost: cfg.MaxNodePerHost,
+		CreateMessage:  createMessage,
+		HandleMessage:  network.handleMessage,
+		PingNonce:      network.GetCurrentHeight,
+		PongNonce:      network.GetCurrentHeight,
+		Sign:           cfg.Account.Sign,
+		StateNotifier:  notifier,
+		//DPoSV2StartHeight: cfg.DPoSV2StartHeight,
 	})
 	if err != nil {
 		return nil, err
