@@ -124,9 +124,9 @@ import:
   version: ~1.20.0
 - package: github.com/AlexpanXX/fsnotify
 - package: github.com/elastos/Elastos.ELA.SideChain
-  version: cde8afaf37d0d12f49a2ff7b801ce6dd7e1c340b #release_v0.3.0
+  version: 0ca5dbe27cfa7557ed84d6ca8369ce82e175c33b #release_v0.3.0
 - package: github.com/elastos/Elastos.ELA.SPV
-  version: 9218b57d1997603367e93dad23e13db3fd37e96b #elatsos release_v0.1.0
+  version: 721074bc256df754c371d93b0b7547775a931f81 #elatsos release_v0.1.0
 - package: github.com/elastos/Elastos.ELA
   version: 3c4d3be13d880204884954054068e7a7e00264b8 #release_v0.9.0
 - package: github.com/gorilla/websocket
