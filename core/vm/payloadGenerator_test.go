@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain/service"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
@@ -15,6 +14,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain/service"
 	elacom "github.com/elastos/Elastos.ELA/common"
 
 	"github.com/stretchr/testify/assert"
@@ -26,16 +26,16 @@ use .json file to formate doc and Test case to generate doc sign.
 PayloadGenerator is the helper struct
 */
 
-var  gentor PayloadGenerator
+var gentor PayloadGenerator
 
-func TestReverse(t *testing.T){
-	hash,_ := elacom.Uint256FromHexString("bedeaad0ce7eb8338546700ccaf84788c21219c560c8dd99f46b60e0a02ce946")
+func TestReverse(t *testing.T) {
+	hash, _ := elacom.Uint256FromHexString("bedeaad0ce7eb8338546700ccaf84788c21219c560c8dd99f46b60e0a02ce946")
 
 	hashReverse := service.ToReversedString(*hash)
 	fmt.Println("hashReverse", hashReverse)
 }
 
-func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
+func TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 
 	//s.validator.didParam.CustomIDFeeRate = 0
 	//privateKeyUser1Str := "FPHbdqtMZ6j4isEgbn54eKUjFSd84ffbBk7GMadDhiJF"
@@ -69,7 +69,7 @@ func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 	//  100, 123456)
 	//s.NoError(err2)
 	//batch2.Commit()
-	var TestCreateID = func (t *testing.T) {
+	var TestCreateID = func(t *testing.T) {
 		{
 			id1 := "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ"
 			privateKey1Str := "FPHbdqtMZ6j4isEgbn54eKUjFSd84ffbBk7GMadDhiJF"
@@ -79,7 +79,7 @@ func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 			statedb, _ := state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
 			evm := NewEVM(Context{}, statedb, &params.ChainConfig{}, Config{})
 			evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
-			evm.Time=big.NewInt(0)
+			evm.Time = big.NewInt(0)
 			evm.BlockNumber = new(big.Int).SetInt64(1)
 			evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 			evm.chainConfig.CustomizeDIDHeight = big.NewInt(3000000)
@@ -94,7 +94,7 @@ func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 			statedb.RemoveDIDLog(common.Hash{})
 		}
 		didParam.IsTest = true
-		var changeDocPayload2          []byte
+		var changeDocPayload2 []byte
 		changeDocPayload2, _ = LoadJsonData(fileName)
 		err := checkDIDTransactionAfterMigrateHeight(changeDocPayload2, nil)
 		assert.NoError(t, err)
@@ -102,9 +102,7 @@ func  TestChangUser2DocAndSaveToJsonJianBin2(t *testing.T) {
 	TestCreateID(t)
 }
 
-
 func TestChangUser2DocAndSaveToJsonJianBin2_Update(t *testing.T) {
-
 
 	privateKeyUser1Str := gentor.TestFromHexStrPrivateToBase58PriJianBin("1d5cf8daa96de73b81700b97f3809fe68e254b182d7fbcd64000a8796bb27a7f")
 	publicKeyUser1Str := gentor.TestFromHexStrPublicToBase58PublicJianBin("03dd9576e700601b05a2561f2781d746ce93ddcad05df2fbea06fcccfb69eec585")
@@ -128,7 +126,7 @@ func TestChangUser2DocAndSaveToJsonJianBin2_Update(t *testing.T) {
 		evm.chainConfig.DocArraySortHeight = new(big.Int).SetInt64(2)
 		evm.chainConfig.MaxExpiredHeight = new(big.Int).SetInt64(100)
 		evm.GasPrice = big.NewInt(int64(params.DIDBaseGasprice))
-		hash1 := common.HexToHash( "e71e0aee28c8119c4e8069fb9faa22c0")
+		hash1 := common.HexToHash("e71e0aee28c8119c4e8069fb9faa22c0")
 		statedb.Prepare(hash1, hash1, 1)
 
 		user1 := "did:elastos:iYm2nAMXetnhtQYzF4nAa8dDKhfnxYqNDQ"
@@ -138,7 +136,7 @@ func TestChangUser2DocAndSaveToJsonJianBin2_Update(t *testing.T) {
 		user1TX.Serialize(buf, did.DIDVersion)
 		statedb.AddDIDLog(user1TX.DIDDoc.ID, did.Create_DID_Operation, buf.Bytes())
 		receipt := getCreateDIDReceipt(*user1TX)
-		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash1, 0, types.Receipts{receipt})
+		rawdb.WriteReceipts(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), hash1, 0, types.Receipts{receipt}, 0)
 		user1Err := rawdb.PersistRegisterDIDTx(statedb.Database().TrieDB().DiskDB().(ethdb.KeyValueStore), statedb.GetDIDLog(hash1), 0, 0)
 		assert.NoError(t, user1Err)
 		statedb.RemoveDIDLog(hash1)
@@ -163,8 +161,7 @@ func TestChangUser2DocAndSaveToJsonJianBin2_Update(t *testing.T) {
 	}
 }
 
-func  TestChangUser2DocAndSaveToJsonJianBin2_Deactive(t *testing.T) {
-
+func TestChangUser2DocAndSaveToJsonJianBin2_Deactive(t *testing.T) {
 
 	privateKeyUser1Str := gentor.TestFromHexStrPrivateToBase58PriJianBin("1d5cf8daa96de73b81700b97f3809fe68e254b182d7fbcd64000a8796bb27a7f")
 	publicKeyUser1Str := gentor.TestFromHexStrPublicToBase58PublicJianBin("03dd9576e700601b05a2561f2781d746ce93ddcad05df2fbea06fcccfb69eec585")
@@ -184,7 +181,7 @@ func  TestChangUser2DocAndSaveToJsonJianBin2_Deactive(t *testing.T) {
 }
 
 //todo
-func  TestChangUser2DocAndSaveToJsonJianBin_VerifiableCredential_Declare(t *testing.T) {
+func TestChangUser2DocAndSaveToJsonJianBin_VerifiableCredential_Declare(t *testing.T) {
 	return
 	privateKeyUser1Str := gentor.TestFromHexStrPrivateToBase58PriJianBin("1d5cf8daa96de73b81700b97f3809fe68e254b182d7fbcd64000a8796bb27a7f")
 	publicKeyUser1Str := gentor.TestFromHexStrPublicToBase58PublicJianBin("03dd9576e700601b05a2561f2781d746ce93ddcad05df2fbea06fcccfb69eec585")
@@ -208,7 +205,7 @@ func  TestChangUser2DocAndSaveToJsonJianBin_VerifiableCredential_Declare(t *test
 		"#key3", veriCrePrivateKeys, veriCrePublicKeys)
 	outputPayloadToFile(txMyChangDOC, "user2.dest.payload.json")
 }
-func  TestChangUser2DocAndSaveToJsonJianBin_VerifiableCredential_Revoke(t *testing.T) {
+func TestChangUser2DocAndSaveToJsonJianBin_VerifiableCredential_Revoke(t *testing.T) {
 	return
 	privateKeyUser1Str := gentor.TestFromHexStrPrivateToBase58PriJianBin("d5b92946c4a3df330b557512deb85cda3b055c7e2477c5d676dbe4ada2c9636c")
 	publicKeyUser1Str := gentor.TestFromHexStrPublicToBase58PublicJianBin("03eeaaac10ff279cba8706e86bbd36d19a4aa967df58e9c41cbe6a44770d68c612")
