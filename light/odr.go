@@ -132,7 +132,7 @@ type ReceiptsRequest struct {
 // StoreResult stores the retrieved data in local database
 func (req *ReceiptsRequest) StoreResult(db ethdb.Database) {
 	if !req.Untrusted {
-		rawdb.WriteReceipts(db, req.Hash, req.Number, req.Receipts)
+		rawdb.WriteReceipts(db, req.Hash, req.Number, req.Receipts, req.Header.Time)
 	}
 }
 

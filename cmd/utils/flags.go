@@ -1727,6 +1727,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
 	default: //main net
+		cfg.Genesis = core.DefaultGenesisBlock()
 		ctx.GlobalSet(FrozenAccount.Name, "0x93c3A8051b8ba814eB5FB22d655681720E6a4d74")
 		ctx.GlobalSet(FrozenAccount.Name, "0x4a9a0cC103199F67730bdC61337d192788858874")
 		cfg.ArbiterListContract = "mainnet"
