@@ -438,7 +438,7 @@ func ReadReceipts(db ethdb.Reader, hash common.Hash, number uint64, config *para
 }
 
 // WriteReceipts stores all the transaction receipts belonging to a block.
-func WriteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, receipts types.Receipts) {
+func WriteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, receipts types.Receipts, btime uint64) {
 	// Convert the receipts into their storage form and serialize them
 	storageReceipts := make([]*types.ReceiptForStorage, len(receipts))
 	for i, receipt := range receipts {
@@ -452,16 +452,22 @@ func WriteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, rec
 	if err := db.Put(blockReceiptsKey(number, hash), bytes); err != nil {
 		log.Crit("Failed to store block receipts", "err", err)
 	}
+	WriteDIDReceipts(db.(ethdb.KeyValueStore), receipts, number, btime)
 }
 
 // DeleteReceipts removes all receipt data associated with a block hash.
-func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
+func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, config *params.ChainConfig) {
 	if err := db.Delete(blockReceiptsKey(number, hash)); err != nil {
 		log.Crit("Failed to delete block receipts", "err", err)
 	}
+	DeleteDIDReceipts(db.(ethdb.Database), hash, number, config)
 }
 
-func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, btime uint64)  {
+func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, btime uint64) {
+	logFun := log.Crit
+	if number == 0 || btime == 0 {
+		logFun = log.Error
+	}
 	var err error
 	for _, receipt := range receipts {
 		if receipt.Status != 1 {
@@ -470,30 +476,47 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 		operation := receipt.DIDLog.Operation
 		switch operation {
 		case did.Create_DID_Operation, did.Update_DID_Operation, did.Transfer_DID_Operation:
-			if err = PersistRegisterDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, number, btime); err != nil{
-				log.Crit("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err)
+			if err = PersistRegisterDIDTx(db, &receipt.DIDLog, number, btime); err != nil {
+				logFun("WriteDIDReceipts Failed to PersistRegisterDIDTx ", "err", err)
 			}
 
 		case did.Deactivate_DID_Operation:
-			if err = PersistDeactivateDIDTx(db.(ethdb.KeyValueStore), &receipt.DIDLog, receipt.TxHash); err != nil{
-				log.Crit("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err)
+			if err = PersistDeactivateDIDTx(db, &receipt.DIDLog, receipt.TxHash); err != nil {
+				logFun("WriteDIDReceipts Failed to PersistDeactivateDIDTx ", "err", err)
 			}
 		case did.Declare_Verifiable_Credential_Operation:
-			if err := PersistVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
-				 number, btime, receipt.TxHash); err != nil {
-				log.Crit("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err)
+			if err := PersistVerifiableCredentialTx(db, &receipt.DIDLog,
+				number, btime, receipt.TxHash); err != nil {
+				logFun("WriteDIDReceipts Failed to PersistVerifiableCredentialTx Declare ", "err", err)
 			}
 		case did.Revoke_Verifiable_Credential_Operation:
-			if err := PersistRevokeVerifiableCredentialTx(db.(ethdb.KeyValueStore), &receipt.DIDLog,
+			if err := PersistRevokeVerifiableCredentialTx(db, &receipt.DIDLog,
 				number, btime, receipt.TxHash); err != nil {
-				log.Crit("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err)
+				logFun("WriteDIDReceipts Failed to PersistRevokeVerifiableCredentialTx Revoke ", "err", err)
 			}
 		}
 
-
 	}
-	if err != nil {
-		log.Crit("WriteDIDReceipts Failed to persist did receipt ", "err", err)
+}
+
+func DeleteDIDReceipts(db ethdb.Database, hash common.Hash, number uint64, config *params.ChainConfig) {
+	if config == nil {
+		return
+	}
+	receipts := ReadReceipts(db, hash, number, config)
+	var err error
+	logFun := log.Crit
+	if number == 0 || config != nil && config.Ethash != nil && config.HomesteadBlock.Cmp(big.NewInt(0)) == 0 {
+		logFun = log.Error
+	}
+	for _, receipt := range receipts {
+		if receipt.Status != 1 {
+			continue
+		}
+		err = DeleteDIDLog(db, &receipt.DIDLog)
+		if err != nil {
+			logFun("DeleteDIDReceipts Failed  ", "err", err, "receipt. txHash", receipt.TxHash.String(), "states", receipt.Status)
+		}
 	}
 }
 
@@ -553,8 +576,8 @@ func WriteAncientBlock(db ethdb.AncientWriter, block *types.Block, receipts type
 }
 
 // DeleteBlock removes all block data associated with a hash.
-func DeleteBlock(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
-	DeleteReceipts(db, hash, number)
+func DeleteBlock(db ethdb.KeyValueStore, hash common.Hash, number uint64, config *params.ChainConfig) {
+	DeleteReceipts(db, hash, number, config)
 	DeleteHeader(db, hash, number)
 	DeleteBody(db, hash, number)
 	DeleteTd(db, hash, number)
@@ -562,8 +585,8 @@ func DeleteBlock(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
 
 // DeleteBlockWithoutNumber removes all block data associated with a hash, except
 // the hash to number mapping.
-func DeleteBlockWithoutNumber(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
-	DeleteReceipts(db, hash, number)
+func DeleteBlockWithoutNumber(db ethdb.KeyValueWriter, hash common.Hash, number uint64, config *params.ChainConfig) {
+	DeleteReceipts(db, hash, number, config)
 	deleteHeaderWithoutNumber(db, hash, number)
 	DeleteBody(db, hash, number)
 	DeleteTd(db, hash, number)
