@@ -158,7 +158,7 @@ func GetBlockReceipts(ctx context.Context, odr OdrBackend, hash common.Hash, num
 		if err := receipts.DeriveFields(config, block.Hash(), block.NumberU64(), block.Transactions()); err != nil {
 			return nil, err
 		}
-		rawdb.WriteReceipts(odr.Database(), hash, number, receipts)
+		rawdb.WriteReceipts(odr.Database(), hash, number, receipts, block.Time())
 	}
 	return receipts, nil
 }

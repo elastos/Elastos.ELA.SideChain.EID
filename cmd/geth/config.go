@@ -150,7 +150,9 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	}
 	utils.SetShhConfig(ctx, stack, &cfg.Shh)
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-
+	if cfg.Eth.Genesis != nil {
+		stack.ChainConfig = cfg.Eth.Genesis.Config
+	}
 	return stack, cfg
 }
 
