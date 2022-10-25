@@ -26,6 +26,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // NoOdr is the default context passed to an ODR capable function when the ODR
@@ -132,7 +133,13 @@ type ReceiptsRequest struct {
 // StoreResult stores the retrieved data in local database
 func (req *ReceiptsRequest) StoreResult(db ethdb.Database) {
 	if !req.Untrusted {
-		rawdb.WriteReceipts(db, req.Hash, req.Number, req.Receipts)
+		header := rawdb.ReadHeader(db, req.Hash, req.Number)
+		if header == nil {
+			log.Error("ReceiptsRequest StoreResult read header error", "hash", req.Hash, "number", req.Number)
+			return
+		}
+		req.Header = header
+		rawdb.WriteReceipts(db, req.Hash, req.Number, req.Receipts, req.Header.Time)
 	}
 }
 
