@@ -25,6 +25,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
@@ -53,7 +54,7 @@ func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int, nam
 // also attaching a chain freezer to it that moves ancient chain data from the
 // database to immutable append-only files. If the node is an ephemeral one, a
 // memory database is returned.
-func (ctx *ServiceContext) OpenDatabaseWithFreezer(name string, cache int, handles int, freezer string, namespace string) (ethdb.Database, error) {
+func (ctx *ServiceContext) OpenDatabaseWithFreezer(name string, cache int, handles int, freezer string, namespace string, chainConfig *params.ChainConfig) (ethdb.Database, error) {
 	if ctx.config.DataDir == "" {
 		return rawdb.NewMemoryDatabase(), nil
 	}
@@ -65,7 +66,7 @@ func (ctx *ServiceContext) OpenDatabaseWithFreezer(name string, cache int, handl
 	case !filepath.IsAbs(freezer):
 		freezer = ctx.config.ResolvePath(freezer)
 	}
-	return rawdb.NewLevelDBDatabaseWithFreezer(root, cache, handles, freezer, namespace)
+	return rawdb.NewLevelDBDatabaseWithFreezer(root, cache, handles, freezer, namespace, chainConfig)
 }
 
 // ResolvePath resolves a user path into the data directory if that was relative

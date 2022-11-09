@@ -33,6 +33,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/debug"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/prometheus/tsdb/fileutil"
 )
@@ -72,6 +73,8 @@ type Node struct {
 	lock sync.RWMutex
 
 	log log.Logger
+
+	ChainConfig *params.ChainConfig
 }
 
 // New creates a new P2P node, ready for protocol registration.
@@ -631,7 +634,7 @@ func (n *Node) OpenDatabaseWithFreezer(name string, cache, handles int, freezer,
 	case !filepath.IsAbs(freezer):
 		freezer = n.config.ResolvePath(freezer)
 	}
-	return rawdb.NewLevelDBDatabaseWithFreezer(root, cache, handles, freezer, namespace)
+	return rawdb.NewLevelDBDatabaseWithFreezer(root, cache, handles, freezer, namespace, n.ChainConfig)
 }
 
 // ResolvePath returns the absolute path of a resource in the instance directory.

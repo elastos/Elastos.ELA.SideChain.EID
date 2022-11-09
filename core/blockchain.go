@@ -496,7 +496,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 			// The header, total difficulty and canonical hash will be
 			// removed in the hc.SetHead function.
 			rawdb.DeleteBody(db, hash, num)
-			rawdb.DeleteReceipts(db, hash, num)
+			rawdb.DeleteReceipts(bc.db, hash, num)
 		}
 		// Todo(rjl493456442) txlookup, bloombits, etc
 	}
@@ -1126,7 +1126,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 					}
 					// Wipe out canonical block data.
 					for _, nh := range deleted {
-						rawdb.DeleteBlockWithoutNumber(batch, nh.hash, nh.number)
+						rawdb.DeleteBlockWithoutNumber(bc.db, nh.hash, nh.number)
 						rawdb.DeleteCanonicalHash(batch, nh.number)
 					}
 					if err := batch.Write(); err != nil {
@@ -1136,7 +1136,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 					// Wipe out side chain too.
 					for _, nh := range deleted {
 						for _, hash := range rawdb.ReadAllHashes(bc.db, nh.number) {
-							rawdb.DeleteBlock(batch, hash, nh.number)
+							rawdb.DeleteBlock(bc.db, hash, nh.number)
 						}
 					}
 					if err := batch.Write(); err != nil {
@@ -1173,13 +1173,13 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 
 		// Wipe out canonical block data.
 		for _, nh := range deleted {
-			rawdb.DeleteBlockWithoutNumber(batch, nh.hash, nh.number)
+			rawdb.DeleteBlockWithoutNumber(bc.db, nh.hash, nh.number)
 			rawdb.DeleteCanonicalHash(batch, nh.number)
 		}
 		for _, block := range blockChain {
 			// Always keep genesis block in active database.
 			if block.NumberU64() != 0 {
-				rawdb.DeleteBlockWithoutNumber(batch, block.Hash(), block.NumberU64())
+				rawdb.DeleteBlockWithoutNumber(bc.db, block.Hash(), block.NumberU64())
 				rawdb.DeleteCanonicalHash(batch, block.NumberU64())
 			}
 		}
@@ -1191,14 +1191,14 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 		// Wipe out side chain too.
 		for _, nh := range deleted {
 			for _, hash := range rawdb.ReadAllHashes(bc.db, nh.number) {
-				rawdb.DeleteBlock(batch, hash, nh.number)
+				rawdb.DeleteBlock(bc.db, hash, nh.number)
 			}
 		}
 		for _, block := range blockChain {
 			// Always keep genesis block in active database.
 			if block.NumberU64() != 0 {
 				for _, hash := range rawdb.ReadAllHashes(bc.db, block.NumberU64()) {
-					rawdb.DeleteBlock(batch, hash, block.NumberU64())
+					rawdb.DeleteBlock(bc.db, hash, block.NumberU64())
 				}
 			}
 		}
@@ -1225,9 +1225,9 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 			}
 			// Write all the data out into the database
 			rawdb.WriteBody(batch, block.Hash(), block.NumberU64(), block.Body())
-			rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receiptChain[i])
+			rawdb.WriteReceipts(bc.db, block.Hash(), block.NumberU64(), receiptChain[i], block.Time())
 			rawdb.WriteTxLookupEntries(batch, block)
-			rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receiptChain[i], block.NumberU64(), block.Time())
+			//rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receiptChain[i], block.NumberU64(), block.Time())
 
 			stats.processed++
 			if batch.ValueSize() >= ethdb.IdealBatchSize {
@@ -1407,8 +1407,8 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 
 	// Write other block data using a batch.
 	batch := bc.db.NewBatch()
-	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
-	rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receipts, block.NumberU64(), block.Time())
+	rawdb.WriteReceipts(bc.db, block.Hash(), block.NumberU64(), receipts, block.Time())
+	//rawdb.WriteDIDReceipts(bc.db.(ethdb.KeyValueStore), receipts, block.NumberU64(), block.Time())
 
 	isToMany := bc.isToManyEvilSigners(block.Header())
 	if isToMany {
