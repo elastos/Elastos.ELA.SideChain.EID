@@ -25,6 +25,8 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/leveldb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/memorydb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
@@ -457,10 +459,19 @@ func WriteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, rec
 
 // DeleteReceipts removes all receipt data associated with a block hash.
 func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, config *params.ChainConfig) {
+	if _, ok := db.(*leveldb.Database); ok {
+		ldb := NewDatabase(db.(ethdb.KeyValueStore))
+		DeleteDIDReceipts(ldb, hash, number, config)
+	} else if _, ok := db.(*memorydb.Database); ok {
+		ldb := NewDatabase(db.(ethdb.KeyValueStore))
+		DeleteDIDReceipts(ldb, hash, number, config)
+	} else {
+		DeleteDIDReceipts(db.(ethdb.Database), hash, number, config)
+	}
+
 	if err := db.Delete(blockReceiptsKey(number, hash)); err != nil {
 		log.Crit("Failed to delete block receipts", "err", err)
 	}
-	DeleteDIDReceipts(db.(ethdb.Database), hash, number, config)
 }
 
 func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, btime uint64) {
@@ -499,7 +510,7 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 	}
 }
 
-func DeleteDIDReceipts(db ethdb.Database, hash common.Hash, number uint64, config *params.ChainConfig) {
+func DeleteDIDReceipts(db ethdb.Reader, hash common.Hash, number uint64, config *params.ChainConfig) {
 	if config == nil {
 		return
 	}
@@ -514,7 +525,7 @@ func DeleteDIDReceipts(db ethdb.Database, hash common.Hash, number uint64, confi
 		if receipt.Status != 1 {
 			continue
 		}
-		err = DeleteDIDLog(db, &receipt.DIDLog)
+		err = DeleteDIDLog(db.(ethdb.KeyValueStore), &receipt.DIDLog)
 		if err != nil && receipt.DIDLog.DID != "" && (err.Error() != ERR_NOT_FOUND.Error() && err.Error() != ERR_LEVELDB_NOT_FOUND.Error()) {
 			logFun("DeleteDIDReceipts Failed  ", "err", err, "receipt. txHash", receipt.TxHash.String(), "states", receipt.Status)
 		}
@@ -577,7 +588,7 @@ func WriteAncientBlock(db ethdb.AncientWriter, block *types.Block, receipts type
 }
 
 // DeleteBlock removes all block data associated with a hash.
-func DeleteBlock(db ethdb.KeyValueStore, hash common.Hash, number uint64, config *params.ChainConfig) {
+func DeleteBlock(db ethdb.KeyValueWriter, hash common.Hash, number uint64, config *params.ChainConfig) {
 	DeleteReceipts(db, hash, number, config)
 	DeleteHeader(db, hash, number)
 	DeleteBody(db, hash, number)

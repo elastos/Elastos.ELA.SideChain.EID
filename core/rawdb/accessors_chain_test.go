@@ -25,6 +25,7 @@ import (
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/memorydb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"golang.org/x/crypto/sha3"
@@ -268,7 +269,8 @@ func TestHeadStorage(t *testing.T) {
 
 // Tests that receipts associated with a single block can be stored and retrieved.
 func TestBlockReceiptStorage(t *testing.T) {
-	db := NewMemoryDatabase()
+	kdb := memorydb.New()
+	db := NewDatabase(kdb)
 
 	// Create a live block since we need metadata to reconstruct the receipt
 	tx1 := types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(1), 1, big.NewInt(1), nil)
@@ -278,7 +280,7 @@ func TestBlockReceiptStorage(t *testing.T) {
 
 	// Create the two receipts to manage afterwards
 	receipt1 := &types.Receipt{
-		Status:            types.ReceiptStatusFailed,
+		Status:            types.ReceiptStatusSuccessful,
 		CumulativeGasUsed: 1,
 		Logs: []*types.Log{
 			{Address: common.BytesToAddress([]byte{0x11})},
@@ -287,6 +289,12 @@ func TestBlockReceiptStorage(t *testing.T) {
 		TxHash:          tx1.Hash(),
 		ContractAddress: common.BytesToAddress([]byte{0x01, 0x11, 0x11}),
 		GasUsed:         111111,
+		DIDLog: types.DIDLog{
+			DID:       "did:elastos:iiHCBHU3nL8Dei1kpqEiSMQLbNAGCuB7CY",
+			Operation: "create",
+			TxHash:    common.HexToHash("0x096adb6705ccd1eed779772e634ec056062d402a3da8d3cb155ace95143a3092"),
+			Removed:   false,
+		},
 	}
 	receipt1.Bloom = types.CreateBloomWithTxList(types.Receipts{receipt1}, body.Transactions)
 
@@ -333,7 +341,7 @@ func TestBlockReceiptStorage(t *testing.T) {
 	// Sanity check that body alone without the receipt is a full purge
 	WriteBody(db, hash, 0, body)
 
-	DeleteReceipts(db, hash, 0, params.TestChainConfig)
+	DeleteReceipts(kdb, hash, 0, params.TestChainConfig)
 	if rs := ReadReceipts(db, hash, 0, params.TestChainConfig); len(rs) != 0 {
 		t.Fatalf("deleted receipts returned: %v", rs)
 	}
