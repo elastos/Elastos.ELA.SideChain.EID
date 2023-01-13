@@ -496,7 +496,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 			// The header, total difficulty and canonical hash will be
 			// removed in the hc.SetHead function.
 			rawdb.DeleteBody(db, hash, num)
-			rawdb.DeleteReceipts(bc.db, hash, num)
+			rawdb.DeleteReceipts(bc.db, hash, num, bc.chainConfig, false)
 		}
 		// Todo(rjl493456442) txlookup, bloombits, etc
 	}
@@ -1126,7 +1126,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 					}
 					// Wipe out canonical block data.
 					for _, nh := range deleted {
-						rawdb.DeleteBlockWithoutNumber(bc.db, nh.hash, nh.number)
+						rawdb.DeleteBlockWithoutNumber(bc.db, nh.hash, nh.number, bc.chainConfig, false)
 						rawdb.DeleteCanonicalHash(batch, nh.number)
 					}
 					if err := batch.Write(); err != nil {
@@ -1136,7 +1136,7 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 					// Wipe out side chain too.
 					for _, nh := range deleted {
 						for _, hash := range rawdb.ReadAllHashes(bc.db, nh.number) {
-							rawdb.DeleteBlock(bc.db, hash, nh.number)
+							rawdb.DeleteBlock(bc.db, hash, nh.number, bc.chainConfig, false)
 						}
 					}
 					if err := batch.Write(); err != nil {
@@ -1173,13 +1173,13 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 
 		// Wipe out canonical block data.
 		for _, nh := range deleted {
-			rawdb.DeleteBlockWithoutNumber(bc.db, nh.hash, nh.number)
+			rawdb.DeleteBlockWithoutNumber(bc.db, nh.hash, nh.number, bc.chainConfig, false)
 			rawdb.DeleteCanonicalHash(batch, nh.number)
 		}
 		for _, block := range blockChain {
 			// Always keep genesis block in active database.
 			if block.NumberU64() != 0 {
-				rawdb.DeleteBlockWithoutNumber(bc.db, block.Hash(), block.NumberU64())
+				rawdb.DeleteBlockWithoutNumber(bc.db, block.Hash(), block.NumberU64(), bc.chainConfig, false)
 				rawdb.DeleteCanonicalHash(batch, block.NumberU64())
 			}
 		}
@@ -1191,14 +1191,14 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 		// Wipe out side chain too.
 		for _, nh := range deleted {
 			for _, hash := range rawdb.ReadAllHashes(bc.db, nh.number) {
-				rawdb.DeleteBlock(bc.db, hash, nh.number)
+				rawdb.DeleteBlock(bc.db, hash, nh.number, bc.chainConfig, false)
 			}
 		}
 		for _, block := range blockChain {
 			// Always keep genesis block in active database.
 			if block.NumberU64() != 0 {
 				for _, hash := range rawdb.ReadAllHashes(bc.db, block.NumberU64()) {
-					rawdb.DeleteBlock(bc.db, hash, block.NumberU64())
+					rawdb.DeleteBlock(bc.db, hash, block.NumberU64(), bc.chainConfig, false)
 				}
 			}
 		}

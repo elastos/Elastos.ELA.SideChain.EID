@@ -456,7 +456,10 @@ func WriteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, rec
 }
 
 // DeleteReceipts removes all receipt data associated with a block hash.
-func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
+func DeleteReceipts(db ethdb.KeyValueWriter, hash common.Hash, number uint64, chainCfg *params.ChainConfig, isfreeze bool) {
+	if !isfreeze {
+		DeleteDIDReceipts(db.(ethdb.Reader), hash, number, chainCfg)
+	}
 	if err := db.Delete(blockReceiptsKey(number, hash)); err != nil {
 		log.Crit("Failed to delete block receipts", "err", err)
 	}
@@ -499,7 +502,6 @@ func WriteDIDReceipts(db ethdb.KeyValueStore, receipts types.Receipts, number, b
 }
 
 func DeleteDIDReceipts(db ethdb.Reader, hash common.Hash, number uint64, config *params.ChainConfig) {
-	//not use
 	if config == nil {
 		return
 	}
@@ -573,8 +575,8 @@ func WriteAncientBlock(db ethdb.AncientWriter, block *types.Block, receipts type
 }
 
 // DeleteBlock removes all block data associated with a hash.
-func DeleteBlock(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
-	DeleteReceipts(db, hash, number)
+func DeleteBlock(db ethdb.KeyValueWriter, hash common.Hash, number uint64, chainCfg *params.ChainConfig, isFreeze bool) {
+	DeleteReceipts(db, hash, number, chainCfg, isFreeze)
 	DeleteHeader(db, hash, number)
 	DeleteBody(db, hash, number)
 	DeleteTd(db, hash, number)
@@ -582,8 +584,8 @@ func DeleteBlock(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
 
 // DeleteBlockWithoutNumber removes all block data associated with a hash, except
 // the hash to number mapping.
-func DeleteBlockWithoutNumber(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
-	DeleteReceipts(db, hash, number)
+func DeleteBlockWithoutNumber(db ethdb.KeyValueWriter, hash common.Hash, number uint64, chainCfg *params.ChainConfig, isFreeze bool) {
+	DeleteReceipts(db, hash, number, chainCfg, isFreeze)
 	deleteHeaderWithoutNumber(db, hash, number)
 	DeleteBody(db, hash, number)
 	DeleteTd(db, hash, number)
