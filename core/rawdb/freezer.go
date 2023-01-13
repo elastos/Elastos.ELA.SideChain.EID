@@ -338,7 +338,7 @@ func (f *freezer) freeze(db ethdb.KeyValueStore, config *params.ChainConfig) {
 		for i := 0; i < len(ancients); i++ {
 			// Always keep the genesis block in active database
 			if first+uint64(i) != 0 {
-				DeleteBlockWithoutNumber(nfdb, ancients[i], first+uint64(i))
+				DeleteBlockWithoutNumber(nfdb, ancients[i], first+uint64(i), config, true)
 				DeleteCanonicalHash(batch, first+uint64(i))
 			}
 		}
@@ -351,7 +351,7 @@ func (f *freezer) freeze(db ethdb.KeyValueStore, config *params.ChainConfig) {
 			// Always keep the genesis block in active database
 			if number != 0 {
 				for _, hash := range ReadAllHashes(db, number) {
-					DeleteBlock(db, hash, number)
+					DeleteBlock(db, hash, number, config, true)
 				}
 			}
 		}

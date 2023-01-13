@@ -990,7 +990,6 @@ func rollbackRegisterDIDLog(db ethdb.KeyValueStore, idKey []byte, txhash common.
 	}
 
 	if count == 1 {
-		log.Crit("rollbackRegisterDIDLog delete", "id", string(idKey), "txhash", txhash.String())
 		return db.Delete(key)
 	}
 
