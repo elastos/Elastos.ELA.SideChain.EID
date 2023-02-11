@@ -352,12 +352,13 @@ func (d *Dispatcher) RejectProposal(proposal *payload.DPOSProposal, ac account.A
 }
 
 func (d *Dispatcher) createConfirm() *payload.Confirm {
-	if d.processingProposal == nil {
+	proposal := d.GetProcessingProposal()
+	if proposal == nil {
 		Warn("processingProposal is nil, can't create confirm")
 		return nil
 	}
 	confirm := &payload.Confirm{
-		Proposal: *d.processingProposal,
+		Proposal: *proposal,
 		Votes:    make([]payload.DPOSProposalVote, 0),
 	}
 	for _, vote := range d.acceptVotes {
@@ -368,8 +369,13 @@ func (d *Dispatcher) createConfirm() *payload.Confirm {
 }
 
 func (d *Dispatcher) createUnConfirm() *payload.Confirm {
+	proposal := d.GetProcessingProposal()
+	if proposal == nil {
+		Warn("processingProposal is nil, can't create confirm")
+		return nil
+	}
 	confirm := &payload.Confirm{
-		Proposal: *d.processingProposal,
+		Proposal: *proposal,
 		Votes:    make([]payload.DPOSProposalVote, 0),
 	}
 	for _, vote := range d.rejectedVotes {
@@ -480,7 +486,7 @@ func (d *Dispatcher) RecoverFromConsensusStatus(status *dmsg.ConsensusStatus) er
 	//	d.rejectedVotes[v.Hash()] = &vote
 	//}
 	d.processingProposal = nil
-	//for _, v := range status.PendingProposals {
+	//for _, v := range status.PendinqgProposals {
 	//	d.setProcessingProposal(&v)
 	//}
 
