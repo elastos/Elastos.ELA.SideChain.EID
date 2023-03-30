@@ -107,7 +107,7 @@ type AbnormalRecovering interface {
 type DPOSManagerConfig struct {
 	PublicKey   []byte
 	Arbitrators state.Arbitrators
-	ChainParams *config.Params
+	ChainParams *config.Configuration
 	TimeSource  dtime.MedianTimeSource
 	Server      elanet.Server
 }
@@ -127,7 +127,7 @@ type DPOSManager struct {
 	arbitrators state.Arbitrators
 	blockPool   *mempool.BlockPool
 	txPool      *mempool.TxPool
-	chainParams *config.Params
+	chainParams *config.Configuration
 	timeSource  dtime.MedianTimeSource
 	server      elanet.Server
 	broadcast   func(p2p.Message)
@@ -436,6 +436,11 @@ func (d *DPOSManager) recoverAbnormalState() bool {
 }
 
 func (d *DPOSManager) DoRecover() {
+	if d.consensus.viewOffset == 0 {
+		log.Info("no need to recover view offset")
+		return
+	}
+
 	var maxCountMaxViewOffset uint32
 	for k, _ := range d.statusMap {
 		if maxCountMaxViewOffset < k {

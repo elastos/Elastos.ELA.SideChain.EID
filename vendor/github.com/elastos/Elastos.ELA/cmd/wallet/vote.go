@@ -131,9 +131,9 @@ func CreateVoteTransaction(c *cli.Context) error {
 	return nil
 }
 
-var stake = cli.Command{
-	Name:  "stake",
-	Usage: "Build a stake tx",
+var exchangevotes = cli.Command{
+	Name:  "exchangevotes",
+	Usage: "Build a exchange votes tx",
 	Flags: []cli.Flag{
 		cmdcom.TransactionAmountFlag,
 		cmdcom.TransactionFeeFlag,
@@ -205,7 +205,7 @@ func CreateStakeTransaction(c *cli.Context) error {
 	}
 
 	// create outputs
-	stakeOutput := &outputpayload.StakeOutput{
+	stakeOutput := &outputpayload.ExchangeVotesOutput{
 		Version:      0,
 		StakeAddress: *sAddressProgramHash,
 	}
@@ -241,9 +241,9 @@ func CreateStakeTransaction(c *cli.Context) error {
 
 	txn := functions.CreateTransaction(
 		common2.TxVersion09,
-		common2.Stake,
+		common2.ExchangeVotes,
 		0,
-		&payload.Stake{},
+		&payload.ExchangeVotes{},
 		txAttributes,
 		txInputs,
 		txOutputs,

@@ -7,6 +7,7 @@ package interfaces
 
 import (
 	"errors"
+
 	common "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 )
@@ -28,6 +29,8 @@ func GetPayload(txType common.TxType, payloadVersion byte) (Payload, error) {
 		p = new(payload.SideChainPow)
 	case common.WithdrawFromSideChain:
 		p = new(payload.WithdrawFromSideChain)
+	case common.NFTDestroyFromSideChain:
+		p = new(payload.NFTDestroyFromSideChain)
 	case common.TransferCrossChainAsset:
 		p = new(payload.TransferCrossChainAsset)
 	case common.RegisterProducer:
@@ -86,18 +89,20 @@ func GetPayload(txType common.TxType, payloadVersion byte) (Payload, error) {
 		p = new(payload.RecordProposalResult)
 	case common.ReturnSideChainDepositCoin:
 		p = new(payload.ReturnSideChainDepositCoin)
-	case common.Stake:
-		p = new(payload.Stake)
+	case common.ExchangeVotes:
+		p = new(payload.ExchangeVotes)
 	case common.Voting:
 		p = new(payload.Voting)
-	case common.Unstake:
-		p = new(payload.Unstake)
-	case common.UnstakeRealWithdraw:
-		p = new(payload.UnstakeRealWithdrawPayload)
+	case common.ReturnVotes:
+		p = new(payload.ReturnVotes)
+	case common.VotesRealWithdraw:
+		p = new(payload.VotesRealWithdrawPayload)
 	case common.DposV2ClaimReward:
 		p = new(payload.DPoSV2ClaimReward)
 	case common.DposV2ClaimRewardRealWithdraw:
 		p = new(payload.DposV2ClaimRewardRealWithdraw)
+	case common.CreateNFT:
+		p = new(payload.CreateNFT)
 	default:
 		return nil, errors.New("[BaseTransaction], invalid transaction type.")
 	}

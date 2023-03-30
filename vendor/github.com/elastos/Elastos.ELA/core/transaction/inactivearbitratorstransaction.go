@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"math"
 
-	common2 "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/blockchain"
 	"github.com/elastos/Elastos.ELA/core/contract/program"
+	common2 "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/crypto"
@@ -31,7 +31,7 @@ func (t *InactiveArbitratorsTransaction) CheckTransactionInput() error {
 	return nil
 }
 
-func (t *InactiveArbitratorsTransaction)  CheckTransactionOutput() error {
+func (t *InactiveArbitratorsTransaction) CheckTransactionOutput() error {
 
 	if len(t.Outputs()) > math.MaxUint16 {
 		return errors.New("output count should not be greater than 65535(MaxUint16)")
@@ -134,6 +134,7 @@ func checkCRCArbitratorsSignatures(program *program.Program) error {
 
 	code := program.Code
 	// Get N parameter
+	// todo check
 	n := int(code[len(code)-2]) - crypto.PUSH1 + 1
 	// Get M parameter
 	m := int(code[0]) - crypto.PUSH1 + 1

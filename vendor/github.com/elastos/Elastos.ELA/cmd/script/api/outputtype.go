@@ -8,7 +8,6 @@ package api
 import (
 	"encoding/hex"
 	"fmt"
-	common2 "github.com/elastos/Elastos.ELA/core/types/common"
 	"os"
 	"strconv"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/common/log"
 	"github.com/elastos/Elastos.ELA/core/contract"
+	common2 "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 	"github.com/elastos/Elastos.ELA/crypto"
 
@@ -80,8 +80,8 @@ func newTxOutput(L *lua.LState) int {
 		}
 		outputPayload = payload
 
-	case *outputpayload.StakeOutput:
-		payload, ok := outputPayloadData.Value.(*outputpayload.StakeOutput)
+	case *outputpayload.ExchangeVotesOutput:
+		payload, ok := outputPayloadData.Value.(*outputpayload.ExchangeVotesOutput)
 		if !ok {
 			log.Debug("error exchange vote payload")
 		}
@@ -246,7 +246,7 @@ func newStakeOutput(L *lua.LState) int {
 		os.Exit(1)
 	}
 
-	voteOutput := &outputpayload.StakeOutput{
+	voteOutput := &outputpayload.ExchangeVotesOutput{
 		Version:      byte(version),
 		StakeAddress: *programHash,
 	}
@@ -258,12 +258,12 @@ func newStakeOutput(L *lua.LState) int {
 	return 1
 }
 
-func checkStakeOutput(L *lua.LState, idx int) *outputpayload.StakeOutput {
+func checkStakeOutput(L *lua.LState, idx int) *outputpayload.ExchangeVotesOutput {
 	ud := L.CheckUserData(idx)
-	if v, ok := ud.Value.(*outputpayload.StakeOutput); ok {
+	if v, ok := ud.Value.(*outputpayload.ExchangeVotesOutput); ok {
 		return v
 	}
-	L.ArgError(1, "StakeOutput expected")
+	L.ArgError(1, "ExchangeVotesOutput expected")
 	return nil
 }
 

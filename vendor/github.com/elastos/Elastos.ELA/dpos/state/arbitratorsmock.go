@@ -7,10 +7,10 @@ package state
 
 import (
 	"bytes"
-	"github.com/elastos/Elastos.ELA/core/types/interfaces"
 
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/core/types"
+	"github.com/elastos/Elastos.ELA/core/types/interfaces"
 	"github.com/elastos/Elastos.ELA/dpos/p2p/peer"
 )
 
@@ -69,6 +69,10 @@ type ArbitratorsMock struct {
 }
 
 func (a *ArbitratorsMock) SetNeedRevertToDPOSTX(need bool) {
+	panic("implement me")
+}
+
+func (a *ArbitratorsMock) SetNeedNextTurnDPOSInfo(need bool) {
 	panic("implement me")
 }
 

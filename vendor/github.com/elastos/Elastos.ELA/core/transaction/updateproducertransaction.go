@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/elastos/Elastos.ELA/core/contract"
 
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
@@ -101,9 +102,31 @@ func (t *UpdateProducerTransaction) SpecialContextCheck() (elaerr.ELAError, bool
 	if err != nil {
 		return elaerr.Simple(elaerr.ErrTxPayload, err), true
 	}
-	err = crypto.Verify(*publicKey, signedBuf.Bytes(), info.Signature)
-	if err != nil {
-		return elaerr.Simple(elaerr.ErrTxPayload, errors.New("invalid signature in payload")), true
+
+	if t.PayloadVersion() != payload.ProducerInfoSchnorrVersion {
+		signedBuf := new(bytes.Buffer)
+		err = info.SerializeUnsigned(signedBuf, t.payloadVersion)
+		if err != nil {
+			return elaerr.Simple(elaerr.ErrTxPayload, err), true
+		}
+		err = crypto.Verify(*publicKey, signedBuf.Bytes(), info.Signature)
+		if err != nil {
+			return elaerr.Simple(elaerr.ErrTxPayload, errors.New("invalid signature in payload")), true
+		}
+	} else {
+		if len(t.Programs()) != 1 {
+			return elaerr.Simple(elaerr.ErrTxPayload,
+				errors.New("ProducerInfoSchnorrVersion can only have one program code")), true
+		}
+		if !contract.IsSchnorr(t.Programs()[0].Code) {
+			return elaerr.Simple(elaerr.ErrTxPayload,
+				errors.New("only schnorr code can use ProducerInfoSchnorrVersion")), true
+		}
+		pk := t.Programs()[0].Code[2:]
+		if !bytes.Equal(pk, info.OwnerPublicKey) {
+			return elaerr.Simple(elaerr.ErrTxPayload,
+				errors.New("tx program pk must equal with OwnerPublicKey")), true
+		}
 	}
 
 	producer := t.parameters.BlockChain.GetState().GetProducer(info.OwnerPublicKey)
@@ -119,7 +142,7 @@ func (t *UpdateProducerTransaction) SpecialContextCheck() (elaerr.ELAError, bool
 			if producer.State() != state.Active {
 				return elaerr.Simple(elaerr.ErrTxPayload, errors.New("only active producer can update to DPoSV1V2")), true
 			}
-			if t.parameters.BlockHeight+t.parameters.Config.DPoSV2DepositCoinMinLockTime >= info.StakeUntil {
+			if t.parameters.BlockHeight+t.parameters.Config.DPoSConfiguration.DPoSV2DepositCoinMinLockTime >= info.StakeUntil {
 				return elaerr.Simple(elaerr.ErrTxPayload, errors.New("v2 producer StakeUntil less than DPoSV2DepositCoinMinLockTime")), true
 			}
 		}
@@ -131,11 +154,6 @@ func (t *UpdateProducerTransaction) SpecialContextCheck() (elaerr.ELAError, bool
 
 		if info.StakeUntil < producer.Info().StakeUntil {
 			return elaerr.Simple(elaerr.ErrTxPayload, errors.New("stake time is smaller than before")), true
-		} else if info.StakeUntil > producer.Info().StakeUntil {
-			//new StakeUntil must bigger than BlockHeight
-			if t.parameters.BlockHeight >= info.StakeUntil {
-				return elaerr.Simple(elaerr.ErrTxPayload, errors.New("v2 producer StakeUntil less than BlockHeight")), true
-			}
 		}
 
 	case state.DPoSV1V2:
@@ -193,17 +211,12 @@ func (t *UpdateProducerTransaction) SpecialContextCheck() (elaerr.ELAError, bool
 
 		if t.parameters.BlockHeight > t.parameters.Config.DPoSV2StartHeight {
 			//check if NodePublicKey is others' ownerpublickey
-			if t.parameters.BlockChain.GetState().ProducerOwnerPublicKeyExists(info.NodePublicKey) {
-				return elaerr.Simple(elaerr.ErrTxPayload, fmt.Errorf("NodePublicKey %s can not be other producer's ownerPublicKey ",
-					hex.EncodeToString(info.NodePublicKey))), true
-			}
 			//NodePublicKey can not be change into  one producer's OwnerPublicKey only if it is the same producer.
 			producer := t.parameters.BlockChain.GetState().GetProducerByOwnerPublicKey(info.NodePublicKey)
 			if producer != nil && !bytes.Equal(info.OwnerPublicKey, producer.OwnerPublicKey()) {
 				return elaerr.Simple(elaerr.ErrTxPayload, fmt.Errorf("NodePublicKey %s can not be other producer's ownerPublicKey ",
 					hex.EncodeToString(info.NodePublicKey))), true
 			}
-
 		}
 	}
 
@@ -235,7 +248,7 @@ func (t *UpdateProducerTransaction) additionalProducerInfoCheck(info *payload.Pr
 			}
 		}
 
-		for _, p := range t.parameters.Config.CRCArbiters {
+		for _, p := range t.parameters.Config.DPoSConfiguration.CRCArbiters {
 			if p == common.BytesToHexString(info.NodePublicKey) {
 				return errors.New("node public key can't equal with CR Arbiters")
 			}
