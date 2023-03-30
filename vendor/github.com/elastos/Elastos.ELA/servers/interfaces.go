@@ -20,6 +20,7 @@ import (
 	"github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/common/config"
 	"github.com/elastos/Elastos.ELA/common/log"
+	"github.com/elastos/Elastos.ELA/core"
 	"github.com/elastos/Elastos.ELA/core/contract"
 	pg "github.com/elastos/Elastos.ELA/core/contract/program"
 	. "github.com/elastos/Elastos.ELA/core/types"
@@ -44,8 +45,7 @@ import (
 
 var (
 	Compile     string
-	Config      *config.Configuration
-	ChainParams *config.Params
+	ChainParams *config.Configuration
 	Chain       *blockchain.BlockChain
 	Store       blockchain.IChainStore
 	TxMemPool   *mempool.TxPool
@@ -212,7 +212,7 @@ func GetNodeState(param Params) map[string]interface{} {
 	}
 	height := Chain.GetHeight()
 	ver := pact.DPOSStartVersion
-	if height > uint32(ChainParams.NewP2PProtocolVersionHeight) {
+	if height > uint32(ChainParams.CRConfiguration.NewP2PProtocolVersionHeight) {
 		ver = pact.CRProposalVersion
 	}
 	return ResponsePack(Success, ServerInfo{
@@ -220,10 +220,10 @@ func GetNodeState(param Params) map[string]interface{} {
 		Height:    height,
 		Version:   ver,
 		Services:  Server.Services().String(),
-		Port:      Config.NodePort,
-		RPCPort:   uint16(Config.HttpJsonPort),
-		RestPort:  uint16(Config.HttpRestPort),
-		WSPort:    uint16(Config.HttpWsPort),
+		Port:      ChainParams.NodePort,
+		RPCPort:   uint16(ChainParams.HttpJsonPort),
+		RestPort:  uint16(ChainParams.HttpRestPort),
+		WSPort:    uint16(ChainParams.HttpWsPort),
 		Neighbors: states,
 	})
 }
@@ -470,8 +470,8 @@ func GetArbiterPeersInfo(params Params) map[string]interface{} {
 	return ResponsePack(Success, result)
 }
 
-//if have params stakeAddress  get stakeAddress all dposv2 votes
-//else get all dposv2 votes
+// if have params stakeAddress  get stakeAddress all dposv2 votes
+// else get all dposv2 votes
 func GetAllDetailedDPoSV2Votes(params Params) map[string]interface{} {
 	start, _ := params.Int("start")
 	if start < 0 {
@@ -503,18 +503,18 @@ func GetAllDetailedDPoSV2Votes(params Params) map[string]interface{} {
 		if len(dposv2Votes) == 0 {
 			continue
 		}
-		for _, v := range dposv2Votes {
+		for voterProgramHash, v := range dposv2Votes {
 			for k1, v1 := range v {
-				address, _ := v1.StakeProgramHash.ToAddress()
+				voterAddress, _ := voterProgramHash.ToAddress()
 				//get stakeAddress all dposv2 votes
-				if stakeAddress != "" && stakeAddress != address {
+				if stakeAddress != "" && stakeAddress != voterAddress {
 					continue
 				}
 				info := &detailedVoteInfo{
 					ProducerOwnerKey: hex.EncodeToString(p.OwnerPublicKey()),
 					ProducerNodeKey:  hex.EncodeToString(p.NodePublicKey()),
 					ReferKey:         common.ToReversedString(k1),
-					StakeAddress:     address,
+					StakeAddress:     voterAddress,
 					TransactionHash:  common.ToReversedString(v1.TransactionHash),
 					BlockHeight:      v1.BlockHeight,
 					PayloadVersion:   v1.PayloadVersion,
@@ -552,7 +552,7 @@ func GetAllDetailedDPoSV2Votes(params Params) map[string]interface{} {
 	return ResponsePack(Success, dvi)
 }
 
-//GetProducerInfo
+// GetProducerInfo
 func GetProducerInfo(params Params) map[string]interface{} {
 	publicKey, ok := params.String("publickey")
 	if !ok {
@@ -591,7 +591,110 @@ func GetProducerInfo(params Params) map[string]interface{} {
 	return ResponsePack(Success, producerInfo)
 }
 
-//by s address.
+func GetNFTInfo(params Params) map[string]interface{} {
+	idParam, ok := params.String("id")
+	if !ok {
+		return ResponsePack(InvalidParams, "need string id ")
+	}
+
+	idBytes, err := common.HexStringToBytes(idParam)
+	if err != nil {
+		return ResponsePack(InvalidParams, "id HexStringToBytes error")
+	}
+	nftID, err := common.Uint256FromBytes(idBytes)
+	if err != nil {
+		return ResponsePack(InvalidParams, "idbytes to hash error")
+	}
+
+	type nftInfo struct {
+		ID          string `json:"ID"`
+		StartHeight uint32 `json:"startheight"`
+		EndHeight   uint32 `json:"endheight"`
+		Votes       string `json:"votes"`
+		VotesRight  string `json:"votesright"`
+		Rewards     string `json:"rewards"`
+	}
+
+	producers := Chain.GetState().GetAllProducers()
+
+	fillNFTINFO := func(nftID common.Uint256, detailVoteInfo payload.DetailedVoteInfo) (info nftInfo) {
+		ct, _ := contract.CreateStakeContractByCode(nftID.Bytes())
+		nftStakeAddress, _ := ct.ToProgramHash().ToAddress()
+		info.StartHeight = detailVoteInfo.BlockHeight
+		info.EndHeight = detailVoteInfo.Info[0].LockTime
+		info.Votes = detailVoteInfo.Info[0].Votes.String()
+		info.Rewards = Chain.GetState().DPoSV2RewardInfo[nftStakeAddress].String()
+		return
+	}
+	nftReferKey, err := Chain.GetState().GetNFTReferKey(*nftID)
+	if err != nil {
+		return ResponsePack(InvalidParams, "wrong nft id, not found it!")
+	}
+	//todo referkey recreate problem
+	for _, producer := range producers {
+		for _, votesInfo := range producer.GetAllDetailedDPoSV2Votes() {
+			for referKey, detailVoteInfo := range votesInfo {
+				if referKey.IsEqual(nftReferKey) {
+					info := fillNFTINFO(*nftID, detailVoteInfo)
+					info.ID = idParam
+					info.VotesRight = common.Fixed64(producer.GetNFTVotesRight(referKey)).String()
+					return ResponsePack(Success, info)
+				}
+			}
+		}
+		for _, expiredVotesInfo := range producer.GetExpiredNFTVotes() {
+			if expiredVotesInfo.ReferKey().IsEqual(nftReferKey) {
+				info := fillNFTINFO(*nftID, expiredVotesInfo)
+				info.ID = idParam
+				info.VotesRight = "0"
+				return ResponsePack(Success, info)
+			}
+		}
+	}
+
+	return ResponsePack(InvalidParams, "wrong nft id, not found it!")
+}
+
+func GetCanDestroynftIDs(params Params) map[string]interface{} {
+	idsParam, ok := params.ArrayString("ids")
+	if !ok {
+		return ResponsePack(InvalidParams, "need ids in an array!")
+	}
+	genesisBlockStr, ok := params.String("genesisblockhash")
+	if !ok {
+		return ResponsePack(InvalidParams, "genesisblockhash not found")
+	}
+	genesisBlockhash, err := common.Uint256FromHexString(genesisBlockStr)
+	if err != nil {
+		return ResponsePack(InvalidParams, "invalid genesisblockhash ")
+	}
+
+	var IDs []common.Uint256
+	for i := 0; i < len(idsParam); i++ {
+		idBytes, err := common.HexStringToBytes(idsParam[i])
+		if err != nil {
+			return ResponsePack(InvalidParams, "HexStringToBytes idsParam[i] error")
+		}
+		id, err := common.Uint256FromBytes(idBytes)
+		if err != nil {
+			return ResponsePack(InvalidParams, "Uint256FromBytes error")
+		}
+		IDs = append(IDs, *id)
+	}
+	state := Chain.GetState()
+	canDestroyIDs := state.CanNFTDestroy(IDs)
+	var destoryIDs []string
+
+	for _, id := range canDestroyIDs {
+		if state.IsNFTIDBelongToSideChain(id, *genesisBlockhash) {
+			destoryIDs = append(destoryIDs, id.String())
+		}
+	}
+
+	return ResponsePack(Success, destoryIDs)
+}
+
+// by s address.
 func GetVoteRights(params Params) map[string]interface{} {
 	addresses, ok := params.ArrayString("stakeaddresses")
 	if !ok {
@@ -771,6 +874,8 @@ func GetUsedVoteRight(voteType outputpayload.VoteType, stakeProgramHash *common.
 			}
 		}
 	case outputpayload.DposV2:
+		addr, _ := stakeProgramHash.ToAddress()
+		fmt.Println("addr", addr)
 		usedDposVote = state.UsedDposV2Votes[*stakeProgramHash]
 	default:
 		return 0, errors.New("unsupport vote type")
@@ -877,7 +982,7 @@ func GetMiningInfo(param Params) map[string]interface{} {
 		Difficulty:     Chain.CalcCurrentDifficulty(block.Bits),
 		NetWorkHashPS:  Chain.GetNetworkHashPS().String(),
 		PooledTx:       uint32(len(TxMemPool.GetTxsInPool())),
-		Chain:          Config.ActiveNet,
+		Chain:          ChainParams.ActiveNet,
 	}
 
 	return ResponsePack(Success, miningInfo)
@@ -1250,7 +1355,7 @@ func GetArbitratorGroupByHeight(param Params) map[string]interface{} {
 	}
 
 	result := ArbitratorGroupInfo{}
-	if height < ChainParams.DPOSNodeCrossChainHeight {
+	if height < ChainParams.DPoSConfiguration.DPOSNodeCrossChainHeight {
 		crcArbiters := Arbiters.GetCRCArbiters()
 		sort.Slice(crcArbiters, func(i, j int) bool {
 			return bytes.Compare(crcArbiters[i].NodePublicKey, crcArbiters[j].NodePublicKey) < 0
@@ -1294,7 +1399,7 @@ func GetAssetByHash(param Params) map[string]interface{} {
 	asset := payload.RegisterAsset{
 		Asset: payload.Asset{
 			Name:      "ELA",
-			Precision: config.ELAPrecision,
+			Precision: core.ELAPrecision,
 			AssetType: 0x00,
 		},
 		Amount:     0 * 100000000,
@@ -1481,14 +1586,14 @@ func GetUTXOsByAmount(param Params) map[string]interface{} {
 			tx.Outputs()[utxo.Index].Type == common2.OTVote {
 			continue
 		}
-		if tx.TxType() == common2.CoinBase && bestHeight-height < config.DefaultParams.CoinbaseMaturity {
+		if tx.TxType() == common2.CoinBase && bestHeight-height < ChainParams.PowConfiguration.CoinbaseMaturity {
 			continue
 		}
 		totalAmount += utxo.Value
 		result = append(result, UTXOInfo{
 			TxType:        byte(tx.TxType()),
 			TxID:          common.ToReversedString(utxo.TxID),
-			AssetID:       common.ToReversedString(config.ELAAssetID),
+			AssetID:       common.ToReversedString(core.ELAAssetID),
 			VOut:          utxo.Index,
 			Amount:        utxo.Value.String(),
 			Address:       address,
@@ -1587,7 +1692,7 @@ func ListUnspent(param Params) map[string]interface{} {
 			result = append(result, UTXOInfo{
 				TxType:        byte(tx.TxType()),
 				TxID:          common.ToReversedString(utxo.TxID),
-				AssetID:       common.ToReversedString(config.ELAAssetID),
+				AssetID:       common.ToReversedString(core.ELAAssetID),
 				VOut:          utxo.Index,
 				Amount:        utxo.Value.String(),
 				Address:       address,
@@ -1858,7 +1963,7 @@ func GetUnspends(param Params) map[string]interface{} {
 			u.Value.String()})
 
 		results = append(results, Result{
-			common.ToReversedString(config.ELAAssetID),
+			common.ToReversedString(core.ELAAssetID),
 			"ELA",
 			unspendsInfo})
 	}
@@ -1895,7 +2000,7 @@ func GetUnspendOutput(param Params) map[string]interface{} {
 	return ResponsePack(Success, UTXOoutputs)
 }
 
-//BaseTransaction
+// BaseTransaction
 func GetTransactionByHash(param Params) map[string]interface{} {
 	str, ok := param.String("hash")
 	if !ok {
@@ -1985,7 +2090,7 @@ func GetExistSideChainReturnDepositTransactions(param Params) map[string]interfa
 	return ResponsePack(Success, resultTxHashes)
 }
 
-//single producer info
+// single producer info
 type RPCProducerInfo struct {
 	OwnerPublicKey string `json:"ownerpublickey"`
 	NodePublicKey  string `json:"nodepublickey"`
@@ -2005,14 +2110,15 @@ type RPCProducerInfo struct {
 	Index          uint64 `json:"index"`
 }
 
-//a group producer info  include TotalVotes and producer count
+//a group producer info include TotalDPoSV1Votes and producer count
 type RPCProducersInfo struct {
 	ProducerInfoSlice []RPCProducerInfo `json:"producers"`
-	TotalVotes        string            `json:"totalvotes"`
+	TotalDPoSV1Votes  string            `json:"totaldposv1votes"`
+	TotalDPoSV2Votes  string            `json:"totaldposv2votes"`
 	TotalCounts       uint64            `json:"totalcounts"`
 }
 
-//single cr candidate info
+// single cr candidate info
 type RPCCRCandidateInfo struct {
 	Code           string `json:"code"`
 	CID            string `json:"cid"`
@@ -2028,7 +2134,7 @@ type RPCCRCandidateInfo struct {
 	Index uint64 `json:"index"`
 }
 
-//a group cr candidate info include TotalVotes and candidate count
+//a group cr candidate info include TotalDPoSV1Votes and candidate count
 type RPCCRCandidatesInfo struct {
 	CRCandidateInfoSlice []RPCCRCandidateInfo `json:"crcandidatesinfo"`
 	TotalVotes           string               `json:"totalvotes"`
@@ -2052,7 +2158,7 @@ type RPCCRRelatedStage struct {
 	VotingEndHeight   uint32 `json:"votingendheight"`
 }
 
-//single cr member info
+// single cr member info
 type RPCCRMemberInfo struct {
 	Code             string `json:"code"`
 	CID              string `json:"cid"`
@@ -2069,7 +2175,7 @@ type RPCCRMemberInfo struct {
 	Index            uint64 `json:"index"`
 }
 
-//a group cr member info  include cr member count
+// a group cr member info  include cr member count
 type RPCCRMembersInfo struct {
 	CRMemberInfoSlice []RPCCRMemberInfo `json:"crmembersinfo"`
 	TotalCounts       uint64            `json:"totalcounts"`
@@ -2214,9 +2320,27 @@ type RPCDPosV2Info struct {
 func DposV2RewardInfo(param Params) map[string]interface{} {
 	addr, ok := param.String("address")
 	if ok {
-		claimable := Chain.GetState().DposV2RewardInfo[addr]
-		claiming := Chain.GetState().DposV2RewardClaimingInfo[addr]
-		claimed := Chain.GetState().DposV2RewardClaimedInfo[addr]
+		// need to get claimable reward from Standard or Multi-sign address,
+		// also need to get claimable reward from Stake address.
+		address, err := common.Uint168FromAddress(addr)
+		if err != nil {
+			return ResponsePack(InternalError, "invalid address")
+		}
+		// check prefix, if the prefix is not PrefixDPoSV2, we need to change it
+		// to PrefixDPoSV2.
+		stakeAddress := addr
+		if address[0] != byte(contract.PrefixDPoSV2) {
+			address[0] = byte(contract.PrefixDPoSV2)
+			// create stake address from Standard or Multi-sign address.
+			stakeAddress, err = address.ToAddress()
+			if err != nil {
+				return ResponsePack(InternalError, "invalid stake address")
+			}
+		}
+
+		claimable := Chain.GetState().DPoSV2RewardInfo[stakeAddress]
+		claiming := Chain.GetState().DposV2RewardClaimingInfo[stakeAddress]
+		claimed := Chain.GetState().DposV2RewardClaimedInfo[stakeAddress]
 		result := RPCDposV2RewardInfo{
 			Address:   addr,
 			Claimable: claimable.String(),
@@ -2226,7 +2350,7 @@ func DposV2RewardInfo(param Params) map[string]interface{} {
 		return ResponsePack(Success, result)
 	} else {
 		var result []RPCDposV2RewardInfo
-		dposV2RewardInfo := Chain.GetState().DposV2RewardInfo
+		dposV2RewardInfo := Chain.GetState().DPoSV2RewardInfo
 		for addr, value := range dposV2RewardInfo {
 			result = append(result, RPCDposV2RewardInfo{
 				Address:   addr,
@@ -2294,9 +2418,10 @@ func ListProducers(param Params) map[string]interface{} {
 	})
 
 	var producerInfoSlice []RPCProducerInfo
-	var totalVotes common.Fixed64
+	var totalVotes, totalDPoSV2Votes common.Fixed64
 	for i, p := range producers {
 		totalVotes += p.Votes()
+		totalDPoSV2Votes += common.Fixed64(p.GetTotalDPoSV2VoteRights())
 		producerInfo := RPCProducerInfo{
 			OwnerPublicKey: hex.EncodeToString(p.Info().OwnerPublicKey),
 			NodePublicKey:  hex.EncodeToString(p.Info().NodePublicKey),
@@ -2335,7 +2460,8 @@ func ListProducers(param Params) map[string]interface{} {
 
 	result := &RPCProducersInfo{
 		ProducerInfoSlice: rsProducerInfoSlice,
-		TotalVotes:        totalVotes.String(),
+		TotalDPoSV1Votes:  totalVotes.String(),
+		TotalDPoSV2Votes:  totalDPoSV2Votes.String(),
 		TotalCounts:       uint64(count),
 	}
 
@@ -2388,7 +2514,7 @@ func GetCRRelatedStage(param Params) map[string]interface{} {
 	return ResponsePack(Success, result)
 }
 
-//list cr candidates according to ( state , start and limit)
+// list cr candidates according to ( state , start and limit)
 func ListCRCandidates(param Params) map[string]interface{} {
 	start, _ := param.Int("start")
 	if start < 0 {
@@ -2477,7 +2603,7 @@ func ListCRCandidates(param Params) map[string]interface{} {
 	return ResponsePack(Success, result)
 }
 
-//list current crs according to (state)
+// list current crs according to (state)
 func ListCurrentCRs(param Params) map[string]interface{} {
 	cm := Chain.GetCRCommittee()
 	var crMembers []*crstate.CRMember
@@ -2525,7 +2651,7 @@ func ListCurrentCRs(param Params) map[string]interface{} {
 	return ResponsePack(Success, result)
 }
 
-//list next crs according to (state)
+// list next crs according to (state)
 func ListNextCRs(param Params) map[string]interface{} {
 	cm := Chain.GetCRCommittee()
 	var crMembers []*crstate.CRMember
@@ -3547,6 +3673,9 @@ func getPayloadInfo(p interfaces.Payload, payloadVersion byte) PayloadInfo {
 				case outputpayload.CRC, outputpayload.CRCImpeachment:
 					c, _ := common.Uint168FromBytes(detail.Candidate)
 					candidate, _ = c.ToAddress()
+				case outputpayload.CRCProposal:
+					proposalHash, _ := common.Uint256FromBytes(detail.Candidate)
+					candidate = common.ToReversedString(*proposalHash)
 				default:
 					candidate = common.BytesToHexString(detail.Candidate)
 				}
@@ -3564,37 +3693,37 @@ func getPayloadInfo(p interfaces.Payload, payloadVersion byte) PayloadInfo {
 		}
 		return obj
 
-	case *payload.Stake:
-		obj := new(StakeInfo)
+	case *payload.ExchangeVotes:
+		obj := new(ExchangeVotesInfo)
 		return obj
-	case *payload.Unstake:
+	case *payload.ReturnVotes:
 		address, _ := object.ToAddr.ToAddress()
-		if payloadVersion == payload.UnstakeVersionV1 {
-			obj := &UnstakeInfo{
+		if payloadVersion == payload.ReturnVotesSchnorrVersion {
+			obj := &ReturnVotesInfo{
 				ToAddr: address,
 				Value:  object.Value.String(),
 			}
 			return obj
 		}
-		obj := &UnstakeInfo{
+		obj := &ReturnVotesInfo{
 			ToAddr:    address,
 			Code:      common.BytesToHexString(object.Code),
 			Value:     object.Value.String(),
 			Signature: common.BytesToHexString(object.Signature),
 		}
 		return obj
-	case *payload.UnstakeRealWithdrawPayload:
-		obj := &RealUnstakesInfo{
-			RealUnstakes: make([]RealUnstakeInfo, 0),
+	case *payload.VotesRealWithdrawPayload:
+		obj := &RealVotesWithdrawInfo{
+			RealReturnVotes: make([]RealReturnVotesInfo, 0),
 		}
-		for _, withdraw := range object.UnstakeRealWithdraw {
+		for _, withdraw := range object.VotesRealWithdraw {
 			address, _ := withdraw.StakeAddress.ToAddress()
-			realUnstakeInfo := RealUnstakeInfo{
-				UnstaketXHash: common.ToReversedString(withdraw.UnstakeTXHash),
-				StakeAddress:  address,
-				Value:         withdraw.Value.String(),
+			realReturnVotesInfo := RealReturnVotesInfo{
+				ReturnVotesTXHash: common.ToReversedString(withdraw.ReturnVotesTXHash),
+				StakeAddress:      address,
+				Value:             withdraw.Value.String(),
 			}
-			obj.RealUnstakes = append(obj.RealUnstakes, realUnstakeInfo)
+			obj.RealReturnVotes = append(obj.RealReturnVotes, realReturnVotesInfo)
 		}
 		return obj
 	case *payload.DPoSV2ClaimReward:
@@ -3621,6 +3750,32 @@ func getPayloadInfo(p interfaces.Payload, payloadVersion byte) PayloadInfo {
 			obj.WithdrawTransactionHashes = append(obj.WithdrawTransactionHashes, common.ToReversedString(txHash))
 		}
 		return obj
+
+	case *payload.CreateNFT:
+		obj := &CreateNFTInfo{
+			ID:               object.ReferKey.ReversedString(),
+			StakeAddress:     object.StakeAddress,
+			GenesisBlockHash: common.ToReversedString(object.GenesisBlockHash),
+		}
+		return obj
+
+	case *payload.NFTDestroyFromSideChain:
+		nftIDs := make([]string, 0)
+		nftStatkeAddresses := make([]string, 0)
+		for _, id := range object.IDs {
+			nftIDs = append(nftIDs, id.ReversedString())
+		}
+		for _, sa := range object.OwnerStakeAddresses {
+			addr, _ := sa.ToAddress()
+			nftStatkeAddresses = append(nftStatkeAddresses, addr)
+		}
+		obj := DestroyNFTInfo{
+			IDs:                 nftIDs,
+			OwnerStakeAddresses: nftStatkeAddresses,
+			GenesisBlockHash:    common.ToReversedString(object.GenesisBlockHash),
+		}
+		return obj
+
 	}
 	return nil
 }
@@ -3706,9 +3861,9 @@ func getOutputPayloadInfo(op common2.OutputPayload) OutputPayloadInfo {
 			obj.Contents = append(obj.Contents, contentInfo)
 		}
 		return obj
-	case *outputpayload.StakeOutput:
+	case *outputpayload.ExchangeVotesOutput:
 		addr, _ := object.StakeAddress.ToAddress()
-		obj := new(StakeOutputInfo)
+		obj := new(ExchangeVotesOutputInfo)
 		obj.Version = object.Version
 		obj.StakeAddress = addr
 		return obj

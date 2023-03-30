@@ -65,10 +65,14 @@ const (
 	// DPoS2.0
 	DposV2ClaimReward             TxType = 0x60
 	DposV2ClaimRewardRealWithdraw TxType = 0x61
-	Stake                         TxType = 0x62
+	ExchangeVotes                 TxType = 0x62
 	Voting                        TxType = 0x63
-	Unstake                       TxType = 0x64
-	UnstakeRealWithdraw           TxType = 0x65
+	ReturnVotes                   TxType = 0x64
+	VotesRealWithdraw             TxType = 0x65
+
+	// NFT
+	CreateNFT               TxType = 0x71
+	NFTDestroyFromSideChain TxType = 0x72
 )
 
 func (self TxType) Name() string {
@@ -89,6 +93,8 @@ func (self TxType) Name() string {
 		return "RechargeToSideChain"
 	case WithdrawFromSideChain:
 		return "WithdrawFromSideChain"
+	case NFTDestroyFromSideChain:
+		return "NFTDestroyFromSideChain"
 	case TransferCrossChainAsset:
 		return "TransferCrossChainAsset"
 	case RegisterProducer:
@@ -147,18 +153,20 @@ func (self TxType) Name() string {
 		return "RevertToDPOS"
 	case ReturnSideChainDepositCoin:
 		return "ReturnSideChainDepositCoin"
-	case Stake:
-		return "Stake"
+	case ExchangeVotes:
+		return "ExchangeVotes"
 	case Voting:
 		return "Voting"
-	case Unstake:
-		return "Unstake"
-	case UnstakeRealWithdraw:
-		return "UnstakeRealWithdraw"
+	case ReturnVotes:
+		return "ReturnVotes"
+	case VotesRealWithdraw:
+		return "VotesRealWithdraw"
 	case DposV2ClaimReward:
 		return "DposV2ClaimReward"
 	case DposV2ClaimRewardRealWithdraw:
 		return "DposV2ClaimRewardRealWithdraw"
+	case CreateNFT:
+		return "CreateNFT"
 	default:
 		return "Unknown"
 	}

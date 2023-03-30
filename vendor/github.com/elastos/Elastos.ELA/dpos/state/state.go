@@ -24,14 +24,12 @@ import (
 	"github.com/elastos/Elastos.ELA/core/types/outputpayload"
 	"github.com/elastos/Elastos.ELA/core/types/payload"
 	"github.com/elastos/Elastos.ELA/cr/state"
-	"github.com/elastos/Elastos.ELA/crypto"
 	msg2 "github.com/elastos/Elastos.ELA/dpos/p2p/msg"
 	elaerr "github.com/elastos/Elastos.ELA/errors"
 	"github.com/elastos/Elastos.ELA/events"
 	"github.com/elastos/Elastos.ELA/p2p"
 	"github.com/elastos/Elastos.ELA/p2p/msg"
 	"github.com/elastos/Elastos.ELA/utils"
-	"github.com/elastos/Elastos.ELA/vm"
 )
 
 // ProducerState represents the state of a producer.
@@ -123,6 +121,8 @@ type Producer struct {
 	//Uint168 key is voter's sVoteAddr
 	//Uint256 key is DetailedVoteInfo's hash
 	detailedDPoSV2Votes map[common.Uint168]map[common.Uint256]payload.DetailedVoteInfo
+	//Uint168 key is nftid--->stakeaddress
+	expiredNFTVotes map[common.Uint168]payload.DetailedVoteInfo
 
 	depositAmount                common.Fixed64
 	totalAmount                  common.Fixed64
@@ -230,6 +230,10 @@ func (p *Producer) GetAllDetailedDPoSV2Votes() map[common.Uint168]map[common.Uin
 	return p.detailedDPoSV2Votes
 }
 
+func (p *Producer) GetExpiredNFTVotes() map[common.Uint168]payload.DetailedVoteInfo {
+	return p.expiredNFTVotes
+}
+
 func (p *Producer) GetTotalDPoSV2VoteRights() float64 {
 	var result float64
 	for _, sVoteDetail := range p.detailedDPoSV2Votes {
@@ -243,6 +247,19 @@ func (p *Producer) GetTotalDPoSV2VoteRights() float64 {
 	}
 
 	return result
+}
+
+func (p *Producer) GetNFTVotesRight(targetReferKey common.Uint256) float64 {
+	for _, sVoteDetail := range p.detailedDPoSV2Votes {
+		for referKey, votes := range sVoteDetail {
+			if referKey.IsEqual(targetReferKey) {
+				weightF := math.Log10(float64(votes.Info[0].LockTime-votes.BlockHeight) / 7200 * 10)
+				N := common.Fixed64(float64(votes.Info[0].Votes) * weightF)
+				return float64(N)
+			}
+		}
+	}
+	return 0
 }
 
 func (p *Producer) SetInfo(i payload.ProducerInfo) {
@@ -279,6 +296,10 @@ func (p *Producer) SetPenalty(v common.Fixed64) {
 
 func (p *Producer) SetVotes(v common.Fixed64) {
 	p.votes = v
+}
+
+func (p *Producer) SetTotalAmount(v common.Fixed64) {
+	p.totalAmount = v
 }
 
 func (p *Producer) SetDposV2Votes(v common.Fixed64) {
@@ -336,7 +357,9 @@ func (p *Producer) Serialize(w io.Writer) error {
 	if err := SerializeDetailVoteInfoMap(p.detailedDPoSV2Votes, w); err != nil {
 		return err
 	}
-
+	if err := SerializeDetailVoteInfo(p.expiredNFTVotes, w); err != nil {
+		return err
+	}
 	if err := p.depositAmount.Serialize(w); err != nil {
 		return err
 	}
@@ -377,6 +400,47 @@ func SerializeDetailVoteInfoMap(
 		}
 	}
 
+	return
+}
+
+func SerializeDetailVoteInfo(
+	vmap map[common.Uint168]payload.DetailedVoteInfo,
+	w io.Writer) (err error) {
+
+	if err := common.WriteVarUint(w, uint64(len(vmap))); err != nil {
+		return err
+	}
+	for k, v := range vmap {
+		if err := k.Serialize(w); err != nil {
+			return err
+		}
+		if err := v.Serialize(w); err != nil {
+			return err
+		}
+	}
+
+	return
+}
+
+func DeserializeDetailVoteInfo(
+	r io.Reader) (vmap map[common.Uint168]payload.DetailedVoteInfo, err error) {
+	var count uint64
+	if count, err = common.ReadVarUint(r, 0); err != nil {
+		return
+	}
+	vmap = make(map[common.Uint168]payload.DetailedVoteInfo)
+	for i := uint64(0); i < count; i++ {
+		var k common.Uint168
+		if err = k.Deserialize(r); err != nil {
+			return
+		}
+
+		var v payload.DetailedVoteInfo
+		if err = v.Deserialize(r); err != nil {
+			return
+		}
+		vmap[k] = v
+	}
 	return
 }
 
@@ -434,6 +498,12 @@ func (p *Producer) Deserialize(r io.Reader) (err error) {
 		return err
 	}
 	p.detailedDPoSV2Votes = voteInfoMap
+
+	expiredNFTVotes, err := DeserializeDetailVoteInfo(r)
+	if err != nil {
+		return err
+	}
+	p.expiredNFTVotes = expiredNFTVotes
 
 	if err = p.depositAmount.Deserialize(r); err != nil {
 		return
@@ -520,7 +590,7 @@ type State struct {
 	tryUpdateCRMemberIllegal func(did common.Uint168, height uint32, illegalPenalty common.Fixed64)
 	tryRevertCRMemberIllegal func(did common.Uint168, oriState state.MemberState, height uint32, illegalPenalty common.Fixed64)
 
-	ChainParams *config.Params
+	ChainParams *config.Configuration
 	mtx         sync.RWMutex
 	History     *utils.History
 
@@ -530,8 +600,11 @@ type State struct {
 	appendToTxpool                      func(transaction interfaces.Transaction) elaerr.ELAError
 	createDposV2RealWithdrawTransaction func(withdrawTransactionHashes []common.Uint256,
 		outputs []*common2.OutputInfo) (interfaces.Transaction, error)
-	createUnstakeRealWithdrawTransaction func(withdrawTransactionHashes []common.Uint256,
+	createVotesRealWithdrawTransaction func(withdrawTransactionHashes []common.Uint256,
 		outputs []*common2.OutputInfo) (interfaces.Transaction, error)
+
+	// temp use
+	LastRenewalDPoSV2Votes map[common.Uint256]struct{}
 }
 
 func (s *State) DPoSV2Started() bool {
@@ -546,8 +619,8 @@ func (s *State) dposV2Started() bool {
 
 func (s *State) isDposV2Active() bool {
 	log.Errorf("isDposV2Active len(a.DposV2EffectedProducers) %d  GeneralArbiters %d", len(s.DposV2EffectedProducers),
-		s.ChainParams.GeneralArbiters)
-	return len(s.DposV2EffectedProducers) >= s.ChainParams.GeneralArbiters*3/2
+		s.ChainParams.DPoSConfiguration.NormalArbitratorsCount)
+	return len(s.DposV2EffectedProducers) >= s.ChainParams.DPoSConfiguration.NormalArbitratorsCount*3/2
 }
 
 func (s *State) GetRealWithdrawTransactions() map[common.Uint256]common2.OutputInfo {
@@ -715,7 +788,7 @@ func (s *State) GetAllProducersPublicKey() []string {
 	for nodePK, _ := range s.NextCRNodeOwnerKeys {
 		nodePublicKeys = append(nodePublicKeys, nodePK)
 	}
-	for _, nodePK := range s.ChainParams.CRCArbiters {
+	for _, nodePK := range s.ChainParams.DPoSConfiguration.CRCArbiters {
 		nodePublicKeys = append(nodePublicKeys, nodePK)
 	}
 	return nodePublicKeys
@@ -814,6 +887,16 @@ func (s *State) getAllNodePublicKey() map[string]struct{} {
 		nodePublicKeyMap[strNodePublicKey] = struct{}{}
 	}
 	return nodePublicKeyMap
+}
+func (s *State) GetNFTReferKey(nftID common.Uint256) (common.Uint256, error) {
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
+	nftInfo, exist := s.NFTIDInfoHashMap[nftID]
+	if !exist {
+		return common.Uint256{}, errors.New("nft is not exist")
+	}
+
+	return nftInfo.ReferKey, nil
 }
 
 // GetPendingProducers returns all producers that in pending state.
@@ -1036,7 +1119,7 @@ func (s *State) IsAbleToRecoverFromInactiveMode() bool {
 // IsAbleToRecoverFromInactiveMode returns if there are enough active arbiters
 func (s *State) IsAbleToRecoverFromUnderstaffedState() bool {
 	s.mtx.RLock()
-	result := len(s.ActivityProducers) >= s.ChainParams.GeneralArbiters
+	result := len(s.ActivityProducers) >= s.ChainParams.DPoSConfiguration.NormalArbitratorsCount
 	s.mtx.RUnlock()
 	return result
 }
@@ -1209,9 +1292,9 @@ func (s *State) ProcessBlock(block *types.Block, confirm *payload.Confirm, dutyI
 	if confirm != nil {
 		if block.Height > s.DPoSV2ActiveHeight {
 			s.countArbitratorsInactivityV3(block.Height, confirm, dutyIndex)
-		} else if block.Height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+		} else if block.Height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 			s.countArbitratorsInactivityV2(block.Height, confirm)
-		} else if block.Height >= s.ChainParams.CRClaimDPOSNodeStartHeight {
+		} else if block.Height >= s.ChainParams.CRConfiguration.CRClaimDPOSNodeStartHeight {
 			s.countArbitratorsInactivityV1(block.Height, confirm)
 		} else {
 			s.countArbitratorsInactivityV0(block.Height, confirm)
@@ -1225,7 +1308,7 @@ func (s *State) ProcessBlock(block *types.Block, confirm *payload.Confirm, dutyI
 
 	if block.Height >= s.ChainParams.DPoSV2StartHeight &&
 		len(s.VotesWithdrawableTxInfo) != 0 {
-		s.createRealUnstakeTransaction(block.Height)
+		s.createRealWithdrawTransaction(block.Height)
 	}
 
 	// todo remove me
@@ -1237,8 +1320,8 @@ func (s *State) ProcessBlock(block *types.Block, confirm *payload.Confirm, dutyI
 	s.History.Commit(block.Height)
 }
 
-func (s *State) createRealUnstakeTransaction(height uint32) {
-	if s.createUnstakeRealWithdrawTransaction != nil && height == s.getHeight() {
+func (s *State) createRealWithdrawTransaction(height uint32) {
+	if s.createVotesRealWithdrawTransaction != nil && height == s.getHeight() {
 		retVoteswithdrawTxHashes := make([]common.Uint256, 0)
 		ouputs := make([]*common2.OutputInfo, 0)
 		for k, v := range s.VotesWithdrawableTxInfo {
@@ -1246,13 +1329,13 @@ func (s *State) createRealUnstakeTransaction(height uint32) {
 			outputInfo := v
 			ouputs = append(ouputs, &outputInfo)
 		}
-		tx, err := s.createUnstakeRealWithdrawTransaction(retVoteswithdrawTxHashes, ouputs)
+		tx, err := s.createVotesRealWithdrawTransaction(retVoteswithdrawTxHashes, ouputs)
 		if err != nil {
-			log.Error("create real unstake tx failed:", err.Error())
+			log.Error("create real return votes tx failed:", err.Error())
 			return
 		}
 
-		log.Info("create real unstake transaction:", tx.Hash())
+		log.Info("create real return votes transaction:", tx.Hash())
 		if s.isCurrent != nil && s.broadcast != nil && s.
 			appendToTxpool != nil {
 			go func() {
@@ -1260,7 +1343,7 @@ func (s *State) createRealUnstakeTransaction(height uint32) {
 					if err := s.appendToTxpool(tx); err == nil {
 						s.broadcast(msg.NewTx(tx))
 					} else {
-						log.Warn("create real unstake tx "+
+						log.Warn("create real return votes tx "+
 							"append to tx pool err ", err)
 					}
 				}
@@ -1307,7 +1390,7 @@ type StateFuncsConfig struct {
 	GetHeight                           func() uint32
 	CreateDposV2RealWithdrawTransaction func(withdrawTransactionHashes []common.Uint256,
 		outpus []*common2.OutputInfo) (interfaces.Transaction, error)
-	CreateUnstakeRealWithdrawTransaction func(withdrawTransactionHashes []common.Uint256,
+	CreateVotesRealWithdrawTransaction func(withdrawTransactionHashes []common.Uint256,
 		outpus []*common2.OutputInfo) (interfaces.Transaction, error)
 	IsCurrent      func() bool
 	Broadcast      func(msg p2p.Message)
@@ -1316,7 +1399,7 @@ type StateFuncsConfig struct {
 
 func (c *State) RegisterFuncitons(cfg *StateFuncsConfig) {
 	c.createDposV2RealWithdrawTransaction = cfg.CreateDposV2RealWithdrawTransaction
-	c.createUnstakeRealWithdrawTransaction = cfg.CreateUnstakeRealWithdrawTransaction
+	c.createVotesRealWithdrawTransaction = cfg.CreateVotesRealWithdrawTransaction
 	c.isCurrent = cfg.IsCurrent
 	c.broadcast = cfg.Broadcast
 	c.appendToTxpool = cfg.AppendToTxpool
@@ -1414,7 +1497,7 @@ func (s *State) updateProducersDepositCoin(height uint32) {
 
 	canceledProducers := s.getCanceledProducers()
 	for _, producer := range canceledProducers {
-		if height-producer.CancelHeight() == s.ChainParams.CRDepositLockupBlocks {
+		if height-producer.CancelHeight() == s.ChainParams.CRConfiguration.DepositLockupBlocks {
 			updateDepositCoin(producer)
 		}
 	}
@@ -1441,11 +1524,29 @@ func (s *State) ProcessVoteStatisticsBlock(block *types.Block) {
 	}
 }
 
+func (s *State) ifCreatedNFT(referKey common.Uint256) bool {
+	for _, nftinfo := range s.NFTIDInfoHashMap {
+		if nftinfo.ReferKey.IsEqual(referKey) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *State) getNFTID(referKey common.Uint256) (bool, common.Uint256) {
+	for nftID, nftinfo := range s.NFTIDInfoHashMap {
+		if nftinfo.ReferKey.IsEqual(referKey) {
+			return true, nftID
+		}
+	}
+	return false, common.Uint256{}
+}
+
 // processTransactions takes the transactions and the height when they have been
 // packed into a block.  Then loop through the transactions to update producers
 // state and votes according to transactions content.
 func (s *State) processTransactions(txs []interfaces.Transaction, height uint32) {
-
+	s.LastRenewalDPoSV2Votes = make(map[common.Uint256]struct{}, 0)
 	for _, tx := range txs {
 		s.processTransaction(tx, height)
 	}
@@ -1508,8 +1609,12 @@ func (s *State) processTransactions(txs []interfaces.Transaction, height uint32)
 			s.Nicknames[producer.info.NickName] = struct{}{}
 		})
 	}
-
-	cleanExpiredDposV2Votes := func(key common.Uint256, stakeAddress common.Uint168, detailVoteInfo payload.DetailedVoteInfo, producer *Producer) {
+	//key is referkey  stake address
+	cleanExpiredDposV2Votes := func(key common.Uint256, stakeAddress common.Uint168,
+		detailVoteInfo payload.DetailedVoteInfo, producer *Producer) {
+		if _, ok := s.LastRenewalDPoSV2Votes[detailVoteInfo.ReferKey()]; ok {
+			return
+		}
 
 		for _, i := range detailVoteInfo.Info {
 			info := i
@@ -1518,16 +1623,30 @@ func (s *State) processTransactions(txs []interfaces.Transaction, height uint32)
 			}, func() {
 				s.UsedDposV2Votes[stakeAddress] += info.Votes
 			})
-
 			voteRights := producer.GetTotalDPoSV2VoteRights()
-
+			//if this vote create nft
+			exist, nftID := s.getNFTID(key)
 			s.History.Append(height, func() {
+				if exist {
+					if producer.expiredNFTVotes == nil {
+						producer.expiredNFTVotes = make(map[common.Uint168]payload.DetailedVoteInfo)
+					}
+					ct, _ := contract.CreateStakeContractByCode(nftID.Bytes())
+					nftStakeAddress := ct.ToProgramHash()
+					producer.expiredNFTVotes[*nftStakeAddress] = detailVoteInfo
+				}
 				delete(producer.detailedDPoSV2Votes[stakeAddress], key)
 				producer.dposV2Votes -= info.Votes
 				if voteRights < float64(s.ChainParams.DPoSV2EffectiveVotes) {
 					delete(s.DposV2EffectedProducers, hex.EncodeToString(producer.OwnerPublicKey()))
 				}
 			}, func() {
+				if exist {
+					ct, _ := contract.CreateStakeContractByCode(nftID.Bytes())
+					nftStakeAddress := ct.ToProgramHash()
+					delete(producer.expiredNFTVotes, *nftStakeAddress)
+				}
+
 				if producer.detailedDPoSV2Votes == nil {
 					producer.detailedDPoSV2Votes = make(map[common.Uint168]map[common.Uint256]payload.DetailedVoteInfo)
 				}
@@ -1643,7 +1762,7 @@ func (s *State) processTransaction(tx interfaces.Transaction, height uint32) {
 	case common2.TransferAsset:
 		s.processVotes(tx, height)
 
-	case common2.Stake:
+	case common2.ExchangeVotes:
 		s.processStake(tx, height)
 
 	case common2.Voting:
@@ -1691,14 +1810,20 @@ func (s *State) processTransaction(tx interfaces.Transaction, height uint32) {
 	case common2.DposV2ClaimReward:
 		s.processDposV2ClaimReward(tx, height)
 
-	case common2.Unstake:
-		s.processUnstake(tx, height)
+	case common2.ReturnVotes:
+		s.processReturnVotes(tx, height)
 
 	case common2.DposV2ClaimRewardRealWithdraw:
 		s.processDposV2ClaimRewardRealWithdraw(tx, height)
 
-	case common2.UnstakeRealWithdraw:
+	case common2.VotesRealWithdraw:
 		s.processRetVotesRewardRealWithdraw(tx, height)
+
+	case common2.CreateNFT:
+		s.processCreateNFT(tx, height)
+
+	case common2.NFTDestroyFromSideChain:
+		s.processNFTDestroyFromSideChain(tx, height)
 	}
 
 	if tx.TxType() != common2.RegisterProducer {
@@ -1893,7 +2018,7 @@ func (s *State) processVotes(tx interfaces.Transaction, height uint32) {
 // validate and update producers votes.
 func (s *State) processStake(tx interfaces.Transaction, height uint32) {
 	ot := tx.Outputs()[0]
-	pld := ot.Payload.(*outputpayload.StakeOutput)
+	pld := ot.Payload.(*outputpayload.ExchangeVotesOutput)
 	s.History.Append(height, func() {
 		s.DposV2VoteRights[pld.StakeAddress] += ot.Value
 	}, func() {
@@ -1960,14 +2085,6 @@ func (s *State) processVoting(tx interfaces.Transaction, height uint32) {
 func (s *State) processVotingContent(tx interfaces.Transaction, height uint32) {
 	// get stake address(program hash)
 	code := tx.Programs()[0].Code
-	signType, _ := crypto.GetScriptType(code)
-	var prefixType byte
-	if signType == vm.CHECKSIG {
-		prefixType = byte(contract.PrefixStandard)
-	} else if signType == vm.CHECKMULTISIG {
-		prefixType = byte(contract.PrefixMultiSig)
-	}
-
 	ct, _ := contract.CreateStakeContractByCode(code)
 	stakeAddress := ct.ToProgramHash()
 	pld := tx.Payload().(*payload.Voting)
@@ -2039,7 +2156,6 @@ func (s *State) processVotingContent(tx interfaces.Transaction, height uint32) {
 					PayloadVersion:   tx.PayloadVersion(),
 					VoteType:         content.VoteType,
 					Info:             []payload.VotesWithLockTime{voteInfo},
-					PrefixType:       prefixType,
 				}
 				s.History.Append(height, func() {
 					if producer.detailedDPoSV2Votes == nil {
@@ -2074,14 +2190,6 @@ func (s *State) processRenewalVotingContent(tx interfaces.Transaction, height ui
 	code := tx.Programs()[0].Code
 	ct, _ := contract.CreateStakeContractByCode(code)
 	stakeAddress := ct.ToProgramHash()
-	signType, _ := crypto.GetScriptType(code)
-	var prefixType byte
-	if signType == vm.CHECKSIG {
-		prefixType = byte(contract.PrefixStandard)
-	} else if signType == vm.CHECKMULTISIG {
-		prefixType = byte(contract.PrefixMultiSig)
-	}
-
 	pld := tx.Payload().(*payload.Voting)
 	for _, cont := range pld.RenewalContents {
 		content := cont
@@ -2101,8 +2209,9 @@ func (s *State) processRenewalVotingContent(tx interfaces.Transaction, height ui
 			PayloadVersion:   voteInfo.PayloadVersion,
 			VoteType:         outputpayload.DposV2,
 			Info:             []payload.VotesWithLockTime{content.VotesInfo},
-			PrefixType:       prefixType,
 		}
+
+		s.LastRenewalDPoSV2Votes[content.ReferKey] = struct{}{}
 
 		referKey := detailVoteInfo.ReferKey()
 		s.History.Append(height, func() {
@@ -2482,10 +2591,10 @@ func (s *State) getClaimedCRMembersMap() map[string]*state.CRMember {
 	return crMembersMap
 }
 
-func (s *State) processUnstake(tx interfaces.Transaction, height uint32) {
-	pld := tx.Payload().(*payload.Unstake)
+func (s *State) processReturnVotes(tx interfaces.Transaction, height uint32) {
+	pld := tx.Payload().(*payload.ReturnVotes)
 	var code []byte
-	if tx.PayloadVersion() == payload.UnstakeVersionV0 {
+	if tx.PayloadVersion() == payload.ReturnVotesVersionV0 {
 		code = pld.Code
 	} else {
 		code = tx.Programs()[0].Code
@@ -2517,17 +2626,18 @@ func (s *State) processDposV2ClaimReward(tx interfaces.Transaction, height uint3
 	}
 
 	programHash, _ := utils.GetProgramHashByCode(code)
-	addr, _ := programHash.ToAddress()
+	stakeProgramHash := common.Uint168FromCodeHash(byte(contract.PrefixDPoSV2), programHash.ToCodeHash())
+	addr, _ := stakeProgramHash.ToAddress()
 	s.History.Append(height, func() {
-		s.DposV2RewardInfo[addr] -= pld.Value
+		s.DPoSV2RewardInfo[addr] -= pld.Value
 		s.DposV2RewardClaimingInfo[addr] += pld.Value
 		s.WithdrawableTxInfo[tx.Hash()] = common2.OutputInfo{
 			Recipient: pld.ToAddr,
 			Amount:    pld.Value,
 		}
-		s.ClaimingRewardAddr[tx.Hash()] = *programHash
+		s.ClaimingRewardAddr[tx.Hash()] = stakeProgramHash
 	}, func() {
-		s.DposV2RewardInfo[addr] += pld.Value
+		s.DPoSV2RewardInfo[addr] += pld.Value
 		s.DposV2RewardClaimingInfo[addr] -= pld.Value
 		delete(s.WithdrawableTxInfo, tx.Hash())
 		delete(s.ClaimingRewardAddr, tx.Hash())
@@ -2540,14 +2650,69 @@ func (s *State) processRetVotesRewardRealWithdraw(tx interfaces.Transaction, hei
 	for k, v := range s.StateKeyFrame.VotesWithdrawableTxInfo {
 		txs[k] = v
 	}
-	withdrawPayload := tx.Payload().(*payload.UnstakeRealWithdrawPayload)
+	withdrawPayload := tx.Payload().(*payload.VotesRealWithdrawPayload)
 	s.History.Append(height, func() {
-		for _, realUnstake := range withdrawPayload.UnstakeRealWithdraw {
-			delete(s.StateKeyFrame.VotesWithdrawableTxInfo, realUnstake.UnstakeTXHash)
+		for _, realReturnVotes := range withdrawPayload.VotesRealWithdraw {
+			delete(s.StateKeyFrame.VotesWithdrawableTxInfo, realReturnVotes.ReturnVotesTXHash)
 		}
 	}, func() {
 		s.StateKeyFrame.VotesWithdrawableTxInfo = txs
 	})
+}
+
+func (s *State) processCreateNFT(tx interfaces.Transaction, height uint32) {
+	nftPayload := tx.Payload().(*payload.CreateNFT)
+	nftID := common.GetNFTID(nftPayload.ReferKey, tx.Hash())
+
+	// record the relationship map between ID and genesis block hash
+	s.NFTIDInfoHashMap[nftID] = payload.NFTInfo{
+		ReferKey:         nftPayload.ReferKey,
+		GenesisBlockHash: nftPayload.GenesisBlockHash,
+		CreateNFTTxHash:  tx.Hash(),
+	}
+
+	producers := s.getDposV2Producers()
+	for _, producer := range producers {
+		for stakeAddress, votesInfo := range producer.GetAllDetailedDPoSV2Votes() {
+			for referKey, detailVoteInfo := range votesInfo {
+				if referKey.IsEqual(nftPayload.ReferKey) {
+					ct, _ := contract.CreateStakeContractByCode(nftID.Bytes())
+					nftStakeAddress := ct.ToProgramHash()
+					nftAmount := detailVoteInfo.Info[0].Votes
+					s.History.Append(height, func() {
+						if _, ok := producer.detailedDPoSV2Votes[*nftStakeAddress]; !ok {
+							producer.detailedDPoSV2Votes[*nftStakeAddress] = make(map[common.Uint256]payload.DetailedVoteInfo)
+						}
+						//change vote's owner
+						detailVoteInfo.StakeProgramHash = *nftStakeAddress
+						producer.detailedDPoSV2Votes[*nftStakeAddress][referKey] = detailVoteInfo
+						delete(producer.detailedDPoSV2Votes[stakeAddress], nftPayload.ReferKey)
+						// process total vote rights
+						s.DposV2VoteRights[stakeAddress] -= nftAmount
+						if s.DposV2VoteRights[stakeAddress] == 0 {
+							delete(s.DposV2VoteRights, stakeAddress)
+						}
+						s.UsedDposV2Votes[stakeAddress] -= nftAmount
+						if s.UsedDposV2Votes[stakeAddress] == 0 {
+							delete(s.UsedDposV2Votes, stakeAddress)
+						}
+						s.UsedDposV2Votes[*nftStakeAddress] += nftAmount
+						s.DposV2VoteRights[*nftStakeAddress] += nftAmount
+					}, func() {
+						producer.detailedDPoSV2Votes[*nftStakeAddress][referKey] = detailVoteInfo
+						delete(producer.detailedDPoSV2Votes[*nftStakeAddress], referKey)
+						producer.detailedDPoSV2Votes[stakeAddress][nftPayload.ReferKey] = detailVoteInfo
+						// process total vote rights
+						s.DposV2VoteRights[stakeAddress] += nftAmount
+						s.UsedDposV2Votes[stakeAddress] += nftAmount
+						s.UsedDposV2Votes[*nftStakeAddress] -= nftAmount
+						s.DposV2VoteRights[*nftStakeAddress] -= nftAmount
+					})
+					return
+				}
+			}
+		}
+	}
 }
 
 func (s *State) processDposV2ClaimRewardRealWithdraw(tx interfaces.Transaction, height uint32) {
@@ -2658,12 +2823,224 @@ func (s *State) RemoveSpecialTx(hash common.Uint256) {
 func (s *State) getIllegalPenaltyByHeight(height uint32) common.Fixed64 {
 	var illegalPenalty common.Fixed64
 	if height >= s.DPoSV2ActiveHeight {
-		illegalPenalty = s.ChainParams.DPoSV2IllegalPenalty
-	} else if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
-		illegalPenalty = s.ChainParams.IllegalPenalty
+		illegalPenalty = s.ChainParams.DPoSConfiguration.DPoSV2IllegalPenalty
+	} else if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
+		illegalPenalty = s.ChainParams.DPoSConfiguration.IllegalPenalty
 	}
 
 	return illegalPenalty
+}
+
+func (s *State) IsNFTIDBelongToSideChain(id, genesisBlockHash common.Uint256) bool {
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
+
+	if v, ok := s.NFTIDInfoHashMap[id]; ok {
+		if v.GenesisBlockHash.IsEqual(genesisBlockHash) {
+			return true
+		}
+
+	}
+	log.Warnf("id genesisBlockHash not match, id:%s genesisBlockHash %s", id.String(), genesisBlockHash.String())
+	return false
+}
+
+func (s *State) processNFTDestroyFromSideChain(tx interfaces.Transaction, height uint32) {
+	nftDestroyPayload := tx.Payload().(*payload.NFTDestroyFromSideChain)
+
+	// remove the relationship between NFT id and genesis block hash
+	oriNFTInfoMap := make(map[common.Uint256]payload.NFTInfo, 0)
+	for _, id := range nftDestroyPayload.IDs {
+		nftInfo := s.NFTIDInfoHashMap[id]
+		oriNFTInfoMap[id] = nftInfo
+	}
+	s.History.Append(height, func() {
+		for _, id := range nftDestroyPayload.IDs {
+			delete(s.NFTIDInfoHashMap, id)
+		}
+	}, func() {
+		for id, nftInfo := range oriNFTInfoMap {
+			s.NFTIDInfoHashMap[id] = nftInfo
+		}
+	})
+
+	producers := s.getDposV2Producers()
+	//deal with not expired nft votes
+	for i := 0; i < len(nftDestroyPayload.IDs); i++ {
+		newOwnerStakeAddress := nftDestroyPayload.OwnerStakeAddresses[i]
+		nftID := nftDestroyPayload.IDs[i]
+		nftInfo := oriNFTInfoMap[nftID]
+	out:
+		for _, producer := range producers {
+			for stakeAddress, votesInfo := range producer.GetAllDetailedDPoSV2Votes() {
+				for referKey, detailVoteInfo := range votesInfo {
+					if common.GetNFTID(referKey, nftInfo.CreateNFTTxHash).IsEqual(nftID) {
+						strNFTStakeAddress, _ := stakeAddress.ToAddress()
+						strOwnerStakeAddress, _ := newOwnerStakeAddress.ToAddress()
+						oriRewardsInfo := s.DPoSV2RewardInfo[strNFTStakeAddress]
+						nftAmount := detailVoteInfo.Info[0].Votes
+						s.History.Append(height, func() {
+							s.UsedDposV2Votes[stakeAddress] -= nftAmount
+							s.DposV2VoteRights[stakeAddress] -= nftAmount
+
+							s.DposV2VoteRights[newOwnerStakeAddress] += nftAmount
+							s.UsedDposV2Votes[newOwnerStakeAddress] += nftAmount
+							//remove nft stake address for future create new nft .
+							delete(producer.detailedDPoSV2Votes[stakeAddress], referKey)
+							s.DPoSV2RewardInfo[strOwnerStakeAddress] += s.DPoSV2RewardInfo[strNFTStakeAddress]
+							delete(s.DPoSV2RewardInfo, strNFTStakeAddress)
+							//detailVoteInfo add to new owner nftDestroyPayload.OwnerStakeAddresses
+							if len(producer.detailedDPoSV2Votes[newOwnerStakeAddress]) == 0 {
+								producer.detailedDPoSV2Votes[newOwnerStakeAddress] = make(map[common.Uint256]payload.DetailedVoteInfo)
+							}
+
+							//change vote's owner
+							detailVoteInfo.StakeProgramHash = newOwnerStakeAddress
+							producer.detailedDPoSV2Votes[newOwnerStakeAddress][referKey] = detailVoteInfo
+
+						}, func() {
+							s.UsedDposV2Votes[stakeAddress] += nftAmount
+							s.DposV2VoteRights[stakeAddress] += nftAmount
+							//process total vote rights
+							s.DposV2VoteRights[newOwnerStakeAddress] -= nftAmount
+							if s.DposV2VoteRights[newOwnerStakeAddress] == 0 {
+								delete(s.DposV2VoteRights, newOwnerStakeAddress)
+							}
+							s.UsedDposV2Votes[newOwnerStakeAddress] -= nftAmount
+							if s.UsedDposV2Votes[newOwnerStakeAddress] == 0 {
+								delete(s.UsedDposV2Votes, newOwnerStakeAddress)
+							}
+							//add detailVoteInfo to  nft stake address
+							if len(producer.detailedDPoSV2Votes[stakeAddress]) == 0 {
+								producer.detailedDPoSV2Votes[stakeAddress] = make(map[common.Uint256]payload.DetailedVoteInfo)
+							}
+							producer.detailedDPoSV2Votes[stakeAddress][referKey] = detailVoteInfo
+							//remove owner's detailVoteInfo
+							delete(producer.detailedDPoSV2Votes[newOwnerStakeAddress], referKey)
+							s.DPoSV2RewardInfo[strOwnerStakeAddress] -= s.DPoSV2RewardInfo[strNFTStakeAddress]
+							s.DPoSV2RewardInfo[strNFTStakeAddress] = oriRewardsInfo
+							if s.DPoSV2RewardInfo[strOwnerStakeAddress] == 0 {
+								delete(s.DPoSV2RewardInfo, strOwnerStakeAddress)
+							}
+						})
+						break out
+					}
+				}
+			}
+		}
+	}
+
+	//deal with  expired nft votes
+	for i := 0; i < len(nftDestroyPayload.IDs); i++ {
+		newOwnerStakeAddress := nftDestroyPayload.OwnerStakeAddresses[i]
+		nftID := nftDestroyPayload.IDs[i]
+		nftInfo := oriNFTInfoMap[nftID]
+	out2:
+		for _, producer := range producers {
+			for stakeAddress, votesInfo := range producer.expiredNFTVotes {
+				if common.GetNFTID(votesInfo.ReferKey(), nftInfo.CreateNFTTxHash).IsEqual(nftID) {
+					strNFTStakeAddress, _ := stakeAddress.ToAddress()
+					strOwnerStakeAddress, _ := newOwnerStakeAddress.ToAddress()
+					oriRewardsInfo := s.DPoSV2RewardInfo[strNFTStakeAddress]
+					nftAmount := votesInfo.Info[0].Votes
+					s.History.Append(height, func() {
+						//process total vote rights
+						s.DposV2VoteRights[stakeAddress] -= nftAmount
+						s.DposV2VoteRights[newOwnerStakeAddress] += nftAmount
+						//s.UsedDposV2Votes[newOwnerStakeAddress] += nftAmount
+						//remove nft stake address for future create new nft .
+						delete(producer.expiredNFTVotes, stakeAddress)
+						s.DPoSV2RewardInfo[strOwnerStakeAddress] += s.DPoSV2RewardInfo[strNFTStakeAddress]
+						delete(s.DPoSV2RewardInfo, strNFTStakeAddress)
+						//detailVoteInfo add to new owner nftDestroyPayload.OwnerStakeAddresses
+						//if len(producer.detailedDPoSV2Votes[newOwnerStakeAddress]) == 0 {
+						//	producer.detailedDPoSV2Votes[newOwnerStakeAddress] = make(map[common.Uint256]payload.DetailedVoteInfo)
+						//}
+
+						//// if we destroy one expired votes,no need add anymore
+						//votesInfo.StakeProgramHash = newOwnerStakeAddress
+						//producer.expiredNFTVotes[newOwnerStakeAddress] = votesInfo
+
+					}, func() {
+						//process total vote rights
+						s.DposV2VoteRights[stakeAddress] += nftAmount
+						s.DposV2VoteRights[newOwnerStakeAddress] -= nftAmount
+						if s.DposV2VoteRights[newOwnerStakeAddress] == 0 {
+							delete(s.DposV2VoteRights, newOwnerStakeAddress)
+						}
+						s.UsedDposV2Votes[newOwnerStakeAddress] -= nftAmount
+						if s.UsedDposV2Votes[newOwnerStakeAddress] == 0 {
+							delete(s.UsedDposV2Votes, newOwnerStakeAddress)
+						}
+						////add detailVoteInfo to  nft stake address
+						//if len(producer.detailedDPoSV2Votes[stakeAddress]) == 0 {
+						//	producer.detailedDPoSV2Votes[stakeAddress] = make(map[common.Uint256]payload.DetailedVoteInfo)
+						//}
+						producer.expiredNFTVotes[stakeAddress] = votesInfo
+						//remove owner's detailVoteInfo
+						//delete(producer.expiredNFTVotes, newOwnerStakeAddress)
+						s.DPoSV2RewardInfo[strOwnerStakeAddress] -= s.DPoSV2RewardInfo[strNFTStakeAddress]
+						s.DPoSV2RewardInfo[strNFTStakeAddress] = oriRewardsInfo
+						if s.DPoSV2RewardInfo[strOwnerStakeAddress] == 0 {
+							delete(s.DPoSV2RewardInfo, strOwnerStakeAddress)
+						}
+					})
+					break out2
+				}
+			}
+		}
+	}
+}
+
+func (s *State) ExistNFTID(id common.Uint256) bool {
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
+	_, exist := s.NFTIDInfoHashMap[id]
+
+	return exist
+}
+
+func (s *State) CanNFTDestroy(IDs []common.Uint256) []common.Uint256 {
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
+
+	producers := s.getDposV2Producers()
+	var canDestroyIDs []common.Uint256
+
+	for i := 0; i < len(IDs); i++ {
+		ID := IDs[i]
+		nftInfo, exist := s.NFTIDInfoHashMap[ID]
+		if !exist {
+			continue
+		}
+	out:
+		for _, p := range producers {
+			for stakeAddress, votesInfo := range p.detailedDPoSV2Votes {
+				for referKey, _ := range votesInfo {
+					nftID := common.GetNFTID(referKey, nftInfo.CreateNFTTxHash)
+					if nftID.IsEqual(ID) {
+						ct, _ := contract.CreateStakeContractByCode(nftID.Bytes())
+						nftStakeAddress := ct.ToProgramHash()
+						if stakeAddress.IsEqual(*nftStakeAddress) {
+							canDestroyIDs = append(canDestroyIDs, ID)
+						} else {
+							log.Info("CanNFTDestroy NFT, not created:", ID)
+						}
+						break out
+					}
+				}
+			}
+
+			for _, expiredVotesInfo := range p.GetExpiredNFTVotes() {
+				nftID := common.GetNFTID(expiredVotesInfo.ReferKey(), nftInfo.CreateNFTTxHash)
+				if nftID.IsEqual(ID) {
+					canDestroyIDs = append(canDestroyIDs, ID)
+					break out
+				}
+			}
+		}
+	}
+	return canDestroyIDs
 }
 
 // processIllegalEvidence takes the illegal evidence payload and change producer
@@ -2728,7 +3105,7 @@ func (s *State) processIllegalEvidence(payloadData interfaces.Payload,
 				producer.illegalHeight = height
 				s.IllegalProducers[key] = producer
 				producer.activateRequestHeight = math.MaxUint32
-				if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+				if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 					producer.penalty += illegalPenalty
 				}
 				delete(s.ActivityProducers, key)
@@ -2752,7 +3129,7 @@ func (s *State) processIllegalEvidence(payloadData interfaces.Payload,
 				producer.illegalHeight = height
 				s.IllegalProducers[key] = producer
 				producer.activateRequestHeight = math.MaxUint32
-				if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+				if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 					producer.penalty += illegalPenalty
 				}
 				delete(s.InactiveProducers, key)
@@ -2773,7 +3150,7 @@ func (s *State) processIllegalEvidence(payloadData interfaces.Payload,
 			s.History.Append(height, func() {
 				producer.illegalHeight = height
 				producer.activateRequestHeight = math.MaxUint32
-				if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+				if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 					producer.penalty += illegalPenalty
 				}
 			}, func() {
@@ -2791,7 +3168,7 @@ func (s *State) processIllegalEvidence(payloadData interfaces.Payload,
 				producer.state = Illegal
 				producer.illegalHeight = height
 				s.IllegalProducers[key] = producer
-				if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+				if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 					producer.penalty += illegalPenalty
 				}
 				delete(s.CanceledProducers, key)
@@ -2834,14 +3211,14 @@ func (s *State) setInactiveProducer(producer *Producer, key string,
 	s.InactiveProducers[key] = producer
 	delete(s.ActivityProducers, key)
 
-	var penalty = s.ChainParams.InactivePenalty
+	var penalty = s.ChainParams.DPoSConfiguration.InactivePenalty
 	if height < s.VersionStartHeight || height >= s.VersionEndHeight {
 		if !emergency {
-			if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+			if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 				producer.penalty += penalty
 			}
 		} else {
-			producer.penalty += s.ChainParams.EmergencyInactivePenalty
+			producer.penalty += s.ChainParams.DPoSConfiguration.EmergencyInactivePenalty
 
 		}
 	}
@@ -2856,10 +3233,10 @@ func (s *State) revertSettingInactiveProducer(producer *Producer, key string,
 	s.ActivityProducers[key] = producer
 	delete(s.InactiveProducers, key)
 
-	var penalty = s.ChainParams.InactivePenalty
+	var penalty = s.ChainParams.DPoSConfiguration.InactivePenalty
 	if height < s.VersionStartHeight || height >= s.VersionEndHeight {
 		if emergency {
-			penalty = s.ChainParams.EmergencyInactivePenalty
+			penalty = s.ChainParams.DPoSConfiguration.EmergencyInactivePenalty
 		}
 
 		if producer.penalty < penalty {
@@ -2879,9 +3256,9 @@ func (s *State) countArbitratorsInactivityV3(height uint32,
 		return
 	}
 
-	lastPosition := dutyIndex == s.ChainParams.GeneralArbiters+len(s.ChainParams.CRCArbiters)-1
+	lastPosition := dutyIndex == s.ChainParams.DPoSConfiguration.NormalArbitratorsCount+len(s.ChainParams.DPoSConfiguration.CRCArbiters)-1
 
-	isDPOSAsCR := height > s.ChainParams.ChangeCommitteeNewCRHeight
+	isDPOSAsCR := height > s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight
 
 	// changingArbiters indicates the arbiters that should reset inactive
 	// counting state. With the value of true means the producer is on duty or
@@ -2985,7 +3362,7 @@ func (s *State) updateCRMemberInactiveCountV2(lastPosition, needReset, workedInR
 			member.InactiveCountV2 += 1
 			if member.InactiveCountV2 >= 3 {
 				member.MemberState = state.MemberInactive
-				if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+				if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 					s.updateCRInactivePenalty(member.Info.CID, height)
 				}
 				member.InactiveCountV2 = 0
@@ -2993,7 +3370,7 @@ func (s *State) updateCRMemberInactiveCountV2(lastPosition, needReset, workedInR
 		}, func() {
 			if member.MemberState == state.MemberInactive && member.InactiveCountV2 >= 3 {
 				member.MemberState = state.MemberElected
-				if height >= s.ChainParams.ChangeCommitteeNewCRHeight {
+				if height >= s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight {
 					s.revertUpdateCRInactivePenalty(member.Info.CID, height)
 				}
 			}
@@ -3044,7 +3421,7 @@ func (s *State) countArbitratorsInactivityV2(height uint32,
 		return
 	}
 
-	isDPOSAsCR := height > s.ChainParams.ChangeCommitteeNewCRHeight
+	isDPOSAsCR := height > s.ChainParams.CRConfiguration.ChangeCommitteeNewCRHeight
 
 	// changingArbiters indicates the arbiters that should reset inactive
 	// counting state. With the value of true means the producer is on duty or
@@ -3280,12 +3657,12 @@ func (s *State) tryUpdateInactivityV2(key string, producer *Producer,
 
 	if producer.selected {
 		producer.randomCandidateInactiveCount++
-		if producer.randomCandidateInactiveCount >= s.ChainParams.MaxInactiveRoundsOfRandomNode {
+		if producer.randomCandidateInactiveCount >= s.ChainParams.DPoSConfiguration.MaxInactiveRoundsOfRandomNode {
 			s.setInactiveProducer(producer, key, height, false)
 		}
 	} else {
 		producer.inactiveCount++
-		if producer.inactiveCount >= s.ChainParams.MaxInactiveRounds {
+		if producer.inactiveCount >= s.ChainParams.DPoSConfiguration.MaxInactiveRounds {
 			s.setInactiveProducer(producer, key, height, false)
 			producer.inactiveCount = 0
 		}
@@ -3304,7 +3681,7 @@ func (s *State) tryUpdateInactivity(key string, producer *Producer,
 		producer.inactiveCountingHeight = height
 	}
 
-	if height-producer.inactiveCountingHeight >= s.ChainParams.MaxInactiveRounds {
+	if height-producer.inactiveCountingHeight >= s.ChainParams.DPoSConfiguration.MaxInactiveRounds {
 		s.setInactiveProducer(producer, key, height, false)
 		producer.inactiveCountingHeight = 0
 	}
@@ -3367,7 +3744,7 @@ func (s *State) GetLastIrreversibleHeight() uint32 {
 }
 
 func (s *State) tryUpdateLastIrreversibleHeight(height uint32) {
-	if height < s.ChainParams.RevertToPOWStartHeight {
+	if height < s.ChainParams.DPoSConfiguration.RevertToPOWStartHeight {
 		return
 	}
 
@@ -3407,7 +3784,6 @@ func (s *State) tryUpdateLastIrreversibleHeight(height uint32) {
 				log.Debugf("[tryUpdateLastIrreversibleHeight] LastIrreversibleHeight %d, DPOSStartHeight %d",
 					s.LastIrreversibleHeight, s.DPOSStartHeight)
 			}, func() {
-				s.LastIrreversibleHeight = oriLastIrreversibleHeight
 				s.DPOSStartHeight = oriDPOSStartHeight
 				log.Debugf("[tryUpdateLastIrreversibleHeight] rollback LastIrreversibleHeight %d, DPOSStartHeight %d",
 					s.LastIrreversibleHeight, s.DPOSStartHeight)
@@ -3416,7 +3792,7 @@ func (s *State) tryUpdateLastIrreversibleHeight(height uint32) {
 	}
 }
 
-//is this Height Irreversible
+// is this Height Irreversible
 func (s *State) IsIrreversible(curBlockHeight uint32, detachNodesLen int) bool {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
@@ -3428,7 +3804,7 @@ func (s *State) IsIrreversible(curBlockHeight uint32, detachNodesLen int) bool {
 	if curBlockHeight-uint32(detachNodesLen) <= s.LastIrreversibleHeight {
 		return true
 	}
-	if curBlockHeight >= s.ChainParams.RevertToPOWStartHeight {
+	if curBlockHeight >= s.ChainParams.DPoSConfiguration.RevertToPOWStartHeight {
 		if s.ConsensusAlgorithm == DPOS {
 			if detachNodesLen >= IrreversibleHeight {
 				return true
@@ -3453,14 +3829,14 @@ func (s *State) handleEvents(event *events.Event) {
 				delete(s.NodeOwnerKeys, nodePubKey)
 			}
 		}
-		s.CurrentCRNodeOwnerKeys = s.NextCRNodeOwnerKeys
+		s.CurrentCRNodeOwnerKeys = copyStringMap(s.NextCRNodeOwnerKeys)
 		s.NextCRNodeOwnerKeys = make(map[string]string)
 		s.mtx.Unlock()
 	}
 }
 
 // NewState returns a new State instance.
-func NewState(chainParams *config.Params, getArbiters func() []*ArbiterInfo,
+func NewState(chainParams *config.Configuration, getArbiters func() []*ArbiterInfo,
 	getCRMembers func() []*state.CRMember,
 	getNextCRMembers func() []*state.CRMember,
 	isInElectionPeriod func() bool,

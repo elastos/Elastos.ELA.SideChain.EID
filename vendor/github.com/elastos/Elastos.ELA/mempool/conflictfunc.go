@@ -6,6 +6,7 @@
 package mempool
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -75,6 +76,16 @@ func hashCloseProposalTargetProposalHash(tx interfaces.Transaction) (interface{}
 		return p.TargetProposalHash, nil
 	}
 	return nil, nil
+}
+
+func hashArrayNFTDestroyFromSideChainHash(tx interfaces.Transaction) (interface{}, error) {
+	p, ok := tx.Payload().(*payload.NFTDestroyFromSideChain)
+	if !ok {
+		return nil, fmt.Errorf(
+			"CRC proposal payload cast failed, tx:%s", tx.Hash())
+	}
+
+	return p.IDs, nil
 }
 
 func hashCRCProposalSecretaryGeneralDID(tx interfaces.Transaction) (interface{}, error) {
@@ -212,6 +223,16 @@ func strCancelProducerOwnerPublicKey(tx interfaces.Transaction) (interface{},
 	return common.BytesToHexString(p.OwnerPublicKey), nil
 }
 
+func strActivateAndCancelKeys(tx interfaces.Transaction) (interface{},
+	error) {
+	if tx.TxType() != common2.CancelProducer && tx.TxType() != common2.ActivateProducer {
+		err := fmt.Errorf(
+			"invalid tx:%s", tx.Hash())
+		return nil, errors.Simple(errors.ErrTxPoolFailure, err)
+	}
+	return "activatecancel", nil
+}
+
 func strProducerInfoOwnerPublicKey(tx interfaces.Transaction) (interface{}, error) {
 	p, err := comGetProducerInfo(tx)
 	if err != nil {
@@ -256,15 +277,15 @@ func strProducerInfoNickname(tx interfaces.Transaction) (interface{}, error) {
 
 func strStake(tx interfaces.Transaction) (interface{}, error) {
 	if len(tx.Outputs()) < 1 {
-		return nil, fmt.Errorf("invlid unstake outputs count, tx:%s", tx.Hash())
+		return nil, fmt.Errorf("invlid return votes outputs count, tx:%s", tx.Hash())
 	}
 	p := tx.Outputs()[0].Payload
 	if p == nil {
-		return nil, fmt.Errorf("invlid unstake outputs payload, tx:%s", tx.Hash())
+		return nil, fmt.Errorf("invlid return votes outputs payload, tx:%s", tx.Hash())
 	}
-	pld, ok := p.(*outputpayload.StakeOutput)
+	pld, ok := p.(*outputpayload.ExchangeVotesOutput)
 	if !ok {
-		return nil, fmt.Errorf("invlid unstake output payload, tx:%s", tx.Hash())
+		return nil, fmt.Errorf("invlid return votes output payload, tx:%s", tx.Hash())
 	}
 
 	return pld.StakeAddress, nil
@@ -287,25 +308,44 @@ func strVoting(tx interfaces.Transaction) (interface{}, error) {
 	return *stakeProgramHash, nil
 }
 
-func strUnstake(tx interfaces.Transaction) (interface{}, error) {
-	pld, ok := tx.Payload().(*payload.Unstake)
+func strReturnVotes(tx interfaces.Transaction) (interface{}, error) {
+	pld, ok := tx.Payload().(*payload.ReturnVotes)
 	if !ok {
-		return nil, fmt.Errorf("invlid unstake payload, tx:%s", tx.Hash())
+		return nil, fmt.Errorf("invlid return votes payload, tx:%s", tx.Hash())
 	}
 
 	if len(tx.Programs()) < 1 {
-		return nil, fmt.Errorf("invlid unstake program, tx:%s", tx.Hash())
+		return nil, fmt.Errorf("invlid return votes program, tx:%s", tx.Hash())
 	}
 
 	var code []byte
-	if tx.PayloadVersion() == payload.UnstakeVersionV0 {
+	if tx.PayloadVersion() == payload.ReturnVotesVersionV0 {
 		code = pld.Code
 	} else {
 		code = tx.Programs()[0].Code
 	}
 	ct, err := contract.CreateStakeContractByCode(code)
 	if err != nil {
-		return nil, fmt.Errorf("invlid unstake code, tx:%s", tx.Hash())
+		return nil, fmt.Errorf("invlid return votes code, tx:%s", tx.Hash())
+	}
+	stakeProgramHash := ct.ToProgramHash()
+	return *stakeProgramHash, nil
+}
+
+func strCreateNFT(tx interfaces.Transaction) (interface{}, error) {
+	_, ok := tx.Payload().(*payload.CreateNFT)
+	if !ok {
+		return nil, fmt.Errorf("invlid create NFT payload, tx:%s", tx.Hash())
+	}
+
+	if len(tx.Programs()) < 1 {
+		return nil, fmt.Errorf("invlid create NFT program, tx:%s", tx.Hash())
+	}
+
+	code := tx.Programs()[0].Code
+	ct, err := contract.CreateStakeContractByCode(code)
+	if err != nil {
+		return nil, fmt.Errorf("invlid create NFT code, tx:%s", tx.Hash())
 	}
 	stakeProgramHash := ct.ToProgramHash()
 	return *stakeProgramHash, nil
@@ -340,13 +380,21 @@ func strRegisterCRPublicKey(tx interfaces.Transaction) (interface{}, error) {
 		return nil, err
 	}
 
-	signType, err := crypto.GetScriptType(p.Code)
+	var code []byte
+	if tx.PayloadVersion() == payload.CRInfoSchnorrVersion {
+		code = tx.Programs()[0].Code
+	} else {
+		code = p.Code
+	}
+	signType, err := crypto.GetScriptType(code)
 	if err != nil {
 		return nil, err
 	}
 
 	if signType == vm.CHECKSIG {
 		return hex.EncodeToString(p.Code[1 : len(p.Code)-1]), nil
+	} else if bytes.Equal(p.Code, []byte{}) && contract.IsSchnorr(code) {
+		return hex.EncodeToString(code[2:]), nil
 	} else {
 		return nil, fmt.Errorf("unsupported sign script type: %d", signType)
 	}
@@ -402,19 +450,19 @@ func strSecretaryGeneral(tx interfaces.Transaction) (interface{}, error) {
 	return nil, nil
 }
 
-func strUnstakeRealWithdrawTX(
+func strVotesRealWithdrawTX(
 	tx interfaces.Transaction) (interface{}, error) {
-	_, ok := tx.Payload().(*payload.UnstakeRealWithdrawPayload)
+	_, ok := tx.Payload().(*payload.VotesRealWithdrawPayload)
 	if !ok {
 		return nil, fmt.Errorf(
-			"UnstakeRealWithdrawPayload cast failed, tx: %s",
+			"VotesRealWithdrawPayload cast failed, tx: %s",
 			tx.Hash())
 	}
 
-	return "UnstakeRealWithdraw", nil
+	return "VotesRealWithdraw", nil
 }
 
-func hashArrayDposV2ClaimRewardRealWithdrawTransactionHashes(
+func hashArrayDPoSV2ClaimRewardRealWithdrawTransactionHashes(
 	tx interfaces.Transaction) (interface{}, error) {
 	p, ok := tx.Payload().(*payload.DposV2ClaimRewardRealWithdraw)
 	if !ok {
@@ -582,4 +630,22 @@ func comGetCRInfo(tx interfaces.Transaction) (*payload.CRInfo, error) {
 			"register CR payload cast failed, tx:%s", tx.Hash())
 	}
 	return p, nil
+}
+
+func hashCreateNFTID(tx interfaces.Transaction) (interface{}, error) {
+	p, ok := tx.Payload().(*payload.CreateNFT)
+	if !ok {
+		return nil, fmt.Errorf(
+			"CreateNFT payload cast failed, tx: %s", tx.Hash())
+	}
+	return p.ReferKey, nil
+}
+
+func strCreateNFTID(tx interfaces.Transaction) (interface{}, error) {
+	p, ok := tx.Payload().(*payload.CreateNFT)
+	if !ok {
+		return nil, fmt.Errorf(
+			"CreateNFT payload cast failed, tx: %s", tx.Hash())
+	}
+	return p.StakeAddress, nil
 }

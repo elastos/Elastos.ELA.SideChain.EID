@@ -7,9 +7,9 @@ package mempool
 
 import (
 	"fmt"
+
 	common2 "github.com/elastos/Elastos.ELA/core/types/common"
 	"github.com/elastos/Elastos.ELA/core/types/interfaces"
-
 	"github.com/elastos/Elastos.ELA/errors"
 )
 
@@ -17,6 +17,7 @@ const (
 	slotDPoSOwnerPublicKey                      = "DPoSOwnerPublicKey"
 	slotDPoSNodePublicKey                       = "DPoSNodePublicKey"
 	slotDPoSOwnerNodePublicKeys                 = "DPoSOwnerNodePublicKeys"
+	slotDPoSActivateCancel                      = "DPoSActivateCancel"
 	slotDPoSNickname                            = "DPoSNickname"
 	slotCRDID                                   = "CrDID"
 	slotCRNickname                              = "CrNickname"
@@ -46,9 +47,12 @@ const (
 	slotCRCouncilMemberDID                      = "CRCouncilMemberDID"
 	slotCRCSecretaryGeneral                     = "CRCSecretaryGeneral"
 	slotRevertToDPOSHash                        = "RevertToDPOSHash"
-	slotUnstakeRealWithdraw                     = "UnstakeRealWithdraw"
-	slotStake                                   = "Stake"
+	slotVotesRealWithdraw                       = "VotesRealWithdraw"
+	slotExchangeVotes                           = "ExchangeVotes"
 	slotDposV2ClaimReward                       = "DposV2ClaimReward"
+	slotCreateNFT                               = "createnft"
+	slotCreateNFTStakeAddr                      = "createnftstakeaddr"
+	slotNFTDestroyFromSideChainHash             = "NFTDestroyFromSideChainHash"
 )
 
 type conflict struct {
@@ -152,6 +156,19 @@ func newConflictManager() conflictManager {
 					keyTypeFuncPair{
 						Type: common2.RegisterCR,
 						Func: strRegisterCRPublicKey,
+					},
+				),
+			},
+			{
+				name: slotDPoSActivateCancel,
+				slot: newConflictSlot(str,
+					keyTypeFuncPair{
+						Type: common2.CancelProducer,
+						Func: strActivateAndCancelKeys,
+					},
+					keyTypeFuncPair{
+						Type: common2.ActivateProducer,
+						Func: strActivateAndCancelKeys,
 					},
 				),
 			},
@@ -438,16 +455,16 @@ func newConflictManager() conflictManager {
 				slot: newConflictSlot(hashArray,
 					keyTypeFuncPair{
 						Type: common2.DposV2ClaimRewardRealWithdraw,
-						Func: hashArrayDposV2ClaimRewardRealWithdrawTransactionHashes,
+						Func: hashArrayDPoSV2ClaimRewardRealWithdrawTransactionHashes,
 					},
 				),
 			},
-			// Stake
+			// ExchangeVotes
 			{
-				name: slotStake,
+				name: slotExchangeVotes,
 				slot: newConflictSlot(programHash,
 					keyTypeFuncPair{
-						Type: common2.Stake,
+						Type: common2.ExchangeVotes,
 						Func: strStake,
 					},
 					keyTypeFuncPair{
@@ -455,8 +472,12 @@ func newConflictManager() conflictManager {
 						Func: strVoting,
 					},
 					keyTypeFuncPair{
-						Type: common2.Unstake,
-						Func: strUnstake,
+						Type: common2.ReturnVotes,
+						Func: strReturnVotes,
+					},
+					keyTypeFuncPair{
+						Type: common2.CreateNFT,
+						Func: strCreateNFT,
 					},
 				),
 			},
@@ -470,13 +491,13 @@ func newConflictManager() conflictManager {
 					},
 				),
 			},
-			// UnstakeRealWithdraw key
+			// VotesRealWithdraw key
 			{
-				name: slotUnstakeRealWithdraw,
+				name: slotVotesRealWithdraw,
 				slot: newConflictSlot(str,
 					keyTypeFuncPair{
-						Type: common2.UnstakeRealWithdraw,
-						Func: strUnstakeRealWithdrawTX,
+						Type: common2.VotesRealWithdraw,
+						Func: strVotesRealWithdrawTX,
 					},
 				),
 			},
@@ -549,6 +570,16 @@ func newConflictManager() conflictManager {
 					},
 				),
 			},
+			// NFT Destroy From SideChain Hash
+			{
+				name: slotNFTDestroyFromSideChainHash,
+				slot: newConflictSlot(hashArray,
+					keyTypeFuncPair{
+						Type: common2.NFTDestroyFromSideChain,
+						Func: hashArrayNFTDestroyFromSideChainHash,
+					},
+				),
+			},
 			// tx inputs refer keys
 			{
 				name: slotTxInputsReferKeys,
@@ -556,6 +587,24 @@ func newConflictManager() conflictManager {
 					keyTypeFuncPair{
 						Type: allType,
 						Func: strArrayTxReferences,
+					},
+				),
+			},
+			{
+				name: slotCreateNFT,
+				slot: newConflictSlot(hash,
+					keyTypeFuncPair{
+						Type: common2.CreateNFT,
+						Func: hashCreateNFTID,
+					},
+				),
+			},
+			{
+				name: slotCreateNFTStakeAddr,
+				slot: newConflictSlot(str,
+					keyTypeFuncPair{
+						Type: common2.CreateNFT,
+						Func: strCreateNFTID,
 					},
 				),
 			},

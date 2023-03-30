@@ -140,7 +140,7 @@ func SpvDbInit(spvdataDir string) {
 
 //Spv service initialization
 func NewService(cfg *Config, client *rpc.Client, tmux *event.TypeMux, dynamicArbiterHeight uint64) (*Service, error) {
-	var chainParams *config.Params
+	var chainParams *config.Configuration
 	switch strings.ToLower(cfg.ActiveNet) {
 	case "testnet", "test", "t":
 		chainParams = config.DefaultParams.TestNet()
