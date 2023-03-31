@@ -81,7 +81,7 @@ func init() {
 	}
 }
 
-func ResetConfigWithReflect(params *config.Params, spvConfig *spv.Config) {
+func ResetConfigWithReflect(params *config.Configuration, spvConfig *spv.Config) {
 	paramsType := reflect.TypeOf(*params)
 	paramsValue := reflect.ValueOf(params).Elem()
 	configType := reflect.TypeOf(PreferConfig.Config)
@@ -123,23 +123,23 @@ func ResetConfigWithReflect(params *config.Params, spvConfig *spv.Config) {
 			if len(v) == 0 {
 				break
 			}
-			if name == Foundation || name == CRCAddress {
-				t, err := common.Uint168FromAddress(v)
-				if err == nil {
-					arrayValue := reflect.ValueOf(t).Elem()
-					destField.Set(arrayValue)
-					if name == Foundation {
-						block := config.GenesisBlock(t)
-						if _, ok := paramsType.FieldByName(GenesisBlock); ok {
-							blockValue := reflect.ValueOf(block)
-							destField = paramsValue.FieldByName(GenesisBlock)
-							destField.Set(blockValue)
-						}
-					}
-
-				}
-				break
-			}
+			//if name == Foundation || name == CRCAddress {
+			//	t, err := common.Uint168FromAddress(v)
+			//	if err == nil {
+			//		arrayValue := reflect.ValueOf(t).Elem()
+			//		destField.Set(arrayValue)
+			//		if name == Foundation {
+			//			block := core.GenesisBlock(*t)
+			//			if _, ok := paramsType.FieldByName(GenesisBlock); ok {
+			//				blockValue := reflect.ValueOf(block)
+			//				destField = paramsValue.FieldByName(GenesisBlock)
+			//				destField.Set(blockValue)
+			//			}
+			//		}
+			//
+			//	}
+			//	break
+			//}
 			destField.Set(value)
 		case reflect.Slice:
 			if !value.IsNil() {
@@ -153,4 +153,3 @@ func ResetConfigWithReflect(params *config.Params, spvConfig *spv.Config) {
 
 	}
 }
-
