@@ -94,7 +94,8 @@ func init() {
 	functions.GetTransactionByBytes = elatx.GetTransactionByBytes
 	functions.CreateTransaction = elatx.CreateTransaction
 	functions.GetTransactionParameters = elatx.GetTransactionparameters
-	config.DefaultParams = config.GetDefaultParams()
+	config.DefaultParams = *config.GetDefaultParams()
+
 }
 
 func loadConfig(file string, cfg *gethConfig) error {
