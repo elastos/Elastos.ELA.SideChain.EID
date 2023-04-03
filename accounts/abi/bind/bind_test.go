@@ -1436,6 +1436,25 @@ func TestGolangBindings(t *testing.T) {
 			t.Fatalf("test %d: failed to write tests: %v", i, err)
 		}
 	}
+
+	// Convert the package to go modules and use the current source for go-ethereum
+	moder := exec.Command(gocmd, "mod", "init", "bindtest")
+	moder.Dir = pkg
+	if out, err := moder.CombinedOutput(); err != nil {
+		t.Fatalf("failed to convert binding test to modules: %v\n%s", err, out)
+	}
+	pwd, _ := os.Getwd()
+	replacer := exec.Command(gocmd, "mod", "edit", "-x", "-require", "github.com/elastos/Elastos.ELA.SideChain.EID@v0.0.0", "-replace", "github.com/elastos/Elastos.ELA.SideChain.EID="+filepath.Join(pwd, "..", "..", "..")) // Repo root
+	replacer.Dir = pkg
+	if out, err := replacer.CombinedOutput(); err != nil {
+		t.Fatalf("failed to replace binding test dependency to current source tree: %v\n%s", err, out)
+	}
+	tidier := exec.Command(gocmd, "mod", "tidy")
+	tidier.Dir = pkg
+	if out, err := tidier.CombinedOutput(); err != nil {
+		t.Fatalf("failed to tidy Go module file: %v\n%s", err, out)
+	}
+
 	// Test the entire package and report any failures
 	cmd := exec.Command(gocmd, "test", "-v", "-count", "1")
 	cmd.Dir = pkg

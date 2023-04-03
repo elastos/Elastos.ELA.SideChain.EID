@@ -140,7 +140,7 @@ func TestBlockStorage(t *testing.T) {
 		t.Fatalf("Retrieved body mismatch: have %v, want %v", entry, block.Body())
 	}
 	// Delete the block and verify the execution
-	DeleteBlock(db, block.Hash(), block.NumberU64())
+	DeleteBlock(db, block.Hash(), block.NumberU64(), params.TestChainConfig, false)
 	if entry := ReadBlock(db, block.Hash(), block.NumberU64()); entry != nil {
 		t.Fatalf("Deleted block returned: %v", entry)
 	}
@@ -341,7 +341,7 @@ func TestBlockReceiptStorage(t *testing.T) {
 	// Sanity check that body alone without the receipt is a full purge
 	WriteBody(db, hash, 0, body)
 
-	DeleteReceipts(kdb, hash, 0)
+	DeleteReceipts(kdb, hash, 0, params.TestChainConfig, false)
 	if rs := ReadReceipts(db, hash, 0, params.TestChainConfig); len(rs) != 0 {
 		t.Fatalf("deleted receipts returned: %v", rs)
 	}
