@@ -261,6 +261,7 @@ func doInstall(cmdline []string) {
 				if name == "main" {
 					gobuild := goToolArch(*arch, *cc, "build", buildFlags(env)...)
 					gobuild.Args = append(gobuild.Args, "-v")
+					gobuild.Args = append(gobuild.Args, "-modcacherw")
 					gobuild.Args = append(gobuild.Args, []string{"-o", executablePath(cmd.Name())}...)
 					gobuild.Args = append(gobuild.Args, "."+string(filepath.Separator)+filepath.Join("cmd", cmd.Name()))
 					build.MustRun(gobuild)
