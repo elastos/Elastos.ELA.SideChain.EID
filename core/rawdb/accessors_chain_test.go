@@ -341,7 +341,7 @@ func TestBlockReceiptStorage(t *testing.T) {
 	// Sanity check that body alone without the receipt is a full purge
 	WriteBody(db, hash, 0, body)
 
-	DeleteReceipts(kdb, hash, 0, params.TestChainConfig, false)
+	DeleteReceipts(kdb, hash, 0, params.TestChainConfig, true)
 	if rs := ReadReceipts(db, hash, 0, params.TestChainConfig); len(rs) != 0 {
 		t.Fatalf("deleted receipts returned: %v", rs)
 	}
