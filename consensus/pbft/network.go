@@ -93,6 +93,7 @@ type peerInfo struct {
 	NodePublicKey  string `json:"nodepublickey"`
 	IP             string `json:"ip"`
 	ConnState      string `json:"connstate"`
+	NodeVersion    string `json:"nodeversion"`
 }
 
 func (p *Pbft) GetAtbiterPeersInfo() []peerInfo {
@@ -112,6 +113,7 @@ func (p *Pbft) GetAtbiterPeersInfo() []peerInfo {
 			NodePublicKey: common.Bytes2Hex(pid),
 			IP:            peer.Addr,
 			ConnState:     peer.State.String(),
+			NodeVersion:   peer.NodeVersion,
 		})
 	}
 	return result

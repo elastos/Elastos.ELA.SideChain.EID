@@ -63,6 +63,7 @@ import (
 	_interface "github.com/elastos/Elastos.ELA.SPV/interface"
 
 	"github.com/elastos/Elastos.ELA/core/types/payload"
+	msg2 "github.com/elastos/Elastos.ELA/dpos/p2p/msg"
 	elapeer "github.com/elastos/Elastos.ELA/dpos/p2p/peer"
 	eevents "github.com/elastos/Elastos.ELA/events"
 	"github.com/elastos/Elastos.ELA/p2p/msg"
@@ -189,9 +190,15 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	chainConfig.CheckCustomizeDIDBeginHeight = config.CheckCustomizeDIDBeginHeight
 	log.Info("New", "chainConfig ", chainConfig)
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir
-	if chainConfig.Pbft != nil && chainConfig.Pbft.DPoSV2StartHeight <= 0 { //if config is set, use config value
-		chainConfig.Pbft.DPoSV2StartHeight = config.DPoSV2StartHeight
+
+	if chainConfig.Pbft != nil {
+		if chainConfig.Pbft.DPoSV2StartHeight <= 0 { //if config is set, use config value
+			chainConfig.Pbft.DPoSV2StartHeight = config.DPoSV2StartHeight
+		}
+		msg2.SetPayloadVersion(msg2.DPoSV2Version)
+		chainConfig.Pbft.NodeVersion = node.Config().Version
 	}
+
 	if len(chainConfig.PbftKeyStore) > 0 {
 		config.PbftKeyStore = chainConfig.PbftKeyStore
 	} else {

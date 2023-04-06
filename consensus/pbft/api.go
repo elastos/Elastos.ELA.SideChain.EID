@@ -38,6 +38,7 @@ func (a *API) GetAllPeersInfo() []peerInfo {
 			NodePublicKey: common.Bytes2Hex(pid),
 			IP:            peer.Addr,
 			ConnState:     peer.State.String(),
+			NodeVersion:   peer.NodeVersion,
 		})
 	}
 	return result
