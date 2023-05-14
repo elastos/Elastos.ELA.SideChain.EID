@@ -9,15 +9,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
 	"io"
 	"math/big"
-	"math/rand"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
@@ -584,12 +583,6 @@ func (p *Pbft) Seal(chain consensus.ChainReader, block *types.Block, results cha
 		return nil
 	}
 	finalBlock := block.WithSeal(header)
-	testcr01 := common.Hex2Bytes("03e435ccd6073813917c2d841a0815d21301ec3286bc1412bb5b099178c68a10b6")
-	if bytes.Equal(testcr01, p.account.PublicKeyBytes()) {
-		randdelay := rand.Int() % 20
-		fmt.Println(">>>>>>> zxb randdelay", time.Duration(randdelay)*time.Second, "hash", finalBlock.Hash().String(), "height", finalBlock.NumberU64())
-		time.Sleep(time.Duration(randdelay) * time.Second)
-	}
 	go func() {
 		select {
 		case results <- finalBlock:
