@@ -1,4 +1,5 @@
 module github.com/elastos/Elastos.ELA.SideChain.EID
+
 go 1.20
 
 require (
@@ -15,8 +16,8 @@ require (
 	github.com/dop251/goja v0.0.0-20220405120441-9037c2b61cbf
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/elastic/gosigar v0.14.2
-	github.com/elastos/Elastos.ELA v0.9.0
-	github.com/elastos/Elastos.ELA.SPV v0.1.0
+	github.com/elastos/Elastos.ELA v0.9.7
+	github.com/elastos/Elastos.ELA.SPV v0.1.1-0.20230508021646-47ddcf037c01
 	github.com/fatih/color v1.13.0
 	github.com/fjl/memsize v0.0.1
 	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08

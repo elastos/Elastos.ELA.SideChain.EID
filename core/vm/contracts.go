@@ -17,19 +17,27 @@
 package vm
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math/big"
 
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/blake2b"
-    "github.com/elastos/Elastos.ELA.SideChain.EID/crypto/bls12381"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/bls12381"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/bn256"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/pledgeBill"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
+	"github.com/elastos/Elastos.ELA/blockchain"
+	"github.com/elastos/Elastos.ELA/core/contract"
+	"github.com/elastos/Elastos.ELA/core/contract/program"
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -64,6 +72,9 @@ var PrecompiledContractsByzantium = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{8}): &bn256PairingByzantium{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):    &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()): &p256Verify{},
+	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
+	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
+	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 // PrecompiledContractsIstanbul contains the default set of pre-compiled Ethereum
@@ -73,45 +84,54 @@ var PrecompiledContractsIstanbul = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{2}): &sha256hash{},
 	common.BytesToAddress([]byte{3}): &ripemd160hash{},
 	common.BytesToAddress([]byte{4}): &dataCopy{},
-        common.BytesToAddress([]byte{5}):                           &bigModExp{eip2565: false},
-	common.BytesToAddress([]byte{6}):                           &bn256AddIstanbul{},
-	common.BytesToAddress([]byte{7}):                           &bn256ScalarMulIstanbul{},
-	common.BytesToAddress([]byte{8}):                           &bn256PairingIstanbul{},
-	common.BytesToAddress([]byte{9}):                           &blake2F{},
+	common.BytesToAddress([]byte{5}): &bigModExp{eip2565: false},
+	common.BytesToAddress([]byte{6}): &bn256AddIstanbul{},
+	common.BytesToAddress([]byte{7}): &bn256ScalarMulIstanbul{},
+	common.BytesToAddress([]byte{8}): &bn256PairingIstanbul{},
+	common.BytesToAddress([]byte{9}): &blake2F{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):       &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()):    &p256Verify{},
+	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
+	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
+	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 // PrecompiledContractsBLS contains the set of pre-compiled Ethereum
 // contracts specified in EIP-2537. These are exported for testing purposes.
 var PrecompiledContractsBLS = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{10}):                          &bls12381G1Add{},
-	common.BytesToAddress([]byte{11}):                          &bls12381G1Mul{},
-	common.BytesToAddress([]byte{12}):                          &bls12381G1MultiExp{},
-	common.BytesToAddress([]byte{13}):                          &bls12381G2Add{},
-	common.BytesToAddress([]byte{14}):                          &bls12381G2Mul{},
-	common.BytesToAddress([]byte{15}):                          &bls12381G2MultiExp{},
-	common.BytesToAddress([]byte{16}):                          &bls12381Pairing{},
-	common.BytesToAddress([]byte{17}):                          &bls12381MapG1{},
-	common.BytesToAddress([]byte{18}):                          &bls12381MapG2{},
+	common.BytesToAddress([]byte{10}): &bls12381G1Add{},
+	common.BytesToAddress([]byte{11}): &bls12381G1Mul{},
+	common.BytesToAddress([]byte{12}): &bls12381G1MultiExp{},
+	common.BytesToAddress([]byte{13}): &bls12381G2Add{},
+	common.BytesToAddress([]byte{14}): &bls12381G2Mul{},
+	common.BytesToAddress([]byte{15}): &bls12381G2MultiExp{},
+	common.BytesToAddress([]byte{16}): &bls12381Pairing{},
+	common.BytesToAddress([]byte{17}): &bls12381MapG1{},
+	common.BytesToAddress([]byte{18}): &bls12381MapG2{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):       &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()):    &p256Verify{},
+	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
+	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
+	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 // PrecompiledContractsBerlin contains the default set of pre-compiled Ethereum
 // contracts used in the Berlin release.
 var PrecompiledContractsBerlin = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):                           &ecrecover{},
-	common.BytesToAddress([]byte{2}):                           &sha256hash{},
-	common.BytesToAddress([]byte{3}):                           &ripemd160hash{},
-	common.BytesToAddress([]byte{4}):                           &dataCopy{},
-	common.BytesToAddress([]byte{5}):                           &bigModExp{eip2565: true},
-	common.BytesToAddress([]byte{6}):                           &bn256AddIstanbul{},
-	common.BytesToAddress([]byte{7}):                           &bn256ScalarMulIstanbul{},
-	common.BytesToAddress([]byte{8}):                           &bn256PairingIstanbul{},
-	common.BytesToAddress([]byte{9}):                           &blake2F{},
+	common.BytesToAddress([]byte{1}): &ecrecover{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	common.BytesToAddress([]byte{3}): &ripemd160hash{},
+	common.BytesToAddress([]byte{4}): &dataCopy{},
+	common.BytesToAddress([]byte{5}): &bigModExp{eip2565: true},
+	common.BytesToAddress([]byte{6}): &bn256AddIstanbul{},
+	common.BytesToAddress([]byte{7}): &bn256ScalarMulIstanbul{},
+	common.BytesToAddress([]byte{8}): &bn256PairingIstanbul{},
+	common.BytesToAddress([]byte{9}): &blake2F{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):       &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()):    &p256Verify{},
+	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
+	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
+	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 var (
@@ -270,9 +290,10 @@ var (
 // modexpMultComplexity implements bigModexp multComplexity formula, as defined in EIP-198
 //
 // def mult_complexity(x):
-//    if x <= 64: return x ** 2
-//    elif x <= 1024: return x ** 2 // 4 + 96 * x - 3072
-//    else: return x ** 2 // 16 + 480 * x - 199680
+//
+//	if x <= 64: return x ** 2
+//	elif x <= 1024: return x ** 2 // 4 + 96 * x - 3072
+//	else: return x ** 2 // 16 + 480 * x - 199680
 //
 // where is x is max(length_of_MODULUS, length_of_BASE)
 func modexpMultComplexity(x *big.Int) *big.Int {
@@ -681,6 +702,174 @@ func (c *p256Verify) Run(input []byte) ([]byte, error) {
 		return false32Byte, nil
 	}
 	return true32Byte, nil
+}
+
+type pbkVerifySignature struct{}
+
+func (b *pbkVerifySignature) RequiredGas(input []byte) uint64 {
+	return params.PbkVerifySignature
+}
+
+func (b *pbkVerifySignature) Run(input []byte) ([]byte, error) {
+	//length := getData(input, 0, 32)
+	pubkey := getData(input, 32, 33)
+	digest := getData(input, 65, 32)
+	sig := getData(input, 97, 65)
+	digest = accounts.TextHash(digest)
+
+	if sig[crypto.RecoveryIDOffset] >= 27 {
+		sig[crypto.RecoveryIDOffset] -= 27
+	}
+	signerPuk, err := crypto.SigToPub(digest, sig)
+	if err != nil {
+		fmt.Println("SigToPub error", signerPuk, err)
+		return false32Byte, err
+	}
+	pubkeyBytes := crypto.CompressPubkey(signerPuk)
+
+	if bytes.Equal(pubkeyBytes, pubkey) {
+		return true32Byte, nil
+	}
+	return false32Byte, nil
+}
+
+type pledgeBillVerify struct{}
+
+func (b *pledgeBillVerify) RequiredGas(input []byte) uint64 {
+	return params.PledgeBillVerifyGas
+}
+
+func (b *pledgeBillVerify) Run(input []byte) ([]byte, error) {
+	elaHash := getData(input, 32, 32)
+	toAddress := getData(input, 64, 20)
+	toAddress = toAddress[:common.AddressLength]
+	multiN := getData(input, 84, 32)
+	multiM := getData(input, 116, 32)
+	sigLen := getData(input, 148, 32)
+	var startPoint int64 = 180
+	var i int64
+	n := big.NewInt(0).SetBytes(multiN)
+	m := big.NewInt(0).SetBytes(multiM)
+	publickeys := make([]*elaCrypto.PublicKey, 0)
+	var point uint64
+	for i = 0; i < n.Int64(); i++ {
+		point = uint64(startPoint + (i * 33))
+		pub := getData(input, point, 33)
+		pbk, err := elaCrypto.DecodePoint(pub)
+		if err != nil {
+			return false32Byte, errors.New("publicKey decode error")
+		}
+		publickeys = append(publickeys, pbk)
+
+	}
+	point = point + 33
+	signatures := make([]byte, 0)
+
+	if n.Int64() == 1 {
+		signature := getData(input, point, 64)
+		err := checkStandardSignature(publickeys[0], elaHash, toAddress, signature)
+		if err != nil {
+			log.Error("checkStandardSignature failed", "err", err)
+			return false32Byte, err
+		}
+	} else if m.Uint64() > 1 && n.Uint64() > 1 {
+		sigCount := big.NewInt(0).SetBytes(sigLen)
+		for i = 0; i < sigCount.Int64(); i++ {
+			c := point + (uint64(i) * 64)
+			signature := getData(input, c, 64)
+			signatures = append(signatures, getParameterBySignature(signature)...)
+		}
+		if n.Cmp(m) < 0 {
+			return false32Byte, errors.New("n is smaller than m")
+		}
+		err := checkMultiSignatures(int(m.Int64()), publickeys, signatures, elaHash, toAddress)
+		if err != nil {
+			log.Error("checkMultiSignatures failed", "err", err)
+			return false32Byte, err
+		}
+	} else {
+		return false32Byte, errors.New("error signature params")
+	}
+	return true32Byte, nil
+}
+
+func getParameterBySignature(signature []byte) []byte {
+	buf := new(bytes.Buffer)
+	buf.WriteByte(byte(len(signature)))
+	buf.Write(signature)
+	return buf.Bytes()
+}
+
+func checkStandardSignature(pubKey *elaCrypto.PublicKey, elaHash []byte, toAddress []byte, signature []byte) error {
+	data := append(elaHash, toAddress...)
+	err := elaCrypto.Verify(*pubKey, data, signature)
+	if err != nil {
+		return err
+	}
+	redeemScript, err := contract.CreateStandardRedeemScript(pubKey)
+	if err != nil {
+		return err
+	}
+	ct, err := contract.CreateStakeContractByCode(redeemScript[:])
+	if err != nil {
+		return err
+	}
+	stakeAddress, err := ct.ToProgramHash().ToAddress()
+
+	sAddress, _, err := pledgeBill.GetPledgeBillData(common.BytesToHash(elaHash).String())
+	if err != nil {
+		log.Info("general stakeAddress", "", stakeAddress)
+		return err
+	}
+	if sAddress != stakeAddress {
+		return errors.New(fmt.Sprintf("stakeAddress is not correct, spv sAddress%s, callSaddress:%s", sAddress, stakeAddress))
+	}
+	return nil
+}
+
+func checkMultiSignatures(m int, publickeys []*elaCrypto.PublicKey, signatures []byte, elaHash []byte, toAddress []byte) error {
+	ct, err := contract.CreateMultiSigContract(m, publickeys)
+	if err != nil {
+		return err
+	}
+	pro := program.Program{
+		Code:      ct.Code,
+		Parameter: signatures,
+	}
+	data := append(elaHash, toAddress...)
+	err = blockchain.CheckMultiSigSignatures(pro, data)
+	if err != nil {
+		return err
+	}
+	ct.Prefix = contract.PrefixDPoSV2
+	stakeAddress, err := ct.ToProgramHash().ToAddress()
+	if err != nil {
+		return err
+	}
+	sAddress, _, err := pledgeBill.GetPledgeBillData(common.BytesToHash(elaHash).String())
+	if sAddress != stakeAddress {
+		return errors.New(fmt.Sprintf("stakeAddress is not correct, spv sAddress%s, callSaddress:%s", sAddress, stakeAddress))
+	}
+	return nil
+}
+
+type pledgeBillTokenID struct{}
+
+func (b *pledgeBillTokenID) RequiredGas(input []byte) uint64 {
+	return params.GetPledgeBillTokenID
+}
+
+func (b *pledgeBillTokenID) Run(input []byte) ([]byte, error) {
+	//length := getData(input, 0, 32)
+	elaHash := getData(input, 32, 32)
+
+	_, tokenID, err := pledgeBill.GetPledgeBillData(common.BytesToHash(elaHash).String())
+	if err != nil {
+		log.Info("pledgeBillTokenID", "elaHash", elaHash, "hash", common.BytesToHash(elaHash).String(), "tokenID", tokenID)
+		return false32Byte, err
+	}
+
+	return tokenID.Bytes(), nil
 }
 
 var (

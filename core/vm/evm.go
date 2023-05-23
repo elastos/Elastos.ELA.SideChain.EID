@@ -59,7 +59,7 @@ func (evm *EVM) precompile(addr common.Address) (PrecompiledContract, Precompile
 		precompiles = PrecompiledContractsHomestead
 	}
 	p, ok := precompiles[addr]
-	if p == nil {
+	if !ok {
 		precompilesdid := PrecompileContractsDID
 		pdid, ok := precompilesdid[addr]
 		return nil, pdid, ok
@@ -373,6 +373,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 // code with the caller as context.
 func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
+	initGas := gas
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
@@ -411,6 +412,9 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != ErrExecutionReverted {
 			gas = 0
+		}
+		if err == ErrExecutionReverted && strings.Contains(string(ret), "diderror") {
+			gas = initGas
 		}
 	}
 	return ret, gas, err
