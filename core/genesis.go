@@ -285,6 +285,14 @@ func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 	if g.Difficulty == nil {
 		head.Difficulty = params.GenesisDifficulty
 	}
+
+	//if g.Config != nil && g.Config.IsLondon(common.Big0) {
+	//	if g.BaseFee != nil {
+	//		head.BaseFee = g.BaseFee
+	//	} else {
+	//		head.BaseFee = new(big.Int).SetUint64(params.InitialBaseFee)
+	//	}
+	//}
 	statedb.Commit(false)
 	statedb.Database().TrieDB().Commit(root, true)
 
@@ -336,7 +344,7 @@ func GenesisBlockForTesting(db ethdb.Database, addr common.Address, balance *big
 func DefaultGenesisBlock() *Genesis {
 	genesis := &Genesis{
 		Config:     params.MainnetChainConfig,
-		Timestamp:  1623945600,
+		Timestamp:  0x1,
 		GasLimit:   0x2068F7700,
 		Difficulty: big.NewInt(1),
 		Alloc:      nil,
@@ -376,7 +384,7 @@ func DefaultGenesisBlock() *Genesis {
 func DefaultTestnetGenesisBlock() *Genesis {
 	genesis := &Genesis{
 		Config:     params.TestnetChainConfig,
-		Timestamp:  1623945600,
+		Timestamp:  0x5bda9da0,
 		GasLimit:   0x2068F7700,
 		Difficulty: big.NewInt(1),
 		Alloc:      nil,
@@ -417,7 +425,7 @@ func DefaultTestnetGenesisBlock() *Genesis {
 func DefaultRinkebyGenesisBlock() *Genesis {
 	genesis := &Genesis{
 		Config:     params.RinkebyChainConfig,
-		Timestamp:  1623945600,
+		Timestamp:  0x5bda9da8,
 		GasLimit:   0x2068F7700,
 		Difficulty: big.NewInt(1),
 		Alloc:      nil,
