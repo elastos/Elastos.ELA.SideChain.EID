@@ -77,7 +77,7 @@ func TestMethodPack(t *testing.T) {
 	}
 
 	var addrA, addrB = common.Address{1}, common.Address{2}
-	sig = abi.Methods["sliceAddress"].ID()
+	sig = abi.Methods["sliceAddress"].ID
 	sig = append(sig, common.LeftPadBytes([]byte{32}, 32)...)
 	sig = append(sig, common.LeftPadBytes([]byte{2}, 32)...)
 	sig = append(sig, common.LeftPadBytes(addrA[:], 32)...)

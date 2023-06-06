@@ -78,6 +78,7 @@ var bindTests = []struct {
 		nil,
 		nil,
 		nil,
+		nil,
 	},
 	{
 		`Crowdsale`,
@@ -93,6 +94,7 @@ var bindTests = []struct {
 		nil,
 		nil,
 		nil,
+		nil,
 	},
 	{
 		`DAO`,
@@ -105,6 +107,7 @@ var bindTests = []struct {
 				t.Fatalf("binding (%v) nil or error (%v) not nil", b, nil)
 			}
 		`,
+		nil,
 		nil,
 		nil,
 		nil,
