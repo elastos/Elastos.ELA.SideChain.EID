@@ -37,17 +37,15 @@ var PrecompileContractsDID = map[common.Address]PrecompiledContractDID{
 }
 
 // RunPrecompiledContract runs and evaluates the output of a precompiled contract.
-func RunPrecompiledContractDID(evm *EVM, p PrecompiledContractDID, input []byte, contract *Contract) (ret []byte, err error) {
-	gas, error := p.RequiredGas(evm, input)
-	if error != nil {
-		return nil, error
+func RunPrecompiledContractDID(evm *EVM, p PrecompiledContractDID, input []byte, suppliedGas uint64) (ret []byte, remainingGas uint64, err error) {
+	gasCost, error := p.RequiredGas(evm, input)
+	if error != nil || suppliedGas < gasCost {
+		return nil, 0, error
 	}
-	log.Info("run did contract", "left gas", contract.Gas)
-	if contract.UseGas(gas) {
-		return p.Run(evm, input, contract.Gas)
-	}
-	log.Error("run did contract out of gas")
-	return nil, ErrOutOfGas
+	log.Info("run did contract", "left gas", suppliedGas)
+	output, err := p.Run(evm, input, suppliedGas)
+	suppliedGas -= gasCost
+	return output, suppliedGas, err
 }
 
 type operationDID struct{}
