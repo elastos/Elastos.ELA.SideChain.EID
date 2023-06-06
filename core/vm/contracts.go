@@ -17,26 +17,19 @@
 package vm
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/blake2b"
     "github.com/elastos/Elastos.ELA.SideChain.EID/crypto/bls12381"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/bn256"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/pledgeBill"
-	"github.com/elastos/Elastos.ELA/blockchain"
-	"github.com/elastos/Elastos.ELA/core/contract"
-	"github.com/elastos/Elastos.ELA/core/contract/program"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -71,9 +64,6 @@ var PrecompiledContractsByzantium = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{8}): &bn256PairingByzantium{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):    &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()): &p256Verify{},
-        common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
-	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
-	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 // PrecompiledContractsIstanbul contains the default set of pre-compiled Ethereum
@@ -90,9 +80,6 @@ var PrecompiledContractsIstanbul = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{9}):                           &blake2F{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):       &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()):    &p256Verify{},
-	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
-	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
-	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 // PrecompiledContractsBLS contains the set of pre-compiled Ethereum
@@ -109,9 +96,6 @@ var PrecompiledContractsBLS = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{18}):                          &bls12381MapG2{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):       &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()):    &p256Verify{},
-	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
-	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
-	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 // PrecompiledContractsBerlin contains the default set of pre-compiled Ethereum
@@ -128,9 +112,6 @@ var PrecompiledContractsBerlin = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{9}):                           &blake2F{},
 	//common.BytesToAddress(params.ArbiterAddress.Bytes()):       &arbiters{},
 	//common.BytesToAddress(params.P256VerifyAddress.Bytes()):    &p256Verify{},
-	common.BytesToAddress(params.SignatureVerifyByPbk.Bytes()): &pbkVerifySignature{},
-	common.BytesToAddress(params.PledgeBillVerify.Bytes()):     &pledgeBillVerify{},
-	common.BytesToAddress(params.PledgeBillTokenID.Bytes()):    &pledgeBillTokenID{},
 }
 
 var (
@@ -643,174 +624,63 @@ func (c *blake2F) Run(input []byte) ([]byte, error) {
 	return output, nil
 }
 
+var (
+	errGettingArbitersFailed = errors.New("getting arbiters failed")
+)
 
+type arbiters struct{}
 
-type pbkVerifySignature struct{}
-
-func (b *pbkVerifySignature) RequiredGas(input []byte) uint64 {
-	return params.PbkVerifySignature
+func (c *arbiters) RequiredGas(input []byte) uint64 {
+	return params.ArbitersBaseGas
 }
 
-func (b *pbkVerifySignature) Run(input []byte) ([]byte, error) {
+func (c *arbiters) Run(input []byte) ([]byte, error) {
+	arbiters, _, err := spv.GetArbiters()
+	if err != nil {
+		return nil, errGettingArbitersFailed
+	}
+	ret := make([]byte, 0)
+	for _, pubkey := range arbiters {
+		hash := crypto.Keccak256(common.Hex2Bytes(pubkey))
+		ret = append(ret, common.LeftPadBytes(hash[:], 32)...)
+	}
+
+	return ret, nil
+}
+
+const (
+	p256VerifyInputLength = 193
+)
+
+var (
+	errP256VerifyInvalidInputLength = errors.New("invalid input length")
+	errP256VerifyInvalidPublicKey   = errors.New("invalid public key")
+)
+
+type p256Verify struct{}
+
+func (c *p256Verify) RequiredGas(input []byte) uint64 {
+	return params.P256VerifyBaseGas
+}
+
+func (c *p256Verify) Run(input []byte) ([]byte, error) {
+	// Make sure the input is valid (correct length)
+	if len(input) != p256VerifyInputLength {
+		return nil, errP256VerifyInvalidInputLength
+	}
 	//length := getData(input, 0, 32)
 	pubkey := getData(input, 32, 33)
-	digest := getData(input, 65, 32)
-	sig := getData(input, 97, 65)
-	digest = accounts.TextHash(digest)
-
-	if sig[crypto.RecoveryIDOffset] >= 27 {
-		sig[crypto.RecoveryIDOffset] -= 27
-	}
-	signerPuk, err := crypto.SigToPub(digest, sig)
+	data := getData(input, 65, 64)
+	sig := getData(input, 129, 64)
+	publicKey, err := elaCrypto.DecodePoint(pubkey)
 	if err != nil {
-		fmt.Println("SigToPub error", signerPuk, err)
-		return false32Byte, err
+		return nil, errP256VerifyInvalidPublicKey
 	}
-	pubkeyBytes := crypto.CompressPubkey(signerPuk)
-
-	if bytes.Equal(pubkeyBytes, pubkey) {
-		return true32Byte, nil
-	}
-	return false32Byte, nil
-}
-
-type pledgeBillVerify struct{}
-
-func (b *pledgeBillVerify) RequiredGas(input []byte) uint64 {
-	return params.PledgeBillVerifyGas
-}
-
-func (b *pledgeBillVerify) Run(input []byte) ([]byte, error) {
-	elaHash := getData(input, 32, 32)
-	toAddress := getData(input, 64, 20)
-	toAddress = toAddress[:common.AddressLength]
-	multiN := getData(input, 84, 32)
-	multiM := getData(input, 116, 32)
-	sigLen := getData(input, 148, 32)
-	var startPoint int64 = 180
-	var i int64
-	n := big.NewInt(0).SetBytes(multiN)
-	m := big.NewInt(0).SetBytes(multiM)
-	publickeys := make([]*elaCrypto.PublicKey, 0)
-	var point uint64
-	for i = 0; i < n.Int64(); i++ {
-		point = uint64(startPoint + (i * 33))
-		pub := getData(input, point, 33)
-		pbk, err := elaCrypto.DecodePoint(pub)
-		if err != nil {
-			return false32Byte, errors.New("publicKey decode error")
-		}
-		publickeys = append(publickeys, pbk)
-
-	}
-	point = point + 33
-	signatures := make([]byte, 0)
-
-	if n.Int64() == 1 {
-		signature := getData(input, point, 64)
-		err := checkStandardSignature(publickeys[0], elaHash, toAddress, signature)
-		if err != nil {
-			log.Error("checkStandardSignature failed", "err", err)
-			return false32Byte, err
-		}
-	} else if m.Uint64() > 1 && n.Uint64() > 1 {
-		sigCount := big.NewInt(0).SetBytes(sigLen)
-		for i = 0; i < sigCount.Int64(); i++ {
-			c := point + (uint64(i) * 64)
-			signature := getData(input, c, 64)
-			signatures = append(signatures, getParameterBySignature(signature)...)
-		}
-		if n.Cmp(m) < 0 {
-			return false32Byte, errors.New("n is smaller than m")
-		}
-		err := checkMultiSignatures(int(m.Int64()), publickeys, signatures, elaHash, toAddress)
-		if err != nil {
-			log.Error("checkMultiSignatures failed", "err", err)
-			return false32Byte, err
-		}
-	} else {
-		return false32Byte, errors.New("error signature params")
+	err = elaCrypto.Verify(*publicKey, data, sig)
+	if err != nil {
+		return false32Byte, nil
 	}
 	return true32Byte, nil
-}
-
-func getParameterBySignature(signature []byte) []byte {
-	buf := new(bytes.Buffer)
-	buf.WriteByte(byte(len(signature)))
-	buf.Write(signature)
-	return buf.Bytes()
-}
-
-func checkStandardSignature(pubKey *elaCrypto.PublicKey, elaHash []byte, toAddress []byte, signature []byte) error {
-	data := append(elaHash, toAddress...)
-	err := elaCrypto.Verify(*pubKey, data, signature)
-	if err != nil {
-		return err
-	}
-	redeemScript, err := contract.CreateStandardRedeemScript(pubKey)
-	if err != nil {
-		return err
-	}
-	ct, err := contract.CreateStakeContractByCode(redeemScript[:])
-	if err != nil {
-		return err
-	}
-	stakeAddress, err := ct.ToProgramHash().ToAddress()
-
-	sAddress, _, err := pledgeBill.GetPledgeBillData(common.BytesToHash(elaHash).String())
-	if err != nil {
-		log.Info("general stakeAddress", "", stakeAddress)
-		return err
-	}
-	if sAddress != stakeAddress {
-		return errors.New(fmt.Sprintf("stakeAddress is not correct, spv sAddress%s, callSaddress:%s", sAddress, stakeAddress))
-	}
-	return nil
-}
-
-func checkMultiSignatures(m int, publickeys []*elaCrypto.PublicKey, signatures []byte, elaHash []byte, toAddress []byte) error {
-	ct, err := contract.CreateMultiSigContract(m, publickeys)
-	if err != nil {
-		return err
-	}
-	pro := program.Program{
-		Code:      ct.Code,
-		Parameter: signatures,
-	}
-	data := append(elaHash, toAddress...)
-	err = blockchain.CheckMultiSigSignatures(pro, data)
-	if err != nil {
-		return err
-	}
-	ct.Prefix = contract.PrefixDPoSV2
-	stakeAddress, err := ct.ToProgramHash().ToAddress()
-	if err != nil {
-		return err
-	}
-	sAddress, _, err := pledgeBill.GetPledgeBillData(common.BytesToHash(elaHash).String())
-	if sAddress != stakeAddress {
-		return errors.New(fmt.Sprintf("stakeAddress is not correct, spv sAddress%s, callSaddress:%s", sAddress, stakeAddress))
-	}
-	return nil
-}
-
-type pledgeBillTokenID struct{}
-
-func (b *pledgeBillTokenID) RequiredGas(input []byte) uint64 {
-	return params.GetPledgeBillTokenID
-}
-
-func (b *pledgeBillTokenID) Run(input []byte) ([]byte, error) {
-	//length := getData(input, 0, 32)
-	elaHash := getData(input, 32, 32)
-
-	_, tokenID, err := pledgeBill.GetPledgeBillData(common.BytesToHash(elaHash).String())
-	if err != nil {
-		log.Info("pledgeBillTokenID", "elaHash", elaHash, "hash", common.BytesToHash(elaHash).String(), "tokenID", tokenID)
-		return false32Byte, err
-	}
-
-	return tokenID.Bytes(), nil
 }
 
 var (

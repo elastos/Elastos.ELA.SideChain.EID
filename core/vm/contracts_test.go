@@ -126,7 +126,7 @@ func testPrecompiledOOG(addr string, test precompiledTest, t *testing.T) {
 			t.Errorf("Expected error [out of gas], got [%v]", err)
 		}
 		// Verify that the precompile did not touch the input buffer
-		exp := common.Hex2Bytes(test.input)
+		exp := common.Hex2Bytes(test.Input)
 		if !bytes.Equal(in, exp) {
 			t.Errorf("Precompiled %v modified input data", addr)
 		}
