@@ -127,7 +127,7 @@ type Service struct {
 	mux *event.TypeMux
 }
 
-//Spv database initialization
+// Spv database initialization
 func SpvDbInit(spvdataDir string) {
 	db, err := leveldb.New(filepath.Join(spvdataDir, "spv_transaction_info.db"), databaseCache, handles, "eth/db/ela/")
 	if err != nil {
@@ -137,12 +137,13 @@ func SpvDbInit(spvdataDir string) {
 	spvTransactiondb = db
 }
 
-//Spv service initialization
+// Spv service initialization
 func NewService(cfg *Config, client *rpc.Client, tmux *event.TypeMux, dynamicArbiterHeight uint64) (*Service, error) {
 	var chainParams *config.Configuration
 	switch strings.ToLower(cfg.ActiveNet) {
 	case "testnet", "test", "t":
 		chainParams = config.DefaultParams.TestNet()
+		chainParams.PrintLevel = 0
 		chainParams.Magic = 2018111
 	case "regnet", "reg", "r":
 		chainParams = config.DefaultParams.RegNet()
@@ -215,7 +216,7 @@ func NewService(cfg *Config, client *rpc.Client, tmux *event.TypeMux, dynamicArb
 	return SpvService, nil
 }
 
-//minedBroadcastLoop Mining awareness, eth can initiate a recharge transaction after the block
+// minedBroadcastLoop Mining awareness, eth can initiate a recharge transaction after the block
 func MinedBroadcastLoop(minedBlockSub *event.TypeMuxSubscription,
 	ondutySub *event.TypeMuxSubscription,
 	smallCrossTxSub *event.TypeMuxSubscription) {
@@ -435,8 +436,7 @@ func saveOutputPayload(outputs []*elacom.Output, txHash string) error {
 	return nil
 }
 
-//
-//savePayloadInfo save and send spv perception
+// savePayloadInfo save and send spv perception
 func savePayloadInfo(elaTx it.Transaction, l *listener) {
 	if elaTx.PayloadVersion() >= payload.TransferCrossChainVersionV1 {
 		err := OnReceivedRechargeTx(elaTx)
@@ -513,7 +513,7 @@ func savePayloadInfo(elaTx it.Transaction, l *listener) {
 	return
 }
 
-//UpTransactionIndex records spv-aware refill transaction index
+// UpTransactionIndex records spv-aware refill transaction index
 func UpTransactionIndex(elaTx string) {
 	muupti.Lock()
 	defer muupti.Unlock()
@@ -538,7 +538,7 @@ func UpTransactionIndex(elaTx string) {
 
 }
 
-//IteratorUnTransaction iterates before mining and processes existing spv refill transactions
+// IteratorUnTransaction iterates before mining and processes existing spv refill transactions
 func IteratorUnTransaction(from ethCommon.Address) {
 	muiterator.Lock()
 	defer muiterator.Unlock()
@@ -621,7 +621,7 @@ func setNextSeek(seek uint64) {
 	}
 }
 
-//SendTransaction sends a reload transaction to txpool
+// SendTransaction sends a reload transaction to txpool
 func SendTransaction(from ethCommon.Address, elaTx string, fee *big.Int) (err error, finished bool) {
 	ethTx, err := ipcClient.StorageAt(context.Background(), ethCommon.Address{}, ethCommon.HexToHash("0x"+elaTx), nil)
 	if err != nil {
@@ -761,7 +761,7 @@ type DatabaseReader interface {
 	Get(key []byte) (value []byte, err error)
 }
 
-//FindOutputFeeAndaddressByTxHash Finds the eth recharge address, recharge amount, and transaction fee based on the main chain hash.
+// FindOutputFeeAndaddressByTxHash Finds the eth recharge address, recharge amount, and transaction fee based on the main chain hash.
 func FindOutputFeeAndaddressByTxHash(transactionHash string) (*big.Int, ethCommon.Address, *big.Int) {
 	var emptyaddr ethCommon.Address
 	if transactionHash[0:2] == "0x" {
