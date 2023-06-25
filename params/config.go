@@ -22,7 +22,7 @@ import (
 	"math/big"
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
-    "github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
@@ -69,7 +69,7 @@ var (
 		ConstantinopleBlock: big.NewInt(4),
 		PetersburgBlock:     big.NewInt(4),
 		IstanbulBlock:       big.NewInt(4),
-                BerlinBlock:         big.NewInt(math.MaxInt64),
+		BerlinBlock:         big.NewInt(math.MaxInt64),
 		LondonBlock:         big.NewInt(math.MaxInt64),
 		Clique: &CliqueConfig{
 			Period: 15,
@@ -142,7 +142,7 @@ var (
 		ConstantinopleBlock: big.NewInt(4),
 		PetersburgBlock:     big.NewInt(4),
 		IstanbulBlock:       big.NewInt(4),
-        BerlinBlock:         big.NewInt(math.MaxInt64),
+		BerlinBlock:         big.NewInt(math.MaxInt64),
 		LondonBlock:         big.NewInt(math.MaxInt64),
 		Clique: &CliqueConfig{
 			Period: 15,
@@ -179,10 +179,10 @@ var (
 
 	// TestnetTrustedCheckpoint contains the light client trusted checkpoint for the Ropsten test network.
 	TestnetTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 0xb,
-		SectionHead:  common.HexToHash("0xc5f019b73f00f33a85e2166901142b7ac82a81199b92f266b40c7ed2bb4b8437"),
-		CHTRoot:      common.HexToHash("0xe2e12201f55e3684434cf8bffb67a2323b07476b642bbf42e298aecdb79dc1bb"),
-		BloomRoot:    common.HexToHash("0xa55e26ae2b0dd99ccb27059206b7500a26188f52894291d4fcb92f5369ff0f24"),
+		SectionIndex: 0x143,
+		SectionHead:  common.HexToHash("0x9bf0b261352e69013996079a2ad4099073ced4112c4395798a403bcc3069383f"),
+		CHTRoot:      common.HexToHash("0xacf2bfd143fe821c2cbddb2d3ab2e45663ec63fbfa730c5aa12bbd00cd62ceea"),
+		BloomRoot:    common.HexToHash("0x2af4970230a34310dcec69fed834898bfa7036551bf9ad4fee7a97cc36052b5f"),
 	}
 
 	// TestnetCheckpointOracle contains a set of configs for the Ropsten test network oracle.
@@ -214,7 +214,7 @@ var (
 		PetersburgBlock:     big.NewInt(4),
 		IstanbulBlock:       big.NewInt(4),
 		ChainIDBlock:        big.NewInt(4),
-                BerlinBlock:         big.NewInt(math.MaxInt64),
+		BerlinBlock:         big.NewInt(math.MaxInt64),
 		LondonBlock:         big.NewInt(math.MaxInt64),
 		Clique: &CliqueConfig{
 			Period: 15,
@@ -284,7 +284,7 @@ var (
 		PetersburgBlock:     big.NewInt(4),
 		IstanbulBlock:       big.NewInt(4),
 		ChainIDBlock:        big.NewInt(4),
-                BerlinBlock:         big.NewInt(math.MaxInt64),
+		BerlinBlock:         big.NewInt(math.MaxInt64),
 		LondonBlock:         big.NewInt(math.MaxInt64),
 		Clique: &CliqueConfig{
 			Period: 15,
@@ -471,7 +471,7 @@ type ChainConfig struct {
 	MaxExpiredHeight   *big.Int `json:"maxExpiredHeight,omitempty"`
 	FrozeAccountList   []string
 	BridgeContractAddr string
-        PledgeBillContract    string
+	PledgeBillContract string
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
