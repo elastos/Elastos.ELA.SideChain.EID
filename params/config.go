@@ -69,8 +69,8 @@ var (
 		ConstantinopleBlock: big.NewInt(4),
 		PetersburgBlock:     big.NewInt(4),
 		IstanbulBlock:       big.NewInt(4),
-		BerlinBlock:         big.NewInt(math.MaxInt64),
-		LondonBlock:         big.NewInt(math.MaxInt64),
+		BerlinBlock:         big.NewInt(11079540),
+		LondonBlock:         big.NewInt(11079540),
 		Clique: &CliqueConfig{
 			Period: 15,
 			Epoch:  30000,
