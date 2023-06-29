@@ -35,7 +35,6 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/pledgeBill"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
-	"github.com/elastos/Elastos.ELA/blockchain"
 	"github.com/elastos/Elastos.ELA/core/contract"
 	"github.com/elastos/Elastos.ELA/core/contract/program"
 	elaCrypto "github.com/elastos/Elastos.ELA/crypto"
@@ -837,7 +836,7 @@ func checkMultiSignatures(m int, publickeys []*elaCrypto.PublicKey, signatures [
 		Parameter: signatures,
 	}
 	data := append(elaHash, toAddress...)
-	err = blockchain.CheckMultiSigSignatures(pro, data)
+	err = elaCrypto.CheckMultiSigSignatures(pro, data)
 	if err != nil {
 		return err
 	}
