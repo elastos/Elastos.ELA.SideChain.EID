@@ -69,8 +69,8 @@ var (
 		ConstantinopleBlock: big.NewInt(4),
 		PetersburgBlock:     big.NewInt(4),
 		IstanbulBlock:       big.NewInt(4),
-		BerlinBlock:         big.NewInt(math.MaxInt64),
-		LondonBlock:         big.NewInt(math.MaxInt64),
+		BerlinBlock:         big.NewInt(11079540),
+		LondonBlock:         big.NewInt(11079540),
 		Clique: &CliqueConfig{
 			Period: 15,
 			Epoch:  30000,
@@ -107,10 +107,10 @@ var (
 
 	// MainnetTrustedCheckpoint contains the light client trusted checkpoint for the main network.
 	MainnetTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 293,
-		SectionHead:  common.HexToHash("0x1176317d82005f230e76e9d470030de0414f8b818d604fd1dd4da034fb999e64"),
-		CHTRoot:      common.HexToHash("0x5f542c24125c232370e0c4ba76666c2891d11442f07de8bf91fd69b7ad27987b"),
-		BloomRoot:    common.HexToHash("0x9d7eb3c63c58f62b2b02ac316acd35e6bd5111d3c1df31e9763c4d8ae58c71d8"),
+		SectionIndex: 332,
+		SectionHead:  common.HexToHash("0xc0930a4f957b9cc72518c06cc6ba132e52d9e2d444b17e41ba7e6a5e56773715"),
+		CHTRoot:      common.HexToHash("0x63152ff310db38a4a7cc1c51d08e8b22e6a5b57c8a9a9f2c393a90d2628b951a"),
+		BloomRoot:    common.HexToHash("0x49adc1ae18db82c4902ffe6e11671c91b7ca43177218fe95d55b4fb0dfad7398"),
 	}
 
 	// MainnetCheckpointOracle contains a set of configs for the main network oracle.
