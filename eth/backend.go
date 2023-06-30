@@ -195,8 +195,6 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 		if chainConfig.Pbft.DPoSV2StartHeight <= 0 { //if config is set, use config value
 			chainConfig.Pbft.DPoSV2StartHeight = config.DPoSV2StartHeight
 		}
-		msg2.SetPayloadVersion(msg2.DPoSV2Version)
-		chainConfig.Pbft.NodeVersion = params.VersionWithESC()
 	}
 
 	if len(chainConfig.PbftKeyStore) > 0 {
@@ -285,6 +283,15 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 		return nil, err
 	}
 	eth.SetEngine(eth.blockchain.Engine())
+	if chainConfig.IsLondon(eth.blockchain.CurrentHeader().Number) {
+		if engine.IsProducer() {
+			msg2.SetPayloadVersion(msg2.DPoSV2Version)
+			chainConfig.Pbft.NodeVersion = params.VersionWithESC()
+		}
+	}
+	if err = engine.CreateNetWork(chainConfig); err == nil {
+		log.Warn("create pbft network failed", "error", err)
+	}
 	// Rewind the chain in case of an incompatible config upgrade.
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)

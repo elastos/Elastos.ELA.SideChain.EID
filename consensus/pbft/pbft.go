@@ -91,6 +91,8 @@ var (
 	errChainForkBlock = errors.New("chain fork block")
 
 	errDoubleSignBlock = errors.New("double sign block")
+
+	dposPath string
 )
 
 // Pbft is a consensus engine based on Byzantine fault-tolerant algorithm
@@ -129,7 +131,7 @@ type Pbft struct {
 
 func New(chainConfig *params.ChainConfig, dataDir string) *Pbft {
 	logpath := filepath.Join(dataDir, "/logs/dpos")
-	dposPath := filepath.Join(dataDir, "/network/dpos")
+	dposPath = filepath.Join(dataDir, "/network/dpos")
 	if strings.LastIndex(dataDir, "/") == len(dataDir)-1 {
 		dposPath = filepath.Join(dataDir, "network/dpos")
 		logpath = filepath.Join(dataDir, "logs/dpos")
@@ -187,6 +189,25 @@ func New(chainConfig *params.ChainConfig, dataDir string) *Pbft {
 
 	if account != nil {
 		accpubkey = account.PublicKeyBytes()
+	}
+
+	pbft.dispatcher = dpos.NewDispatcher(producers, pbft.onConfirm, pbft.onUnConfirm,
+		10*time.Second, accpubkey, medianTimeSouce, pbft, chainConfig.GetPbftBlock())
+	return pbft
+}
+
+func (p *Pbft) CreateNetWork(chainConfig *params.ChainConfig) error {
+	cfg := chainConfig.Pbft
+	if cfg == nil {
+		return errors.New("chainConfig.Pbft is nil")
+	}
+	medianTimeSouce := dtime.NewMedianTime()
+	account := p.account
+	if account == nil {
+		return errors.New("is not a producer")
+	}
+	if account != nil {
+		pubKeys := account.PublicKeyBytes()
 		network, err := dpos.NewNetwork(&dpos.NetworkConfig{
 			IPAddress:         cfg.IPAddress,
 			Magic:             cfg.Magic,
@@ -194,10 +215,10 @@ func New(chainConfig *params.ChainConfig, dataDir string) *Pbft {
 			Account:           account,
 			MedianTime:        medianTimeSouce,
 			MaxNodePerHost:    cfg.MaxNodePerHost,
-			Listener:          pbft,
+			Listener:          p,
 			DataPath:          dposPath,
-			PublicKey:         accpubkey,
-			GetCurrentHeight:  pbft.GetMainChainHeight,
+			PublicKey:         pubKeys,
+			GetCurrentHeight:  p.GetMainChainHeight,
 			DPoSV2StartHeight: cfg.DPoSV2StartHeight,
 			NodeVersion:       cfg.NodeVersion,
 			AnnounceAddr: func() {
@@ -208,12 +229,10 @@ func New(chainConfig *params.ChainConfig, dataDir string) *Pbft {
 			dpos.Error("New dpos network error:", err.Error())
 			return nil
 		}
-		pbft.network = network
-		pbft.subscribeEvent()
+		p.network = network
+		p.subscribeEvent()
 	}
-	pbft.dispatcher = dpos.NewDispatcher(producers, pbft.onConfirm, pbft.onUnConfirm,
-		10*time.Second, accpubkey, medianTimeSouce, pbft, chainConfig.GetPbftBlock())
-	return pbft
+	return nil
 }
 
 func (p *Pbft) GetMainChainHeight(pid peer.PID) uint64 {
