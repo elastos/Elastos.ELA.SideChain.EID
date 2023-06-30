@@ -191,9 +191,9 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*Ethereum, 
 	chainConfig.EvilSignersJournalDir = config.EvilSignersJournalDir
 
 	if chainConfig.Pbft != nil {
-		//if chainConfig.Pbft.DPoSV2StartHeight <= 0 { //if config is set, use config value
-		//	chainConfig.Pbft.DPoSV2StartHeight = config.DPoSV2StartHeight
-		//}
+		if chainConfig.Pbft.DPoSV2StartHeight <= 0 { //if config is set, use config value
+			chainConfig.Pbft.DPoSV2StartHeight = config.DPoSV2StartHeight
+		}
 		//msg2.SetPayloadVersion(msg2.DPoSV2Version)
 		chainConfig.Pbft.NodeVersion = params.VersionWithESC()
 	}
