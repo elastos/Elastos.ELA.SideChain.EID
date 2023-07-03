@@ -16,7 +16,7 @@
 
 package ethclient
 
-import "github.com/elastos/Elastos.ELA.SideChain.ESC"
+import "github.com/elastos/Elastos.ELA.SideChain.EID"
 
 // Verify that Client implements the ethereum interfaces.
 var (

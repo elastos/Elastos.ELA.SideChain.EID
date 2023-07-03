@@ -3,14 +3,14 @@ package listener
 import (
 	"context"
 	"fmt"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/blockstore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/bridgelog"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/blockstore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/bridgelog"
 	"math/big"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/config"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/relayer"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/config"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/relayer"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 var BlockDelay = big.NewInt(6)

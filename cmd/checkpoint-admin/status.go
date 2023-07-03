@@ -19,8 +19,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"gopkg.in/urfave/cli.v1"
 )
 

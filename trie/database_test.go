@@ -19,8 +19,8 @@ package trie
 import (
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb/memorydb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/memorydb"
 )
 
 // Tests that the trie database returns a missing trie node error if attempting

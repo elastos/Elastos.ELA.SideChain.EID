@@ -23,9 +23,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/math"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 type diffTest struct {

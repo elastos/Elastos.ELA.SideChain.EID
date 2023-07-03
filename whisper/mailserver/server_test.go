@@ -25,9 +25,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	whisper "github.com/elastos/Elastos.ELA.SideChain.ESC/whisper/whisperv6"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
 )
 
 const powRequirement = 0.00001

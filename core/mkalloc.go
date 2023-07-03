@@ -34,8 +34,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 type allocItem struct{ Addr, Balance *big.Int }

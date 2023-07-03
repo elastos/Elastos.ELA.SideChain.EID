@@ -38,7 +38,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/tracers"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers"
 )
 
 // init registers itself this packages as a lookup for tracers.

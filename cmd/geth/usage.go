@@ -24,8 +24,8 @@ import (
 
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/debug"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/debug"
 	cli "gopkg.in/urfave/cli.v1"
 )
 

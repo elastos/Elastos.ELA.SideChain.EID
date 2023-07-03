@@ -20,8 +20,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 )
 
 // senderFromServer is a types.Signer that remembers the sender address returned by the RPC

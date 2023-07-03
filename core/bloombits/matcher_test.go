@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 const testSectionSize = 4096

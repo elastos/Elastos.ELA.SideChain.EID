@@ -24,13 +24,13 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/ethash"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/downloader"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/gasprice"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/miner"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/ethash"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/downloader"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/gasprice"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/miner"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.

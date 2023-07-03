@@ -3,7 +3,7 @@ package chainbridge_abi
 import (
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
 )
 
 func GetSetArbitersABI() (abi.ABI, error) {

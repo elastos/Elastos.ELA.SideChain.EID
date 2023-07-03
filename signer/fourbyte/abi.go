@@ -23,8 +23,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // decodedCallData is an internal type to represent a method call parsed according

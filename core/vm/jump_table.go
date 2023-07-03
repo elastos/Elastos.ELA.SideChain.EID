@@ -19,7 +19,7 @@ package vm
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 type (

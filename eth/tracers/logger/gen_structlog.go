@@ -5,10 +5,10 @@ package logger
 import (
 	"encoding/json"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/math"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"github.com/holiman/uint256"
 )
 

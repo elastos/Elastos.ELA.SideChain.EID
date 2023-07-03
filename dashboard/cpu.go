@@ -21,7 +21,7 @@ package dashboard
 import (
 	"syscall"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // getProcessCPUTime retrieves the process' CPU time since program startup.

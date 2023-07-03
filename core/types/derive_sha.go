@@ -19,9 +19,9 @@ package types
 import (
 	"bytes"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/trie"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/trie"
 )
 
 type DerivableList interface {

@@ -20,9 +20,9 @@ import (
 	"context"
 	"sync"
 
-	ethereum "github.com/elastos/Elastos.ELA.SideChain.ESC"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	ethereum "github.com/elastos/Elastos.ELA.SideChain.EID"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 // PublicDownloaderAPI provides an API which gives information about the current synchronisation status.

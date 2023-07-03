@@ -17,10 +17,10 @@
 package eth
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/forkid"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enode"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/forkid"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 // ethEntry is the "eth" ENR entry which advertises eth protocol

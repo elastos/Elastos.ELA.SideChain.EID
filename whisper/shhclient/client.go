@@ -19,10 +19,10 @@ package shhclient
 import (
 	"context"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
-	whisper "github.com/elastos/Elastos.ELA.SideChain.ESC/whisper/whisperv6"
+	"github.com/elastos/Elastos.ELA.SideChain.EID"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
+	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
 )
 
 // Client defines typed wrappers for the Whisper v6 RPC API.

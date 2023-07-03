@@ -24,10 +24,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/console"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/console"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"gopkg.in/urfave/cli.v1"
 )
 

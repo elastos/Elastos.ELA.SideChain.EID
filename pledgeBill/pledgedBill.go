@@ -7,11 +7,11 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethclient"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb/leveldb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/smallcrosstx"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethclient"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/leveldb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
 
 	elaCom "github.com/elastos/Elastos.ELA/common"
 	it "github.com/elastos/Elastos.ELA/core/types/interfaces"

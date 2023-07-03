@@ -26,7 +26,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
 	"golang.org/x/crypto/sha3"
 )
 

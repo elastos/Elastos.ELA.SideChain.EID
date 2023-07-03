@@ -20,9 +20,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/prque"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/prque"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 )
 
 // ErrNotRequested is returned by the trie sync when it's requested to process a

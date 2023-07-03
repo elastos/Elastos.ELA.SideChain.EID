@@ -19,15 +19,15 @@ package main
 import (
 	"strconv"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi/bind"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/external"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/contracts/checkpointoracle"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethclient"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi/bind"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/external"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/contracts/checkpointoracle"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethclient"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"gopkg.in/urfave/cli.v1"
 )
 

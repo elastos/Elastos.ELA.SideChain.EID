@@ -24,8 +24,8 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enr"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enr"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"github.com/stretchr/testify/assert"
 )
 

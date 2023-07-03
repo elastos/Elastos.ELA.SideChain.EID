@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/elastic/gosigar"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
 )
 
 // meterCollector returns a function, which retrieves the count of a specific meter.

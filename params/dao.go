@@ -19,7 +19,7 @@ package params
 import (
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // DAOForkBlockExtra is the block header extra-data field to set for the DAO fork

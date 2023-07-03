@@ -16,7 +16,7 @@
 
 package downloader
 
-import "github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
+import "github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 
 type DoneEvent struct {
 	Latest *types.Header

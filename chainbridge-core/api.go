@@ -3,11 +3,11 @@ package chainbridge_core
 import (
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/bridgelog"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus/pbft"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/bridgelog"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus/pbft"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // API is a user facing RPC API to allow controlling the signer and voting

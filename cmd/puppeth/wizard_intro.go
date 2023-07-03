@@ -26,7 +26,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // makeWizard creates and returns a new puppeth wizard.

@@ -35,7 +35,7 @@ package whisperv6
 import (
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
 // Whisper protocol parameters

@@ -22,7 +22,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // A BigInt represents a signed multi-precision integer.

@@ -19,7 +19,7 @@ package vm
 import (
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/holiman/uint256"
 )
 

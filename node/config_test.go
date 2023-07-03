@@ -24,8 +24,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
 )
 
 // Tests that datadirs can be successfully created, be them manually configured

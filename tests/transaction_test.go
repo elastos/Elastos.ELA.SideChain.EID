@@ -19,7 +19,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 func TestTransaction(t *testing.T) {

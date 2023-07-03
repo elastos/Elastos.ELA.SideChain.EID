@@ -40,7 +40,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 const SizeLimit = 300 // maximum encoded size of a node record in bytes

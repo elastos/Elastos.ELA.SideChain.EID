@@ -27,8 +27,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enr"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enr"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 var errMissingPrefix = errors.New("missing 'enr:' prefix for base64-encoded record")

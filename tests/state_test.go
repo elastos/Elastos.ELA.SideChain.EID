@@ -20,11 +20,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth/tracers/logger"
 	"reflect"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers/logger"
 )
 
 func TestState(t *testing.T) {

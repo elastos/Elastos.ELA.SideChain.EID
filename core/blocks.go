@@ -16,7 +16,7 @@
 
 package core
 
-import "github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+import "github.com/elastos/Elastos.ELA.SideChain.EID/common"
 
 // BadHashes represent a set of manually tracked bad hashes (usually hard forks)
 var BadHashes = map[common.Hash]bool{

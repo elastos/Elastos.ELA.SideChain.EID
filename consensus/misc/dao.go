@@ -21,9 +21,9 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/state"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 var (

@@ -17,7 +17,7 @@
 package vm
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 func minSwapStack(n int) int {

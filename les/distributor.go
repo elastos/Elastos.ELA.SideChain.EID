@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
 )
 
 // requestDistributor implements a mechanism that distributes requests to

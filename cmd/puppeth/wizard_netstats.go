@@ -23,8 +23,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/olekukonko/tablewriter"
 )
 

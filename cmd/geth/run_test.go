@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/reexec"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/cmdtest"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/cmdtest"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 func tmpdir(t *testing.T) string {

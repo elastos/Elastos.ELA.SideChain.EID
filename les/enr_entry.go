@@ -17,7 +17,7 @@
 package les
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 // lesEntry is the "les" ENR entry. This is set for LES servers only.

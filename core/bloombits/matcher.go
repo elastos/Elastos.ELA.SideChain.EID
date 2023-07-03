@@ -26,8 +26,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/bitutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/bitutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
 // bloomIndexes represents the bit indexes inside the bloom filter that belong

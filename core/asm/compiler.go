@@ -22,8 +22,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/math"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 )
 
 // Compiler contains information about the parsed source

@@ -22,7 +22,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // Strings represents s slice of strs.

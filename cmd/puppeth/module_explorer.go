@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // explorerDockerfile is the Dockerfile required to run a block explorer.

@@ -17,7 +17,7 @@
 package state
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // transientStorage is a representation of EIP-1153 "Transient Storage".

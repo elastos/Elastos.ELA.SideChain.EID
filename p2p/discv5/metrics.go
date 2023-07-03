@@ -16,7 +16,7 @@
 
 package discv5
 
-import "github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
+import "github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
 
 var (
 	ingressTrafficMeter = metrics.NewRegisteredMeter("discv5/InboundTraffic", nil)

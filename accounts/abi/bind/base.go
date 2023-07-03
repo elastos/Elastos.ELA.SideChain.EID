@@ -24,12 +24,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 )
 
 // SignerFn is a signer function callback when a contract requires a method to

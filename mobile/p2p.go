@@ -21,7 +21,7 @@ package geth
 import (
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
 )
 
 // NodeInfo represents pi short summary of the information known about the host.

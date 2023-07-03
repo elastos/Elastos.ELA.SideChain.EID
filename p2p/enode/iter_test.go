@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enr"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enr"
 )
 
 func TestReadNodes(t *testing.T) {

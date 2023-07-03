@@ -19,7 +19,7 @@ package ethapi
 import (
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 type AddrLocker struct {

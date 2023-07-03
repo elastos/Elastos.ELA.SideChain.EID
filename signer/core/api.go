@@ -25,16 +25,16 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/keystore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/scwallet"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/usbwallet"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/ethapi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/storage"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/scwallet"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/usbwallet"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/ethapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/storage"
 )
 
 const (

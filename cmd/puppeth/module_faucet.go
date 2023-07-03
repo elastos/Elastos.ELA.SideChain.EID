@@ -26,8 +26,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // faucetDockerfile is the Dockerfile required to build a faucet container to

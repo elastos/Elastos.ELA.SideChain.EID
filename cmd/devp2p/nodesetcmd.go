@@ -21,10 +21,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/forkid"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enr"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/forkid"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enr"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"gopkg.in/urfave/cli.v1"
 )
 

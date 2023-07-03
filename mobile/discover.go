@@ -22,7 +22,7 @@ package geth
 import (
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/discv5"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/discv5"
 )
 
 // Enode represents a host on the network.

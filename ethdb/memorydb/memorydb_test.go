@@ -19,8 +19,8 @@ package memorydb
 import (
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb/dbtest"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/dbtest"
 )
 
 func TestMemoryDB(t *testing.T) {

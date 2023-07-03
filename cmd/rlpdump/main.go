@@ -26,7 +26,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 var (

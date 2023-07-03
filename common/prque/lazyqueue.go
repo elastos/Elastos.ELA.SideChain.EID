@@ -20,7 +20,7 @@ import (
 	"container/heap"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
 )
 
 // LazyQueue is a priority queue data structure where priorities can change over

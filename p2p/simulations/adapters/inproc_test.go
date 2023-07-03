@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/simulations/pipes"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/simulations/pipes"
 )
 
 func TestTCPPipe(t *testing.T) {

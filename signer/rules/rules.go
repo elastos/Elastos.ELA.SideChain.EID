@@ -22,11 +22,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/ethapi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/rules/deps"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/storage"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/ethapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/rules/deps"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/storage"
 	"github.com/robertkrimen/otto"
 )
 

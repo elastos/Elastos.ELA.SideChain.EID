@@ -27,16 +27,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/keystore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/ethapi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/fourbyte"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/signer/storage"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/ethapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/fourbyte"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/signer/storage"
 )
 
 //Used for testing

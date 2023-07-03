@@ -19,7 +19,7 @@ package bloombits
 import (
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 )
 
 var (

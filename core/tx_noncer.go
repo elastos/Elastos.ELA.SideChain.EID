@@ -19,8 +19,8 @@ package core
 import (
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/state"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
 )
 
 // txNoncer is a tiny virtual state database to manage the executable nonces of

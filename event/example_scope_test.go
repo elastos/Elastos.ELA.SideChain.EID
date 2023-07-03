@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 )
 
 // This example demonstrates how SubscriptionScope can be used to control the lifetime of

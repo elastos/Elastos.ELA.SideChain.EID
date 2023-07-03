@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // manageServers displays a list of servers the user can disconnect from, and an

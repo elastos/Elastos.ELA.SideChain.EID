@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
 )
 
 // Simulation provides a framework for running actions in a simulated network

@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
 )
 
 type testNode struct {

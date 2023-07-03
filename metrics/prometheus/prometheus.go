@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
 )
 
 // Handler returns an HTTP handler which dump metrics in Prometheus format.

@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/consensus"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/consensus"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/blocksigner"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/spv"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/blocksigner"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 )
 
 //Evidence of evil signers

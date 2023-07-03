@@ -19,7 +19,7 @@ package downloader
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 )
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.

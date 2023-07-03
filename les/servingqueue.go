@@ -21,8 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/mclock"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/prque"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/prque"
 )
 
 // servingQueue allows running tasks in a limited number of threads and puts the

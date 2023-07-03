@@ -19,7 +19,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // deployDashboard queries the user for various input on deploying a web-service

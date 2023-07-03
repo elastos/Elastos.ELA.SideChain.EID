@@ -21,7 +21,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 // Entry is implemented by known node record entry types.

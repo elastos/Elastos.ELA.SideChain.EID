@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 func TestInterfaceGetSet(t *testing.T) {

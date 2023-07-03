@@ -19,8 +19,8 @@ package trie
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // SecureTrie wraps a trie with key hashing. In a secure trie, all

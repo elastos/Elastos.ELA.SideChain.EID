@@ -19,7 +19,7 @@ package core
 import (
 	"runtime"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 )
 
 // senderCacher is a concurrent transaction sender recoverer and cacher.

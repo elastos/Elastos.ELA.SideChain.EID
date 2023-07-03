@@ -23,8 +23,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
 )
 
 func TestUDPv4_Lookup(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/evm/internal/compiler"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/evm/internal/compiler"
 
 	cli "gopkg.in/urfave/cli.v1"
 )

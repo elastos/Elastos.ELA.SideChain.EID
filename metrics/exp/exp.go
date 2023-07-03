@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics/prometheus"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics/prometheus"
 )
 
 type exp struct {

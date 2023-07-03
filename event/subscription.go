@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
 )
 
 // Subscription represents a stream of events. The carrier of the events is typically a

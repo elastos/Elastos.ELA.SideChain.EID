@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/fdlimit"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/fdlimit"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"gopkg.in/urfave/cli.v1"
 )
 

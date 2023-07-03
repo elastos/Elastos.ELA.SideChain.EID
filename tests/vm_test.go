@@ -19,7 +19,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 )
 
 func TestVM(t *testing.T) {

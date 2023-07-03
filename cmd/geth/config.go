@@ -25,12 +25,12 @@ import (
 	"reflect"
 	"unicode"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/dashboard"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/eth"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/node"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
-	whisper "github.com/elastos/Elastos.ELA.SideChain.ESC/whisper/whisperv6"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dashboard"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
 	"github.com/naoina/toml"
 	cli "gopkg.in/urfave/cli.v1"
 

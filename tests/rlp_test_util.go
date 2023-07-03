@@ -24,7 +24,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 )
 
 // RLPTest is the JSON structure of a single RLP test.

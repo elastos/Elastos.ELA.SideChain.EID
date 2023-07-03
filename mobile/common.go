@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
 )
 
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.

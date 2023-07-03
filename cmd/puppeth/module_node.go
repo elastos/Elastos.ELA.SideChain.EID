@@ -26,8 +26,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // nodeDockerfile is the Dockerfile required to run an Ethereum node.

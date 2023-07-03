@@ -28,9 +28,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/jsre"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/web3ext"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/jsre"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/web3ext"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/mattn/go-colorable"
 	"github.com/peterh/liner"
 	"github.com/robertkrimen/otto"

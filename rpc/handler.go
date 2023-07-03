@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // handler handles JSON-RPC messages. There is one handler per connection. Note that

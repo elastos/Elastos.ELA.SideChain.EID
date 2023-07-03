@@ -2,7 +2,7 @@ package pledgeBill
 
 import (
 	"encoding/binary"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/smallcrosstx"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
 )
 
 func GetIndexByKey(Key string) (uint64, error) {

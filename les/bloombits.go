@@ -19,8 +19,8 @@ package les
 import (
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/bitutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/light"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/bitutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/light"
 )
 
 const (

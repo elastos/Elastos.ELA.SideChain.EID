@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
 // FunctionType represents different types of functions a contract might have.

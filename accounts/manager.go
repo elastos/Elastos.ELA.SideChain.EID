@@ -21,8 +21,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 )
 
 // Config contains the settings of the global account manager.

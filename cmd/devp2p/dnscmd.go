@@ -25,11 +25,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/keystore"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/console"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/dnsdisc"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/console"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/dnsdisc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
 	cli "gopkg.in/urfave/cli.v1"
 )
 

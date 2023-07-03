@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
 )
 
 // Tests the Elastos.ELA.SideChain.ESC to Aleth chainspec conversion for the Stureby testnet.

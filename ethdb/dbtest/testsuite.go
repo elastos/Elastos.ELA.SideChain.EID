@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 )
 
 // TestDatabaseSuite runs a suite of tests against a KeyValueStore database

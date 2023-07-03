@@ -30,8 +30,8 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // Lang is a target programming language selector to generate bindings for.

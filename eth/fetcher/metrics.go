@@ -19,7 +19,7 @@
 package fetcher
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/metrics"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/metrics"
 )
 
 var (

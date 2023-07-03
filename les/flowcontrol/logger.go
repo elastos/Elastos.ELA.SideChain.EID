@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/mclock"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/mclock"
 )
 
 // logger collects events in string format and discards events older than the

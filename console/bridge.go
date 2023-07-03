@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/scwallet"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/usbwallet"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/scwallet"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/usbwallet"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/robertkrimen/otto"
 )
 

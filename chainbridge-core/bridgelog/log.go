@@ -1,6 +1,6 @@
 package bridgelog
 
-import "github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+import "github.com/elastos/Elastos.ELA.SideChain.EID/log"
 
 func Info(msg string, ctx ...interface{}) {
 	log.Info("[chainbridge info]", "", msg, "", ctx)

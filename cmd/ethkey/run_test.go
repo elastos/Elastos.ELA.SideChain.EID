@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/docker/docker/pkg/reexec"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/cmdtest"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/cmdtest"
 )
 
 type testEthkey struct {

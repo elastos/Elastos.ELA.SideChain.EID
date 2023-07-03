@@ -26,7 +26,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/stretchr/testify/require"
 )
 

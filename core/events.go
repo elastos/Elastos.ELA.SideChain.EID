@@ -17,8 +17,8 @@
 package core
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 )
 
 // NewTxsEvent is posted when a batch of transactions enter the transaction pool.

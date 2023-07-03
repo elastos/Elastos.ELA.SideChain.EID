@@ -22,7 +22,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/cmd/utils"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
 	"gopkg.in/urfave/cli.v1"
 )
 

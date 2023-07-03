@@ -21,9 +21,9 @@ package geth
 import (
 	"encoding/json"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/discv5"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/params"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/discv5"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
 )
 
 // MainnetGenesis returns the JSON spec to use for the main Ethereum network. It

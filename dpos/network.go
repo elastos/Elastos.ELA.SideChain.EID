@@ -9,8 +9,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/dpos_msg"
-	dmsg "github.com/elastos/Elastos.ELA.SideChain.ESC/dpos/msg"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/dpos_msg"
+	dmsg "github.com/elastos/Elastos.ELA.SideChain.EID/dpos/msg"
 	peer2 "github.com/elastos/Elastos.ELA/p2p/peer"
 	"net"
 

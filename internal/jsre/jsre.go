@@ -26,8 +26,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/internal/jsre/deps"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/jsre/deps"
 	"github.com/robertkrimen/otto"
 )
 

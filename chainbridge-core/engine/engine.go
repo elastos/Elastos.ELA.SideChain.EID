@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
 
 	"github.com/elastos/Elastos.ELA/dpos/p2p/peer"
 	"github.com/elastos/Elastos.ELA/p2p"

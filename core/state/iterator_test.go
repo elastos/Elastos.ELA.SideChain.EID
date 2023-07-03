@@ -20,8 +20,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethdb"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 )
 
 // Tests that the node iterator indeed walks over the entire database contents.

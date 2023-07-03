@@ -19,7 +19,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // ensureVirtualHost checks whether a reverse-proxy is running on the specified

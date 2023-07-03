@@ -19,8 +19,8 @@
 package geth
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/whisper/shhclient"
-	whisper "github.com/elastos/Elastos.ELA.SideChain.ESC/whisper/whisperv6"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/whisper/shhclient"
+	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
 )
 
 // WhisperClient provides access to the Ethereum APIs.

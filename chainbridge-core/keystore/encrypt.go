@@ -14,9 +14,9 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/crypto/secp256k1"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto/blake2b"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto/secp256k1"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/blake2b"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

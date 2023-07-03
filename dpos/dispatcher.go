@@ -20,7 +20,7 @@ import (
 	"github.com/elastos/Elastos.ELA/dpos/p2p/msg"
 	"github.com/elastos/Elastos.ELA/dpos/p2p/peer"
 
-	dmsg "github.com/elastos/Elastos.ELA.SideChain.ESC/dpos/msg"
+	dmsg "github.com/elastos/Elastos.ELA.SideChain.EID/dpos/msg"
 )
 
 type Dispatcher struct {

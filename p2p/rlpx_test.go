@@ -32,10 +32,10 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto/ecies"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/simulations/pipes"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto/ecies"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/simulations/pipes"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
 	"golang.org/x/crypto/sha3"
 )
 

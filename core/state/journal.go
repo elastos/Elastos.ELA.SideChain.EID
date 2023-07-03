@@ -19,7 +19,7 @@ package state
 import (
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // journalEntry is a modification entry in the state change journal that can be

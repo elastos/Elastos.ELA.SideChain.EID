@@ -19,7 +19,7 @@ package les
 import (
 	"errors"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
 )
 
 var (

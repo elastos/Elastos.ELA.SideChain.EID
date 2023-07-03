@@ -21,8 +21,8 @@ package geth
 import (
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/ethclient"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/ethclient"
 )
 
 // EthereumClient provides access to the Ethereum APIs.

@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 func TestUnmarshalJSONNewFilterArgs(t *testing.T) {

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 )
 
 // Event is an event potentially triggered by the EVM's LOG mechanism. The Event

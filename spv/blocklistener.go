@@ -5,11 +5,11 @@ import (
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
 	"github.com/elastos/Elastos.ELA.SPV/util"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/dpos_msg"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	eevent "github.com/elastos/Elastos.ELA.SideChain.ESC/core/events"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/dpos"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/dpos_msg"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	eevent "github.com/elastos/Elastos.ELA.SideChain.EID/core/events"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 
 	"github.com/elastos/Elastos.ELA/core/transaction"
 	"github.com/elastos/Elastos.ELA/core/types/payload"

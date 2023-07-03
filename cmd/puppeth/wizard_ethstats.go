@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // deployEthstats queries the user for various input on deploying an ethstats

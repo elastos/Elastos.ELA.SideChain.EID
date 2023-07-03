@@ -6,8 +6,8 @@
 package dpos
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/crypto"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/crypto/secp256k1"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto/secp256k1"
 	"github.com/elastos/Elastos.ELA/account"
 	daccount "github.com/elastos/Elastos.ELA/dpos/account"
 )

@@ -1,7 +1,7 @@
 package pledgeBill
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
 	"strings"
 )
 

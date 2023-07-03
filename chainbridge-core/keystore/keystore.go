@@ -29,7 +29,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/chainbridge-core/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/chainbridge-core/crypto"
 )
 
 const EnvPassword = "KEYSTORE_PASSWORD"

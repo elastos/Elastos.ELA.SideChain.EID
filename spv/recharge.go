@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	ethCommon "github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	ethCommon "github.com/elastos/Elastos.ELA.SideChain.EID/common"
 
 	"github.com/elastos/Elastos.ELA/common"
 )

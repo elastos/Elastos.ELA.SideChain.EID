@@ -26,7 +26,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/math"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/math"
 	"gopkg.in/urfave/cli.v1"
 )
 

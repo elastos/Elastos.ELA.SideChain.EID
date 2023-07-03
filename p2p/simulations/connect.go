@@ -20,7 +20,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/enode"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/enode"
 )
 
 var (

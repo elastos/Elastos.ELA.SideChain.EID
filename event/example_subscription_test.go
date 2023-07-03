@@ -19,7 +19,7 @@ package event_test
 import (
 	"fmt"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/event"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 )
 
 func ExampleNewSubscription() {

@@ -17,8 +17,8 @@
 package runtime
 
 import (
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/vm"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 )
 
 func NewEnv(cfg *Config) *vm.EVM {

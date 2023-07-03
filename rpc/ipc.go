@@ -20,8 +20,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/p2p/netutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p/netutil"
 )
 
 // ServeListener accepts connections on l, serving JSON-RPC on them.

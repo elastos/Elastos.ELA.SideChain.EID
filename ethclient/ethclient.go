@@ -24,12 +24,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common/hexutil"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/types"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rlp"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common/hexutil"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rlp"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
@@ -535,8 +535,6 @@ func (ec *Client) GetCurrentProducers(ctx context.Context) ([]string, error) {
 	err := ec.c.CallContext(ctx, &result, "eth_getCurrentProducers")
 	return result, err
 }
-
-
 
 func (ec *Client) CurrentBlockNumber(ctx context.Context) (uint64, error) {
 	var hex hexutil.Uint64

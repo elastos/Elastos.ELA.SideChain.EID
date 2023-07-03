@@ -54,7 +54,7 @@ func TestBloom(t *testing.T) {
 import (
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/core/state"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
 )
 
 func TestBloom9(t *testing.T) {

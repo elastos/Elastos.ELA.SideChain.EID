@@ -22,7 +22,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/rpc"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 )
 
 // In this example, our client wishes to track the latest 'block number'

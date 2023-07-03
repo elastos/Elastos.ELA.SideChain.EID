@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // Tests that all the selectors contained in the 4byte database are valid.

@@ -62,12 +62,17 @@ require (
 	gopkg.in/urfave/cli.v1 v1.20.0
 )
 
+require github.com/elastos/Elastos.ELA.SideChain.EID v0.2.2
+
 require (
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
+	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
+	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/cevaris/ordered_map v0.0.0-20220813181356-34664b69742b // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dlclark/regexp2 v1.4.1-0.20201116162257-a2a8dda75c91 // indirect
+	github.com/elastos/Elastos.ELA.SideChain v0.3.0 // indirect
 	github.com/go-echarts/go-echarts/v2 v2.2.3 // indirect
 	github.com/go-echarts/statsview v0.3.4 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
@@ -97,5 +102,4 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gotest.tools/v3 v3.4.0 // indirect
 )

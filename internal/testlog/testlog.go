@@ -20,7 +20,7 @@ package testlog
 import (
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // Logger returns a logger which logs to the unit test log of t.

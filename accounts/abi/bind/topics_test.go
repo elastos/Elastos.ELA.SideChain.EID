@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/accounts/abi"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 func TestMakeTopics(t *testing.T) {

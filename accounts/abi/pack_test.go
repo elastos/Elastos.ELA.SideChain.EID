@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 )
 
 // TestPack tests the general pack/unpack tests in packing_test.go

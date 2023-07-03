@@ -8,8 +8,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/common"
-	"github.com/elastos/Elastos.ELA.SideChain.ESC/crypto"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 
 	"github.com/elastos/Elastos.ELA/dpos/p2p/peer"
 )
