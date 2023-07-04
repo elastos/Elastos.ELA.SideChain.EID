@@ -3,6 +3,7 @@
 const Web3 = require("web3");
 const web3 = new Web3("http://127.0.0.1:20646");
 const ctrt = require("./ctrt");
+const pledgeBillContract = require("./pledgeBillContract");
 
 
 web3.extend({
@@ -39,23 +40,28 @@ web3.extend({
     ]
 });
 const contract = new web3.eth.Contract(ctrt.abi);
+const pledgeBill = new web3.eth.Contract(pledgeBillContract.abi)
 console.log(JSON.stringify(process.env.env));
 switch (process.env.env) {
     case "rinkeby":
         console.log("0x762a042b8B9f9f0d3179e992d965c11785219599");
         contract.options.address = "0x762a042b8B9f9f0d3179e992d965c11785219599";
+        pledgeBill.options.address = ""
         break;
     case "testnet":
         console.log("0x762a042b8B9f9f0d3179e992d965c11785219599");
         contract.options.address = "0x762a042b8B9f9f0d3179e992d965c11785219599";
+        pledgeBill.options.address = ""
         break;
     case "mainnet":
         console.log("0x6F60FdED6303e73A83ef99c53963407f415e80b9");
         contract.options.address = "0x6F60FdED6303e73A83ef99c53963407f415e80b9";
+        pledgeBill.options.address = ""
         break;
     default:
         console.log("config address");
         contract.options.address = ctrt.address;
+        pledgeBill.options.address = pledgeBillContract.address
 }
 const payloadReceived = {name: null, inputs: null, signature: null};
 const blackAdr = "0x0000000000000000000000000000000000000000";
@@ -70,10 +76,14 @@ for (const event of ctrt.abi) {
     }
 }
 
+const pledgeBillBurnEvent = pledgeBillContract.abi[0]
+
 module.exports = {
     web3: web3,
     contract: contract,
     payloadReceived: payloadReceived,
+    pledgeBillBurnEvent:pledgeBillBurnEvent,
+    pledgeBillContract:pledgeBill,
     blackAdr: blackAdr,
     latest: latest,
     zeroHash64: zeroHash64,

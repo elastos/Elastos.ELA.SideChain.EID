@@ -9,18 +9,20 @@ For prerequisites and detailed build instructions please read the
 [Installation Instructions](https://github.com/elastos/Elastos.ELA.SideChain.EID/wiki/Building-Ethereum)
 on the wiki.
 
-Building `geth` requires both a Go (version 1.16.5 or later) and a C compiler. You can install
+Building `geth` requires both a Go (version 1.20 or later) and a C compiler. You can install
 them using your favourite package manager. Once the dependencies are installed, run
 
 ```shell
-export GO111MODULE=auto
+export GO111MODULE=on
+go mod tidy
 make geth
 ```
 
 or, to build the full suite of utilities:
 
 ```shell
-export GO111MODULE=auto
+export GO111MODULE=on
+go mod tidy
 make all
 ```
 
@@ -316,6 +318,10 @@ Which will start mining blocks and transactions on a single CPU thread, creditin
 proceedings to the account specified by `--etherbase`. You can further tune the mining
 by changing the default gas limit blocks converge to (`--targetgaslimit`) and the price
 transactions are accepted at (`--gasprice`).
+
+## Upgrade EVM version to ShangHai
+This section highlights the main breaking changes introduced in Solidity version 0.8.20.
+For the full list check [the release changelog](https://github.com/ethereum/solidity/releases/tag/v0.8.20)
 
 ## Contribution
 

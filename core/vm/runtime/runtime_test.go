@@ -30,13 +30,12 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/asm"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/state"
-        "github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/core/types"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
-        "github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers"
+	_ "github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers/js"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers/logger"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
-
-        _ "github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers/js"
 )
 
 func TestDefaults(t *testing.T) {

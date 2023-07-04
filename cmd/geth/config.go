@@ -25,21 +25,17 @@ import (
 	"reflect"
 	"unicode"
 
-	cli "gopkg.in/urfave/cli.v1"
-	"path/filepath"
-
 	"github.com/elastos/Elastos.ELA.SideChain.EID/cmd/utils"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/dashboard"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/eth"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/node"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
-	"github.com/elastos/Elastos.ELA.SideChain.EID/spv"
 	whisper "github.com/elastos/Elastos.ELA.SideChain.EID/whisper/whisperv6"
-	"github.com/naoina/toml"
-
 	"github.com/elastos/Elastos.ELA/common/config"
 	elatx "github.com/elastos/Elastos.ELA/core/transaction"
 	"github.com/elastos/Elastos.ELA/core/types/functions"
+	"github.com/naoina/toml"
+	cli "gopkg.in/urfave/cli.v1"
 )
 
 var (
@@ -169,21 +165,6 @@ func enableWhisper(ctx *cli.Context) bool {
 
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
-
-	var SpvDbDir string
-	switch {
-	case ctx.GlobalIsSet(utils.DataDirFlag.Name):
-		SpvDbDir = ctx.GlobalString(utils.DataDirFlag.Name)
-	case ctx.GlobalBool(utils.DeveloperFlag.Name):
-		SpvDbDir = "" // unless explicitly requested, use memory databases
-	case ctx.GlobalBool(utils.TestnetFlag.Name):
-		SpvDbDir = filepath.Join(node.DefaultDataDir(), "testnet")
-	case ctx.GlobalBool(utils.RinkebyFlag.Name):
-		SpvDbDir = filepath.Join(node.DefaultDataDir(), "rinkeby")
-	default:
-		SpvDbDir = node.DefaultDataDir()
-	}
-
 	switch {
 	case ctx.GlobalBool(utils.TestnetFlag.Name):
 		cfg.Eth.DPoSV2StartHeight = config.DefaultParams.TestNet().DPoSV2StartHeight
@@ -195,7 +176,6 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		cfg.Eth.DPoSV2StartHeight = config.DefaultParams.DPoSV2StartHeight
 	}
 
-	spv.SpvDbInit(SpvDbDir)
 	if ctx.GlobalIsSet(utils.OverrideIstanbulFlag.Name) {
 		cfg.Eth.OverrideIstanbul = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideIstanbulFlag.Name))
 	}

@@ -36,6 +36,7 @@ import (
 )
 
 var stopChain chan bool
+
 // Reduce some of the parameters to make the tester faster.
 func init() {
 	maxForkAncestry = 10000
@@ -482,12 +483,14 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 // Tests that simple synchronization against a canonical chain works correctly.
 // In this test common ancestor lookup should be short circuited and not require
 // binary searching.
-func TestCanonicalSynchronisation62(t *testing.T)      { testCanonicalSynchronisation(t, 62, FullSync) }
-func TestCanonicalSynchronisation63Full(t *testing.T)  { testCanonicalSynchronisation(t, 63, FullSync) }
-func TestCanonicalSynchronisation63Fast(t *testing.T)  { testCanonicalSynchronisation(t, 63, FastSync) }
-func TestCanonicalSynchronisation64Full(t *testing.T)  { testCanonicalSynchronisation(t, 64, FullSync) }
-func TestCanonicalSynchronisation64Fast(t *testing.T)  { testCanonicalSynchronisation(t, 64, FastSync) }
-func TestCanonicalSynchronisation64Light(t *testing.T) { testCanonicalSynchronisation(t, 64, LightSync) }
+func TestCanonicalSynchronisation62(t *testing.T)     { testCanonicalSynchronisation(t, 62, FullSync) }
+func TestCanonicalSynchronisation63Full(t *testing.T) { testCanonicalSynchronisation(t, 63, FullSync) }
+func TestCanonicalSynchronisation63Fast(t *testing.T) { testCanonicalSynchronisation(t, 63, FastSync) }
+func TestCanonicalSynchronisation64Full(t *testing.T) { testCanonicalSynchronisation(t, 64, FullSync) }
+func TestCanonicalSynchronisation64Fast(t *testing.T) { testCanonicalSynchronisation(t, 64, FastSync) }
+func TestCanonicalSynchronisation64Light(t *testing.T) {
+	testCanonicalSynchronisation(t, 64, LightSync)
+}
 
 func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
 	t.Parallel()
@@ -1244,15 +1247,14 @@ func TestForkedSyncProgress64Full(t *testing.T)  { testForkedSyncProgress(t, 64,
 func TestForkedSyncProgress64Fast(t *testing.T)  { testForkedSyncProgress(t, 64, FastSync) }
 func TestForkedSyncProgress64Light(t *testing.T) { testForkedSyncProgress(t, 64, LightSync) }
 
-
 func testLongForkedSyncProgress(t *testing.T, protocol int, mode SyncMode) {
 	t.Parallel()
 
 	tester := newTester()
 	defer tester.terminate()
 
-	chainA := testChainBase.makeFork(signersCount() / 2 + 1, false, 1)
-	chainB := testChainBase.makeFork(signersCount() / 2 + 1, true, 2)
+	chainA := testChainBase.makeFork(signersCount()/2+1, false, 1)
+	chainB := testChainBase.makeFork(signersCount()/2+1, true, 2)
 
 	// Set a sync init hook to catch progress changes
 	starting := make(chan struct{})

@@ -51,6 +51,9 @@ type StateDB interface {
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash)
 
+	GetTransientState(addr common.Address, key common.Hash) common.Hash
+	SetTransientState(addr common.Address, key, value common.Hash)
+
 	Suicide(common.Address) bool
 	HasSuicided(common.Address) bool
 
@@ -60,8 +63,7 @@ type StateDB interface {
 	// Empty returns whether the given account is empty. Empty
 	// is defined according to EIP161 (balance = nonce = code = 0).
 	Empty(common.Address) bool
-
-	PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList)
+	PrepareAccessList(rules params.Rules, sender, coinbase common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList)
 	AddressInAccessList(addr common.Address) bool
 	SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool)
 	// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
@@ -91,13 +93,13 @@ type StateDB interface {
 
 	GetLastVerifiableCredentialTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
 
-	GetCredentialExpiresHeight(credentIDKey []byte)  (uint32, error)
+	GetCredentialExpiresHeight(credentIDKey []byte) (uint32, error)
 
 	GetRevokeCredentialCtrls(credentIDKey []byte) ([]string, error)
 
 	AddDIDLog(did string, operation string, doc []byte)
 
-	IsDID(did string)  (bool, error)
+	IsDID(did string) (bool, error)
 
 	ReadTransaction(txID common.Hash) (*types.Transaction, common.Hash, uint64, uint64)
 
@@ -105,8 +107,7 @@ type StateDB interface {
 
 	GetDeactivatedTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
 
-	GetDIDExpiresHeight(idKey []byte)  (uint32, error)
-
+	GetDIDExpiresHeight(idKey []byte) (uint32, error)
 }
 
 // CallContext provides a basic interface for the EVM calling conventions. The EVM

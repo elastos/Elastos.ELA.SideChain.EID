@@ -839,6 +839,12 @@ var (
 		Name:  "updateArbiterListToLayer1",
 		Usage: "add data feed node for abiter reading",
 	}
+
+	PledgedBillContract = cli.StringFlag{
+		Name:  "pledged.bill.address",
+		Usage: "configue pledged bill address",
+		Value: "",
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -1622,6 +1628,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(ctx.GlobalUint64(CheckCustomizeDIDBeginHeightFlag.Name))
 
 	cfg.DynamicArbiterHeight = ctx.GlobalUint64(DynamicArbiter.Name)
+	cfg.PledgedBillContract = ctx.GlobalString(PledgedBillContract.Name)
+
 	cfg.FrozenAccountList = make([]string, 0)
 	// Override any default configs for hard coded networks.
 	switch {

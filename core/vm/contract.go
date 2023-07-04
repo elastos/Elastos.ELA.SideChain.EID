@@ -20,7 +20,7 @@ import (
 	"math/big"
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
-    "github.com/holiman/uint256"
+	"github.com/holiman/uint256"
 )
 
 // ContractRef is a reference to the contract's backing object

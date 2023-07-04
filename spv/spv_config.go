@@ -12,7 +12,7 @@ import (
 
 const (
 	DefaultConfigFilename = "./spvconfig.json"
-	Foundation            = "Foundation"
+	Foundation            = "FoundationAddress"
 	CRCAddress            = "CRCAddress"
 	GenesisBlock          = "GenesisBlock"
 	PowLimit              = "PowLimit"

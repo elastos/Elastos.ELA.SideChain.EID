@@ -40,7 +40,7 @@ type FailedWithdrawEvent struct {
 	Txid      string
 }
 
-//Spv database initialization
+// Spv database initialization
 func FailedWithrawInit(datadir string, evtMux *event.TypeMux) {
 	eventMux = evtMux
 }
@@ -255,7 +255,7 @@ func VerifySignatures(input []byte) bool {
 			}
 			err = elaCrypto.Verify(*pubKey, buff, sig)
 			if err == nil {
-				count ++
+				count++
 				break
 			}
 		}

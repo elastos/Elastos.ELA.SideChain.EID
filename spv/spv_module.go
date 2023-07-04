@@ -6,6 +6,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
+	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/elastos/Elastos.ELA.SPV/bloom"
 	spv "github.com/elastos/Elastos.ELA.SPV/interface"
@@ -19,13 +24,9 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb/leveldb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/event"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/pledgeBill"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/rpc"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/smallcrosstx"
-	"math/big"
-	"path/filepath"
-	"strings"
-	"sync"
-	"sync/atomic"
 
 	"golang.org/x/net/context"
 
@@ -128,27 +129,27 @@ type Service struct {
 }
 
 // Spv database initialization
-func SpvDbInit(spvdataDir string) {
+func SpvDbInit(spvdataDir string, pledgeBillContract string, signer ethCommon.Address, client *rpc.Client) {
 	db, err := leveldb.New(filepath.Join(spvdataDir, "spv_transaction_info.db"), databaseCache, handles, "eth/db/ela/")
 	if err != nil {
 		log.Error("spv Open db", "err", err)
 		return
 	}
 	spvTransactiondb = db
+	ipcClient = ethclient.NewClient(client)
+	pledgeBill.Init(db, &transactionDBMutex, pledgeBillContract, signer, ipcClient)
 }
 
 // Spv service initialization
-func NewService(cfg *Config, client *rpc.Client, tmux *event.TypeMux, dynamicArbiterHeight uint64) (*Service, error) {
+func NewService(cfg *Config, tmux *event.TypeMux, dynamicArbiterHeight uint64) (*Service, error) {
 	var chainParams *config.Configuration
 	switch strings.ToLower(cfg.ActiveNet) {
 	case "testnet", "test", "t":
 		chainParams = config.DefaultParams.TestNet()
-		chainParams.Magic = 2018111
 	case "regnet", "reg", "r":
 		chainParams = config.DefaultParams.RegNet()
 	case "goreli", "g":
 		chainParams = config.DefaultParams.RegNet()
-		chainParams.Magic = 2018211
 	default:
 		chainParams = &config.DefaultParams
 
@@ -188,8 +189,14 @@ func NewService(cfg *Config, client *rpc.Client, tmux *event.TypeMux, dynamicArb
 	if err != nil {
 		return nil, err
 	}
+	err = service.RegisterTransactionListener(&pledgeBill.PledgeBillListener{
+		Service: service,
+	})
+	if err != nil {
+		log.Error("Spv Register Transaction PledgeBillListener: ", "err", err)
+		return nil, err
+	}
 
-	ipcClient = ethclient.NewClient(client)
 	genesis, err := ipcClient.HeaderByNumber(context.Background(), new(big.Int).SetInt64(0))
 	if err != nil {
 		log.Error("IpcClient: ", "err", err)
@@ -240,7 +247,7 @@ func MinedBroadcastLoop(minedBlockSub *event.TypeMuxSubscription,
 				log.Info("receive onduty event")
 				atomic.StoreInt32(&candSend, 0)
 			}
-			accessFailedRechargeTx()
+			go accessFailedRechargeTx()
 			go eevents.Notify(dpos.ETOnDutyEvent, nil)
 		case obj := <-smallCrossTxSub.Chan():
 			if evt, ok := obj.Data.(events.CmallCrossTx); ok {
@@ -323,6 +330,7 @@ func (l *listener) Notify(id common.Uint256, proof bloom.MerkleProof, tx it.Tran
 		log.Info("all ready received this cross transaction")
 	}
 	l.service.SubmitTransactionReceipt(id, tx.Hash()) // give spv service a receipt, Indicates receipt of notice
+
 	log.Info("------------------------------------Notify END----------------------------------------------------")
 }
 
@@ -1217,7 +1225,6 @@ func Close() {
 		fmt.Println("spv close 2222222")
 		spvdb.Close()
 		close(stopChn)
-		SpvService.Stop()
 	}
 	fmt.Println("spv close 33333333")
 }

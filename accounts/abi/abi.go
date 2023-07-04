@@ -202,7 +202,6 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf("abi: could not recognize type %v of field %v", field.Type, field.Name)
 		}
 	}
-
 	return nil
 }
 

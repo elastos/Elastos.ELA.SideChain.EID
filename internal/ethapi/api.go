@@ -29,7 +29,7 @@ import (
 	"github.com/tyler-smith/go-bip39"
 
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts"
-        "github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/keystore"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/scwallet"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
@@ -43,7 +43,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/crypto"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/dpos"
-        "github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers/logger"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/eth/tracers/logger"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/p2p"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
@@ -642,10 +642,10 @@ func (s *PublicBlockChainAPI) GetHeaderByHash(ctx context.Context, hash common.H
 }
 
 // GetBlockByNumber returns the requested canonical block.
-// * When blockNr is -1 the chain head is returned.
-// * When blockNr is -2 the pending chain head is returned.
-// * When fullTx is true all transactions in the block are returned, otherwise
-//   only the transaction hash is returned.
+//   - When blockNr is -1 the chain head is returned.
+//   - When blockNr is -2 the pending chain head is returned.
+//   - When fullTx is true all transactions in the block are returned, otherwise
+//     only the transaction hash is returned.
 func (s *PublicBlockChainAPI) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
 	block, err := s.b.BlockByNumber(ctx, number)
 	if block != nil && err == nil {

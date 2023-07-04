@@ -181,4 +181,5 @@ type Config struct {
 	FrozenAccountList            []string
 
 	ArbiterListContract string
+	PledgedBillContract string
 }

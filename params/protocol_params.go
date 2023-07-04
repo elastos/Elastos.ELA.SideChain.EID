@@ -38,6 +38,7 @@ const (
 
 	Keccak256Gas     uint64 = 30 // Once per KECCAK256 operation.
 	Keccak256WordGas uint64 = 6  // Once per word of the KECCAK256 operation's data.
+	InitCodeWordGas  uint64 = 2  // Once per word of the init code when creating a contract.
 
 	SstoreSetGas    uint64 = 20000 // Once per SSTORE operation.
 	SstoreResetGas  uint64 = 5000  // Once per SSTORE operation if the zeroness changes from zero.
@@ -123,7 +124,8 @@ const (
 	ElasticityMultiplier     = 2          // Bounds the maximum gas limit an EIP-1559 block may have.
 	InitialBaseFee           = 1000000000 // Initial base fee for EIP-1559 blocks.
 
-	MaxCodeSize = 24576 // Maximum bytecode to permit for a contract
+	MaxCodeSize     = 24576           // Maximum bytecode to permit for a contract
+	MaxInitCodeSize = 2 * MaxCodeSize // Maximum initcode to permit in a creation transaction and create instructions
 
 	// Precompiled contract gas prices
 
@@ -144,8 +146,13 @@ const (
 	Bn256PairingPerPointGasByzantium uint64 = 80000  // Byzantium per-point price for an elliptic curve pairing check
 	Bn256PairingPerPointGasIstanbul  uint64 = 34000  // Per-point price for an elliptic curve pairing check
 
-	PledgeBillVerifyGas       uint64 = 1000   // Gas needed for verifying P256 signature
-	GetPledgeBillTokenID      uint64 = 0      // Gas needed for verifying P256 signature
+	ArbitersBaseGas          uint64 = 1000 // Gas needed for getting DPos arbiters
+	P256VerifyBaseGas        uint64 = 1000 // Gas needed for verifying P256 signature
+	PbkVerifySignature       uint64 = 1000
+	PledgeBillVerifyGas      uint64 = 1000
+	GetPledgeBillTokenID     uint64 = 0
+	GetPledgeBillTokenDetail uint64 = 0
+
 	Bls12381G1AddGas          uint64 = 600    // Price for BLS12-381 elliptic curve G1 point addition
 	Bls12381G1MulGas          uint64 = 12000  // Price for BLS12-381 elliptic curve G1 point scalar multiplication
 	Bls12381G2AddGas          uint64 = 4500   // Price for BLS12-381 elliptic curve G2 point addition
@@ -160,12 +167,9 @@ const (
 	RefundQuotient        uint64 = 2
 	RefundQuotientEIP3529 uint64 = 5
 
-	ArbitersBaseGas    uint64 = 1000 // Gas needed for getting DPos arbiters
-	P256VerifyBaseGas  uint64 = 1000 // Gas needed for verifying P256 signature
-	PbkVerifySignature uint64 = 1000 // Gas needed for verifying P256 signature
-	DIDBaseGasprice   uint64 = GWei * 1000
-	DIDBaseGasCost    uint64 = 0
-	ResolveDIDCost    uint64 = 1000
+	DIDBaseGasprice uint64 = GWei * 1000
+	DIDBaseGasCost  uint64 = 0
+	ResolveDIDCost  uint64 = 1000
 )
 
 // Gas discount table for BLS12-381 G1 and G2 multi exponentiation operations
@@ -177,9 +181,11 @@ var (
 	MinimumDifficulty      = big.NewInt(131072) // The minimum that the difficulty may ever be.
 	DurationLimit          = big.NewInt(13)     // The decision boundary on the blocktime duration used to determine whether difficulty should go up or not.
 
-	ArbiterAddress       = big.NewInt(1000)
-	P256VerifyAddress    = big.NewInt(1001)
-	SignatureVerifyByPbk = big.NewInt(1002)
-	PledgeBillVerify     = big.NewInt(1003)
-	PledgeBillTokenID    = big.NewInt(1004)
+	ArbiterAddress         = big.NewInt(1000)
+	P256VerifyAddress      = big.NewInt(1001)
+	SignatureVerifyByPbk   = big.NewInt(1002)
+	PledgeBillVerify       = big.NewInt(1003)
+	PledgeBillTokenID      = big.NewInt(1004)
+	PledgeBillTokenDetail  = big.NewInt(1005)
+	PledgeBillTokenVersion = big.NewInt(1006)
 )
