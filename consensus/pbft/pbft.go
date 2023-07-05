@@ -217,7 +217,10 @@ func New(chainConfig *params.ChainConfig, dataDir string) *Pbft {
 }
 
 func (p *Pbft) GetMainChainHeight(pid peer.PID) uint64 {
-	return spv.GetSpvHeight()
+	if p.chain.Config().IsNodeVersionFork(p.chain.CurrentHeader().Number) {
+		return spv.GetSpvHeight()
+	}
+	return 0
 }
 
 func (p *Pbft) subscribeEvent() {

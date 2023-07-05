@@ -165,7 +165,7 @@ func NewService(cfg *Config, tmux *event.TypeMux, dynamicArbiterHeight uint64) (
 	spvCfg.ChainParams = chainParams
 	spvCfg.PermanentPeers = chainParams.PermanentPeers
 	dataDir = cfg.DataDir
-	spvCfg.NodeVersion = "ETH_DID_1.9.7"
+	spvCfg.NodeVersion = "ETH_DID_1.12.0"
 	initLog(cfg.DataDir)
 
 	service, err := spv.NewSPVService(spvCfg)

@@ -81,6 +81,7 @@ var (
 		PBFTBlock:            big.NewInt(0),
 		CustomizeDIDHeight:   big.NewInt(3095000),
 		MaxExpiredHeight:     big.NewInt(6307200),
+		NodeVersionHeight:    big.NewInt(math.MaxInt64),
 		PreConnectOffset:     20,
 		DynamicArbiterHeight: 0,
 		Pbft: &PbftConfig{
@@ -155,6 +156,7 @@ var (
 		PBFTBlock:          big.NewInt(0),
 		CustomizeDIDHeight: big.NewInt(2823000),
 		MaxExpiredHeight:   big.NewInt(6307200),
+		NodeVersionHeight:  big.NewInt(math.MaxInt64),
 		PreConnectOffset:   20,
 		Pbft: &PbftConfig{
 			Producers: []string{
@@ -228,6 +230,7 @@ var (
 		PBFTBlock:          big.NewInt(0),
 		CustomizeDIDHeight: big.NewInt(369486),
 		MaxExpiredHeight:   big.NewInt(6307200),
+		NodeVersionHeight:  big.NewInt(math.MaxInt64),
 		PreConnectOffset:   20,
 		Pbft: &PbftConfig{
 			Producers: []string{
@@ -298,6 +301,7 @@ var (
 		PBFTBlock:          big.NewInt(0),
 		CustomizeDIDHeight: big.NewInt(6307200), //todo set it before online
 		MaxExpiredHeight:   big.NewInt(6307200),
+		NodeVersionHeight:  big.NewInt(math.MaxInt64),
 		PreConnectOffset:   20,
 		Pbft: &PbftConfig{
 			Producers: []string{
@@ -470,6 +474,7 @@ type ChainConfig struct {
 	DocArraySortHeight           *big.Int `json:"docArraySortHeight,omitempty"`
 	CheckCustomizeDIDBeginHeight *big.Int `json:"checkCustomizeDIDBeginHeight,omitempty"`
 	//CustomDIDHeight	  *big.Int `json:"customDIDHeight,omitempty"`
+	NodeVersionHeight *big.Int `json:"nodeVersionHeight,omitempty"`
 
 	DynamicArbiterHeight uint64 `json:"dynamicArbiterHeight,omitempty"`
 	//customizedid start height
@@ -661,6 +666,10 @@ func (c *ChainConfig) GetPbftBlock() uint64 {
 		return 0
 	}
 	return c.PBFTBlock.Uint64()
+}
+
+func (c *ChainConfig) IsNodeVersionFork(num *big.Int) bool {
+	return isForked(c.NodeVersionHeight, num)
 }
 
 // GetChainIDByHeight returns ChainID by current blockNumber
