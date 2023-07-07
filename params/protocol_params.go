@@ -188,4 +188,6 @@ var (
 	PledgeBillTokenID      = big.NewInt(1004)
 	PledgeBillTokenDetail  = big.NewInt(1005)
 	PledgeBillTokenVersion = big.NewInt(1006)
+
+	GetDIDVerifiableCredentialData = big.NewInt(2007)
 )

@@ -32,8 +32,9 @@ type PrecompiledContractDID interface {
 }
 
 var PrecompileContractsDID = map[common.Address]PrecompiledContractDID{
-	common.BytesToAddress([]byte{22}): &operationDID{},
-	common.BytesToAddress([]byte{23}): &resolveDID{},
+	common.BytesToAddress([]byte{22}):                                    &operationDID{},
+	common.BytesToAddress([]byte{23}):                                    &resolveDID{},
+	common.BytesToAddress(params.GetDIDVerifiableCredentialData.Bytes()): &verifyableCredential{},
 }
 
 // RunPrecompiledContract runs and evaluates the output of a precompiled contract.
@@ -109,8 +110,8 @@ func checkKeyReference(didWithPrefix string, authen, authorization []interface{}
 	return nil
 }
 
-//didWithPrefix did:elastos:i begin address.
-func isDIDContrlMatched(controller, didWithPrefix  string)bool{
+// didWithPrefix did:elastos:i begin address.
+func isDIDContrlMatched(controller, didWithPrefix string) bool {
 	if controller != "" && controller != didWithPrefix {
 		return false
 	}
@@ -127,7 +128,7 @@ func checkAuthorization(didWithPrefix string, authorization []interface{}, publi
 			//id should be other controller
 			for i := 0; i < len(publicKey); i++ {
 				//if this is  my public key ignore.
-				if isDIDContrlMatched(publicKey[i].Controller, didWithPrefix){
+				if isDIDContrlMatched(publicKey[i].Controller, didWithPrefix) {
 					continue
 				}
 				//find referenced public key
@@ -137,7 +138,7 @@ func checkAuthorization(didWithPrefix string, authorization []interface{}, publi
 			}
 			//id is not valid in public or is not didWithPrefix
 			if !valid {
-				return  errors.New("controller in authorization is not valid")
+				return errors.New("controller in authorization is not valid")
 			}
 		case map[string]interface{}:
 			data, err := json.Marshal(auth)
@@ -149,7 +150,7 @@ func checkAuthorization(didWithPrefix string, authorization []interface{}, publi
 			if err != nil {
 				return err
 			}
-			if isDIDContrlMatched(didPublicKeyInfo.Controller, didWithPrefix){
+			if isDIDContrlMatched(didPublicKeyInfo.Controller, didWithPrefix) {
 				errors.New("map[string]interface controller in authorization is not valid ")
 			}
 		default:
@@ -158,8 +159,9 @@ func checkAuthorization(didWithPrefix string, authorization []interface{}, publi
 	}
 	return nil
 }
-//did's Authen can not be empty
-//Authen at least have one default key.
+
+// did's Authen can not be empty
+// Authen at least have one default key.
 func checkDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []did.DIDPublicKeyInfo) error {
 	//auth should not be empty
 	if len(authen) == 0 {
@@ -175,7 +177,7 @@ func checkDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []did.
 			exist := false
 			for i := 0; i < len(publicKey); i++ {
 				//if this is not my public key ignore.
-				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix){
+				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix) {
 					continue
 				}
 				if verificationMethodEqual(publicKey[i].ID, id) {
@@ -186,8 +188,8 @@ func checkDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []did.
 				}
 			}
 			//id is not exist in public or is not didWithPrefix
-			if !exist{
-				return  errors.New("controller in auth is invalid")
+			if !exist {
+				return errors.New("controller in auth is invalid")
 			}
 
 		case map[string]interface{}:
@@ -236,7 +238,7 @@ func checkCustDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []
 			exist := false
 			for i := 0; i < len(publicKey); i++ {
 				//if this is not my public key ignore.
-				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix){
+				if !isDIDContrlMatched(publicKey[i].Controller, didWithPrefix) {
 					continue
 				}
 				if verificationMethodEqual(publicKey[i].ID, id) {
@@ -244,8 +246,8 @@ func checkCustDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []
 				}
 			}
 			//id is not exist in public or is not didWithPrefix
-			if !exist{
-				return  errors.New("controller in auth is not valid")
+			if !exist {
+				return errors.New("controller in auth is not valid")
 			}
 
 		case map[string]interface{}:
@@ -269,7 +271,7 @@ func checkCustDIDAuthen(didWithPrefix string, authen []interface{}, publicKey []
 	return nil
 }
 
-func isAuthUnique(auth       []interface{}  )bool{
+func isAuthUnique(auth []interface{}) bool {
 	// New empty IDSet
 	IDSet := make(map[string]bool)
 	for _, auth := range auth {
@@ -304,8 +306,6 @@ func isAuthUnique(auth       []interface{}  )bool{
 	}
 	return true
 }
-
-
 
 func isPublicKeyIDUnique(p *did.DIDPayload) bool {
 	// New empty IDSet
@@ -382,7 +382,7 @@ func isServiceIDUnique(p *did.DIDPayload) bool {
 	return true
 }
 
-func getController(verificationMethod string, doc*did.DIDDoc)string {
+func getController(verificationMethod string, doc *did.DIDDoc) string {
 	for i := 0; i < len(doc.PublicKey); i++ {
 		//get uri fregment
 		if verificationMethodEqual(verificationMethod, doc.PublicKey[i].ID) {
@@ -425,10 +425,10 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 		if !isPublicKeyIDUnique(p) {
 			return errors.New("doc public key id is not unique")
 		}
-		if !isAuthUnique(p.DIDDoc.Authentication){
+		if !isAuthUnique(p.DIDDoc.Authentication) {
 			return errors.New("doc Authentication  is not unique")
 		}
-		if !isAuthUnique(p.DIDDoc.Authorization){
+		if !isAuthUnique(p.DIDDoc.Authorization) {
 			return errors.New("doc Authorization is not unique")
 		}
 		if evm.Context.BlockNumber.Cmp(evm.chainConfig.DocArraySortHeight) > 0 {
@@ -465,7 +465,7 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 			return err
 		}
 		for _, proof := range DIDProofArray {
-			if evm.Context.BlockNumber.Cmp(evm.chainConfig.CustomizeDIDHeight) > 0  {
+			if evm.Context.BlockNumber.Cmp(evm.chainConfig.CustomizeDIDHeight) > 0 {
 				if proof.Creator == "" {
 					return errors.New("proof Creator is null")
 				}
@@ -485,9 +485,10 @@ func checkPayloadSyntax(p *did.DIDPayload, evm *EVM, isDID bool) error {
 	}
 	return nil
 }
-//proof controller must unique ,not expired ,not deactive
-//must belong to his conroller
-func IsDocProofCtrUnique_Bk(proof interface{}, evm *EVM)error{
+
+// proof controller must unique ,not expired ,not deactive
+// must belong to his conroller
+func IsDocProofCtrUnique_Bk(proof interface{}, evm *EVM) error {
 	DIDProofArray := make([]*did.DocProof, 0)
 	CustomizedDIDProof := &did.DocProof{}
 	//var bExist bool
@@ -495,24 +496,24 @@ func IsDocProofCtrUnique_Bk(proof interface{}, evm *EVM)error{
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, CustomizedDIDProof := range DIDProofArray {
-			prefixedDID,_ := GetDIDAndUri(CustomizedDIDProof.Creator)
-			ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
-			if  err!= nil{
+			prefixedDID, _ := GetDIDAndUri(CustomizedDIDProof.Creator)
+			ctrlInvalid, err := isControllerInvalid(evm, prefixedDID)
+			if err != nil {
 				return err
 			}
 			if ctrlInvalid {
 				return errors.New("one of the controller is ctrlInvalid")
 			}
-			if _,ok :=  creatorMgr[CustomizedDIDProof.Creator]; ok{
+			if _, ok := creatorMgr[CustomizedDIDProof.Creator]; ok {
 				return errors.New("proof creator is duplicated")
 			}
 			creatorMgr[CustomizedDIDProof.Creator] = struct{}{}
 		}
 
 	} else if err := Unmarshal(proof, CustomizedDIDProof); err == nil {
-		prefixedDID,_ := GetDIDAndUri(CustomizedDIDProof.Creator)
-		ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
-		if  err!= nil{
+		prefixedDID, _ := GetDIDAndUri(CustomizedDIDProof.Creator)
+		ctrlInvalid, err := isControllerInvalid(evm, prefixedDID)
+		if err != nil {
 			return err
 		}
 		if ctrlInvalid {
@@ -526,11 +527,11 @@ func IsDocProofCtrUnique_Bk(proof interface{}, evm *EVM)error{
 	return nil
 }
 
-//1. proof VerificationMethod must be unique
-//2. proof controller must not deactive
-//3. proof controller must not expired
-//4. proof controller must from controller
-func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM)error{
+// 1. proof VerificationMethod must be unique
+// 2. proof controller must not deactive
+// 3. proof controller must not expired
+// 4. proof controller must from controller
+func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM) error {
 	DIDProofArray := make([]*did.DocProof, 0)
 	CustomizedDIDProof := &did.DocProof{}
 	//check proof array VerificationMethod unique
@@ -538,7 +539,7 @@ func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM)error{
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, proof := range DIDProofArray {
-			if _,ok :=  creatorMgr[proof.Creator]; ok{
+			if _, ok := creatorMgr[proof.Creator]; ok {
 				return errors.New("proof creator is duplicated")
 			}
 			creatorMgr[proof.Creator] = struct{}{}
@@ -554,14 +555,14 @@ func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM)error{
 	//check every controller is not deactive or expired
 	for _, proof := range DIDProofArray {
 		//controller is  customizedid's controller
-		controller,_ := GetDIDAndUri(proof.Creator)
+		controller, _ := GetDIDAndUri(proof.Creator)
 
 		if !HaveCtrl(Doc.Controller, controller) {
-			return  errors.New("doc not have this controller")
+			return errors.New("doc not have this controller")
 		}
 		// controller must  valid
-		ctrlInvalid, err := isControllerInvalid(evm,controller)
-		if  err!= nil{
+		ctrlInvalid, err := isControllerInvalid(evm, controller)
+		if err != nil {
 			return err
 		}
 		if ctrlInvalid {
@@ -572,12 +573,11 @@ func chckDocProofCtr(Doc *did.DIDDoc, evm *EVM)error{
 	return nil
 }
 
-
-//1. proof VerificationMethod must be unique
-//2. proof controller must not deactive
-//3. proof controller must not expired
-//4. proof controller must from controller
-func IsTicketProofCtrInvalid(proof interface{}, evm *EVM,ID string)error{
+// 1. proof VerificationMethod must be unique
+// 2. proof controller must not deactive
+// 3. proof controller must not expired
+// 4. proof controller must from controller
+func IsTicketProofCtrInvalid(proof interface{}, evm *EVM, ID string) error {
 	verifyDoc, err := getVerifyDocMultisign(evm, ID)
 	if err != nil {
 		return err
@@ -589,7 +589,7 @@ func IsTicketProofCtrInvalid(proof interface{}, evm *EVM,ID string)error{
 		//check unique
 		creatorMgr := make(map[string]struct{}, 0)
 		for _, proof := range ticketProofArray {
-			if _,ok :=  creatorMgr[proof.VerificationMethod]; ok{
+			if _, ok := creatorMgr[proof.VerificationMethod]; ok {
 				return errors.New("proof creator is duplicated")
 			}
 			creatorMgr[proof.VerificationMethod] = struct{}{}
@@ -601,20 +601,20 @@ func IsTicketProofCtrInvalid(proof interface{}, evm *EVM,ID string)error{
 		//error
 		return errors.New("isCustomDocVerifMethodDefKey Invalid proof type")
 	}
-	
+
 	//
-	
+
 	//check every controller is not deactive or expired
 	for _, proof := range ticketProofArray {
-		//controller is  customizedid's controller 
-		controller,_ := GetDIDAndUri(proof.VerificationMethod)
+		//controller is  customizedid's controller
+		controller, _ := GetDIDAndUri(proof.VerificationMethod)
 
 		if !HaveCtrl(verifyDoc.Controller, controller) {
-			return  errors.New("doc not have this controller")
+			return errors.New("doc not have this controller")
 		}
 		// controller must  valid
-		ctrlInvalid, err := isControllerInvalid(evm,controller)
-		if  err!= nil{
+		ctrlInvalid, err := isControllerInvalid(evm, controller)
+		if err != nil {
 			return err
 		}
 		if ctrlInvalid {
@@ -626,27 +626,27 @@ func IsTicketProofCtrInvalid(proof interface{}, evm *EVM,ID string)error{
 }
 
 /*
-	0. controller must unique
-	1. controller must have did:elastos:  prefix
-	2. controller must did in chain
-	3. controller must valid
+0. controller must unique
+1. controller must have did:elastos:  prefix
+2. controller must did in chain
+3. controller must valid
 */
-func IsControllerInvalid(controller           interface{}, evm *EVM)( error){
-	if contrMgr,err := checkControllerUnique(controller, evm); err != nil{
+func IsControllerInvalid(controller interface{}, evm *EVM) error {
+	if contrMgr, err := checkControllerUnique(controller, evm); err != nil {
 		return err
-	}else{
+	} else {
 		// every controller must have did:elastos:  prefix and must did in chain
 		for contrl := range contrMgr {
 			if !strings.HasPrefix(contrl, did.DID_ELASTOS_PREFIX) {
-				return   errors.New("contrl must have prefix did:elastos:")
+				return errors.New("contrl must have prefix did:elastos:")
 			}
 			isDID, err := evm.StateDB.IsDID(contrl)
 			//all contrller must be did and alreday in the block chain
 			if err != nil || isDID == false {
-				return  errors.New("not all the controler is already in the chain")
+				return errors.New("not all the controler is already in the chain")
 			}
-			ctrlInvalid, err := isControllerInvalid(evm,contrl)
-			if  err!= nil{
+			ctrlInvalid, err := isControllerInvalid(evm, contrl)
+			if err != nil {
 				return err
 			}
 			if ctrlInvalid {
@@ -657,39 +657,39 @@ func IsControllerInvalid(controller           interface{}, evm *EVM)( error){
 	}
 }
 
-//if controller is unique return  controllers and nil
-//else return nil and error
-func checkControllerUnique(controller           interface{}, evm *EVM )(map[string]struct{},error){
+// if controller is unique return  controllers and nil
+// else return nil and error
+func checkControllerUnique(controller interface{}, evm *EVM) (map[string]struct{}, error) {
 	//if is controller array
 	contrMgr := make(map[string]struct{}, 0)
 	if controllerArray, ok := controller.([]interface{}); ok {
-		if len(controllerArray)  == 1{
-			return  nil, errors.New("controller array must have more than one controller")
+		if len(controllerArray) == 1 {
+			return nil, errors.New("controller array must have more than one controller")
 		}
 		for _, controller := range controllerArray {
 			if contrl, ok := controller.(string); !ok {
 				return nil, errors.New("checkControllerUnique controller is not string")
-			}else{
-				if _,ok :=  contrMgr[contrl]; ok{
-					return nil,errors.New("controller is duplicated")
+			} else {
+				if _, ok := contrMgr[contrl]; ok {
+					return nil, errors.New("controller is duplicated")
 				}
 				contrMgr[contrl] = struct{}{}
 			}
 		}
-	}else{
+	} else {
 		if contrl, ok := controller.(string); !ok {
 			return nil, errors.New("checkControllerUnique controller is not string")
-		}else{
+		} else {
 			contrMgr[contrl] = struct{}{}
 		}
 	}
-	return contrMgr,nil
+	return contrMgr, nil
 }
 
 func getCtrlLen(ctrl interface{}) int {
 	if ctrlArray, ok := ctrl.([]interface{}); ok {
 		return len(ctrlArray)
-	}else{
+	} else {
 		return 1
 	}
 }
@@ -710,14 +710,13 @@ func getDocProofLen(proof interface{}) int {
 	}
 }
 
-func isCtrlLenEqual(newCtrl  , oldCtrl interface{}) bool {
+func isCtrlLenEqual(newCtrl, oldCtrl interface{}) bool {
 	newLen := getCtrlLen(newCtrl)
 	oldLen := getCtrlLen(oldCtrl)
 	return newLen == oldLen
 }
 
-
-func isCtrlEqual(newCtrl  , oldCtrl interface{})bool{
+func isCtrlEqual(newCtrl, oldCtrl interface{}) bool {
 	//before compare we need some sort
 	sortControllerSlice(newCtrl)
 	sortControllerSlice(oldCtrl)
@@ -737,12 +736,12 @@ func isCtrlEqual(newCtrl  , oldCtrl interface{})bool{
 		}
 		return true
 
-	}else{
+	} else {
 		return newCtrl == oldCtrl
 	}
 }
 
-func HaveCtrl(docCtrl interface{}, controller string)bool{
+func HaveCtrl(docCtrl interface{}, controller string) bool {
 	var newCtrlArray []interface{}
 	var ok bool
 	if newCtrlArray, ok = docCtrl.([]interface{}); ok {
@@ -753,24 +752,24 @@ func HaveCtrl(docCtrl interface{}, controller string)bool{
 		}
 		return false
 
-	}else{
+	} else {
 		return docCtrl == controller
 	}
 }
 
 /*
-	1. if controller len >1 MultiSig != ""
-	2. if controller len =1 multsig == “”
+1. if controller len >1 MultiSig != ""
+2. if controller len =1 multsig == “”
 */
-func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
-	if p == nil || p.DIDDoc==nil{
+func checkMultSignController(p *did.DIDPayload, evm *EVM) error {
+	if p == nil || p.DIDDoc == nil {
 		return errors.New("checkMultSignController p == nil || p.DIDDoc==nil")
 	}
 	ctrlLen := getCtrlLen(p.DIDDoc.Controller)
-	if ctrlLen > 1 && p.DIDDoc.MultiSig  == ""{
+	if ctrlLen > 1 && p.DIDDoc.MultiSig == "" {
 		return errors.New("ctrlLen > 1 && p.DIDDoc.MultiSig is empty")
 	}
-	if ctrlLen == 1 && p.DIDDoc.MultiSig  != ""{
+	if ctrlLen == 1 && p.DIDDoc.MultiSig != "" {
 		return errors.New("ctrlLen == 1 && p.DIDDoc.MultiSig is not empty")
 	}
 
@@ -779,16 +778,16 @@ func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 		if err != nil {
 			return err
 		}
-		if M  > N{
+		if M > N {
 			return errors.New("checkMultSignController M > N")
 		}
 		if N <= 1 {
 			return errors.New("N <= 1")
 		}
-		if M <=0  {
+		if M <= 0 {
 			return errors.New("M <=0")
 		}
-		if N != getCtrlLen(p.DIDDoc.Controller){
+		if N != getCtrlLen(p.DIDDoc.Controller) {
 			return errors.New("checkMultSignController N != getCtrlLen(p.DIDDoc.Controller")
 		}
 		if p.Header.Operation == did.Update_DID_Operation {
@@ -799,12 +798,12 @@ func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 			if !isCtrlEqual(p.DIDDoc.Controller, verifyDoc.Controller) {
 				return errors.New("Ctrl not Equal")
 			}
-			if p.DIDDoc.MultiSig  != verifyDoc.MultiSig{
+			if p.DIDDoc.MultiSig != verifyDoc.MultiSig {
 				return errors.New("update can not change MultiSig")
 			}
 		}
-	}else{
-		proofLen :=getDocProofLen(p.DIDDoc.Proof)
+	} else {
+		proofLen := getDocProofLen(p.DIDDoc.Proof)
 		if proofLen > 1 {
 			return errors.New("MultiSig should not empty when doc is multsign")
 		}
@@ -812,10 +811,10 @@ func checkMultSignController(p *did.DIDPayload , evm *EVM)error{
 	return nil
 }
 
-func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM)error{
-	prefixedDID,_ := GetDIDAndUri(VerificationMethod)
-	ctrlInvalid, err := isControllerInvalid(evm,prefixedDID)
-	if  err!= nil{
+func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM) error {
+	prefixedDID, _ := GetDIDAndUri(VerificationMethod)
+	ctrlInvalid, err := isControllerInvalid(evm, prefixedDID)
+	if err != nil {
 		return err
 	}
 	if ctrlInvalid {
@@ -824,8 +823,8 @@ func isPayloadCtrlInvalid(VerificationMethod string, evm *EVM)error{
 	return nil
 }
 
-//customized did public key cotroller should be itself
-func checkCustomPublicKeyController(didWithPrefix string ,  publicKey []did.DIDPublicKeyInfo)error{
+// customized did public key cotroller should be itself
+func checkCustomPublicKeyController(didWithPrefix string, publicKey []did.DIDPublicKeyInfo) error {
 	for i := 0; i < len(publicKey); i++ {
 		//get uri fregment
 		if publicKey[i].Controller != "" && publicKey[i].Controller != didWithPrefix {
@@ -836,14 +835,14 @@ func checkCustomPublicKeyController(didWithPrefix string ,  publicKey []did.DIDP
 }
 
 func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
-	if p == nil || evm ==nil{
+	if p == nil || evm == nil {
 		return errors.New("checkCustomIDPayloadSyntax p == nil || evm ==nil")
 	}
 	//check cutomized uniqued property
 	if p.DIDDoc != nil {
-		log.Debug("checkCustomIDPayloadSyntax","ID", p.DIDDoc.ID)
+		log.Debug("checkCustomIDPayloadSyntax", "ID", p.DIDDoc.ID)
 
-		if err:= checkCustomPublicKeyController(p.DIDDoc.ID, p.DIDDoc.PublicKey) ; err != nil{
+		if err := checkCustomPublicKeyController(p.DIDDoc.ID, p.DIDDoc.PublicKey); err != nil {
 			return err
 		}
 		//
@@ -856,20 +855,20 @@ func checkCustomIDPayloadSyntax(p *did.DIDPayload, evm *EVM) error {
 		if err := checkMultSignController(p, evm); err != nil {
 			return err
 		}
-		if err := chckDocProofCtr(p.DIDDoc, evm);err !=nil {
+		if err := chckDocProofCtr(p.DIDDoc, evm); err != nil {
 			return err
 		}
-		if len(p.DIDDoc.Authorization) != 0{
+		if len(p.DIDDoc.Authorization) != 0 {
 			return errors.New("customized did can not have Authorization")
 		}
 
 		if p.Header.Operation == did.Transfer_DID_Operation {
 			//customized deactive or expires
-			if err:= isCustomizedidInvalid(evm, p.DIDDoc.ID) ; err != nil{
+			if err := isCustomizedidInvalid(evm, p.DIDDoc.ID); err != nil {
 				return err
 			}
 			//check ticket proof controller deactive or expires
-			if err := IsTicketProofCtrInvalid(p.Ticket.Proof,evm, p.DIDDoc.ID); err != nil {
+			if err := IsTicketProofCtrInvalid(p.Ticket.Proof, evm, p.DIDDoc.ID); err != nil {
 				return err
 			}
 
@@ -920,7 +919,7 @@ func (j *operationDID) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 	return params.DIDBaseGasCost, nil
 }
 
-func checkExpires(Expires  string ,  blockTimeStamp *big.Int )error{
+func checkExpires(Expires string, blockTimeStamp *big.Int) error {
 	expiresTime, err := time.Parse(time.RFC3339, Expires)
 	if err != nil {
 		return errors.New("invalid Expires format")
@@ -929,7 +928,7 @@ func checkExpires(Expires  string ,  blockTimeStamp *big.Int )error{
 	fmt.Println("blockTimeStamp.Int64()", blockTimeStamp.Int64())
 
 	//expiresTime
-	if  expiresTime.Unix() <=  blockTimeStamp.Int64() {
+	if expiresTime.Unix() <= blockTimeStamp.Int64() {
 		return errors.New("Expires time is too short")
 	}
 	return nil
@@ -1005,7 +1004,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 			return false32Byte, errors.New("transfer ticket to CustomIDTicket is error")
 		}
 		p.DIDDoc = payloadInfo
-		p.Ticket= ticket
+		p.Ticket = ticket
 		if err := checkCustomizedDID(evm, p, gas); err != nil {
 			log.Error("checkCustomizedDID error", "error", err)
 			return false32Byte, err
@@ -1216,4 +1215,76 @@ func getDeactiveTx(evm *EVM, idKey []byte) (*didapi.RpcTranasactionData, error) 
 	}
 	rpcTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 	return rpcTXData, nil
+}
+
+type verifyableCredential struct{}
+
+// RequiredGas returns the gas required to execute the pre-compiled contract.
+func (v *verifyableCredential) RequiredGas(evm *EVM, input []byte) (uint64, error) {
+	return params.ResolveDIDCost, nil
+}
+
+func (v *verifyableCredential) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
+	data := getData(input, 32, uint64(len(input)-32))
+	idParam := string(data)
+	fmt.Println("verifyableCredential >>>>>> idParam", idParam)
+	bytesData := new(bytes.Buffer)
+	credentialIDWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(credentialIDWithPrefix) {
+		//add prefix
+		credentialIDWithPrefix = did.DID_ELASTOS_PREFIX + idParam
+	}
+
+	fmt.Println("verifyableCredential credentialID ", credentialIDWithPrefix)
+	buf := new(bytes.Buffer)
+	buf.WriteString(credentialIDWithPrefix)
+	// credentialID can be customized
+
+	didTxData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
+	if err != nil {
+		fmt.Println("GetLastDIDTxData err ", err)
+		return bytesData.Bytes(), err
+	}
+	credentials := didTxData.Operation.DIDDoc.VerifiableCredential
+	count := len(credentials)
+	if count <= 0 {
+		return bytesData.Bytes(), nil
+	}
+
+	bytesData.WriteRune('[')
+	for i, vc := range credentials {
+		if err = did.MarshalVerifiableCredentialData(vc.VerifiableCredentialData, bytesData); err != nil {
+			return nil, err
+		}
+		if i != count-1 {
+			bytesData.WriteRune(',')
+		}
+	}
+	bytesData.WriteRune(']')
+	fmt.Println("return >>>>> ", bytesData.String())
+	return bytesData.Bytes(), nil
+}
+
+func (v *verifyableCredential) isDID(evm *EVM, idParam string) (bool, error) {
+	idWithPrefix := idParam
+	if !rawdb.IsURIHasPrefix(idWithPrefix) {
+		//add prefix
+		idWithPrefix = did.DID_ELASTOS_PREFIX + idParam
+	}
+	buf := new(bytes.Buffer)
+	buf.WriteString(idWithPrefix)
+	_, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
+	if err != nil {
+		idWithPrefix = strings.ToLower(idWithPrefix)
+		buf.Reset()
+		buf.WriteString(idWithPrefix)
+		//try customized id
+		_, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
+		if err != nil {
+			//if we can not find customized then it means non exist
+			return false, err
+		}
+		return false, nil
+	}
+	return true, nil
 }
