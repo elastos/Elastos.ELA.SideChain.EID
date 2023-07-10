@@ -156,7 +156,7 @@ var (
 		PBFTBlock:          big.NewInt(0),
 		CustomizeDIDHeight: big.NewInt(2823000),
 		MaxExpiredHeight:   big.NewInt(6307200),
-		NodeVersionHeight:  big.NewInt(math.MaxInt64),
+		NodeVersionHeight:  big.NewInt(10905400),
 		PreConnectOffset:   20,
 		Pbft: &PbftConfig{
 			Producers: []string{
