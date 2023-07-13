@@ -17,7 +17,7 @@
 // package web3ext contains geth specific web3.js extensions.
 package web3ext
 
-//web3ext add did by xxl
+// web3ext add did by xxl
 var Modules = map[string]string{
 	"accounting": AccountingJs,
 	"admin":      AdminJs,
@@ -916,7 +916,7 @@ web3._extend({
 });
 `
 
-//add DIDJs by xxl
+// add DIDJs by xxl
 const DIDJs = `
 
 web3._extend({
@@ -934,6 +934,12 @@ methods: [
 	new web3._extend.Method({
 		name: 'resolveCredential',
 		call: 'did_resolveCredential',
+		params: 1
+	}),
+
+	new web3._extend.Method({
+		name: 'kycCredential',
+		call: 'did_kycCredential',
 		params: 1
 	})
 
