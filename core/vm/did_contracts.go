@@ -12,6 +12,7 @@ import (
 	"github.com/bitly/go-simplejson"
 	"github.com/btcsuite/btcutil/base58"
 
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
@@ -32,9 +33,9 @@ type PrecompiledContractDID interface {
 }
 
 var PrecompileContractsDID = map[common.Address]PrecompiledContractDID{
-	common.BytesToAddress([]byte{22}):                                    &operationDID{},
-	common.BytesToAddress([]byte{23}):                                    &resolveDID{},
-	common.BytesToAddress(params.GetDIDVerifiableCredentialData.Bytes()): &verifyableCredential{},
+	common.BytesToAddress([]byte{22}):               &operationDID{},
+	common.BytesToAddress([]byte{23}):               &resolveDID{},
+	common.BytesToAddress(params.GetDIDKYC.Bytes()): &kyc{},
 }
 
 // RunPrecompiledContract runs and evaluates the output of a precompiled contract.
@@ -1217,17 +1218,33 @@ func getDeactiveTx(evm *EVM, idKey []byte) (*didapi.RpcTranasactionData, error) 
 	return rpcTXData, nil
 }
 
-type verifyableCredential struct{}
+type kyc struct{}
 
 // RequiredGas returns the gas required to execute the pre-compiled contract.
-func (v *verifyableCredential) RequiredGas(evm *EVM, input []byte) (uint64, error) {
+func (v *kyc) RequiredGas(evm *EVM, input []byte) (uint64, error) {
 	return params.ResolveDIDCost, nil
 }
 
-func (v *verifyableCredential) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
+func (v *kyc) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	data := getData(input, 32, uint64(len(input)-32))
-	idParam := string(data)
-	fmt.Println("verifyableCredential >>>>>> idParam", idParam)
+
+	String, _ := abi.NewType("string", "string", nil)
+	Bytes, _ := abi.NewType("bytes", "bytes", nil)
+
+	arguments := make([]abi.Argument, 0)
+	didArguemnt := abi.Argument{Name: "did", Type: String}
+	arguments = append(arguments, didArguemnt)
+	idArgument := abi.Argument{Name: "id", Type: String}
+	arguments = append(arguments, idArgument)
+
+	m := abi.Method{Inputs: arguments}
+	inputs, err := m.Inputs.Unpack(data)
+	if len(inputs) != 2 || err != nil {
+		log.Warn("kyc input data error", "input", string(data), "inputs", inputs, "err", err)
+		return nil, err
+	}
+	idParam := inputs[0].(string)
+
 	bytesData := new(bytes.Buffer)
 	credentialIDWithPrefix := idParam
 	if !rawdb.IsURIHasPrefix(credentialIDWithPrefix) {
@@ -1235,14 +1252,12 @@ func (v *verifyableCredential) Run(evm *EVM, input []byte, gas uint64) ([]byte, 
 		credentialIDWithPrefix = did.DID_ELASTOS_PREFIX + idParam
 	}
 
-	fmt.Println("verifyableCredential credentialID ", credentialIDWithPrefix)
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialIDWithPrefix)
-	// credentialID can be customized
 
 	didTxData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
 	if err != nil {
-		fmt.Println("GetLastDIDTxData err ", err)
+		log.Warn("GetLastDIDTxData err ", "error", err)
 		return bytesData.Bytes(), err
 	}
 	credentials := didTxData.Operation.DIDDoc.VerifiableCredential
@@ -1250,22 +1265,39 @@ func (v *verifyableCredential) Run(evm *EVM, input []byte, gas uint64) ([]byte, 
 	if count <= 0 {
 		return bytesData.Bytes(), nil
 	}
-
-	bytesData.WriteRune('[')
-	for i, vc := range credentials {
-		if err = did.MarshalVerifiableCredentialData(vc.VerifiableCredentialData, bytesData); err != nil {
-			return nil, err
+	var credential *did.VerifiableCredentialData
+	for _, vc := range credentials {
+		if !strings.HasSuffix(vc.ID, inputs[1].(string)) || !strings.HasPrefix(vc.ID, credentialIDWithPrefix) {
+			continue
 		}
-		if i != count-1 {
-			bytesData.WriteRune(',')
-		}
+		credential = vc.VerifiableCredentialData
+		break
 	}
-	bytesData.WriteRune(']')
-	fmt.Println("return >>>>> ", bytesData.String())
-	return bytesData.Bytes(), nil
+	if err = did.MarshalVerifiableCredentialData(credential, bytesData); err != nil {
+		return nil, err
+	}
+
+	encodeData, err := did.EncodeVerifiableCredentialData(credential)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments = make([]abi.Argument, 0)
+
+	jsonData := abi.Argument{Name: "json", Type: String}
+	arguments = append(arguments, jsonData)
+	byteEnodeData := abi.Argument{Name: "bytes", Type: Bytes}
+	arguments = append(arguments, byteEnodeData)
+
+	m = abi.Method{Inputs: arguments}
+	ret, err := m.Inputs.Pack(bytesData.String(), encodeData[:])
+	if err != nil {
+		fmt.Println("return >>>>> ", ret, "len", len(ret), "error", err)
+	}
+	return ret, err
 }
 
-func (v *verifyableCredential) isDID(evm *EVM, idParam string) (bool, error) {
+func (v *kyc) isDID(evm *EVM, idParam string) (bool, error) {
 	idWithPrefix := idParam
 	if !rawdb.IsURIHasPrefix(idWithPrefix) {
 		//add prefix

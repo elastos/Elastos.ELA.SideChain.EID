@@ -12,12 +12,14 @@ import (
 	elacom "github.com/elastos/Elastos.ELA/common"
 	"github.com/elastos/Elastos.ELA/utils/http"
 
+	"github.com/elastos/Elastos.ELA.SideChain.EID/accounts/abi"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/common"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/rawdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/internal/didapi"
+	"github.com/elastos/Elastos.ELA.SideChain.EID/log"
 )
 
 // payload of DID transaction
@@ -39,7 +41,12 @@ type CredentialOperation struct {
 	Proof   interface{} `json:"proof"`
 }
 
-//xxl add new register API
+type CredentialKYC struct {
+	VerifiableCredentialData string `json:"verifiableCredentialData"`
+	EncodeABI                []byte `json:"encodeABI"`
+}
+
+// xxl add new register API
 // NewPublicDebugAPI creates a new API definition for the public debug methods
 // of the Ethereum service.
 func NewPublicDIDAPI(b Backend, nonceLock *AddrLocker) *PublicTransactionPoolAPI {
@@ -60,7 +67,7 @@ func (rpcTxData *RpcCredentialTransactionData) FromCredentialTranasactionData(tx
 	return true
 }
 
-func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error){
+func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error) {
 
 	idWithPrefix := idParam
 	if !rawdb.IsURIHasPrefix(idWithPrefix) {
@@ -72,42 +79,41 @@ func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error){
 	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 
-		idWithPrefix= strings.ToLower(idWithPrefix)
+		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
 		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 		if err != nil {
 			//if we can not find customized then it means non exist
-			return false , err
+			return false, err
 		}
-		return  false , nil
+		return false, nil
 	}
 	return true, nil
 }
 
-
-//IDS shoule be issuer or owner
-func (s *PublicTransactionPoolAPI) isRevokerValid(revoker  string, IDS []string)(bool,error){
+// IDS shoule be issuer or owner
+func (s *PublicTransactionPoolAPI) isRevokerValid(revoker string, IDS []string) (bool, error) {
 	for _, id := range IDS {
 		var idTxData *did.DIDTransactionData
 		isDID, err := s.isDID(id)
 		if err != nil {
-			return  false, err
+			return false, err
 		}
 		lowerID := id
-		if !isDID{
-			lowerID= strings.ToLower(id)
+		if !isDID {
+			lowerID = strings.ToLower(id)
 		}
 		if idTxData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerID), s.b.ChainConfig()); err != nil {
-			return   false ,err
+			return false, err
 		}
 
 		if isDID {
 			if revoker == id {
 				return true, nil
 			}
-		}else{
+		} else {
 			//check if customizedid owner have ctrl
 			if revoker == id {
 				return true, nil
@@ -118,7 +124,7 @@ func (s *PublicTransactionPoolAPI) isRevokerValid(revoker  string, IDS []string)
 
 		}
 	}
-	return false ,nil
+	return false, nil
 }
 
 func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param map[string]interface{}) (interface{}, error) {
@@ -133,7 +139,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		//add prefix
 		credentialIDWithPrefix = did.DID_ELASTOS_PREFIX + idParam
 	}
-	controller ,uri := did.GetController(credentialIDWithPrefix)
+	controller, uri := did.GetController(credentialIDWithPrefix)
 
 	isDID, err := s.isDID(controller)
 	if err != nil {
@@ -143,7 +149,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	}
 	//customizedid
 	if !isDID {
-		credentialIDWithPrefix = strings.ToLower(controller)+uri
+		credentialIDWithPrefix = strings.ToLower(controller) + uri
 	}
 
 	credentialID := credentialIDWithPrefix
@@ -154,7 +160,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	if err != nil {
 		rpcPayloadDid.Status = didapi.CredentialNonExist
 		rpcPayloadDid.ID = idParam
-		return  rpcPayloadDid , nil
+		return rpcPayloadDid, nil
 	}
 
 	//check issuer
@@ -169,22 +175,22 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		}
 	}
 
-	issuerRevokeTXData := new(RpcCredentialTransactionData)//if haveIssuerRevokeTx is true issuerRevokeTXData is the tx
-	haveIssuerRevokeTx := false //if issuer param is one of the revoker set true
-	haveValidRevoke := false//if revoked by issuer or owner  set true32Byte
-	realIssuer :=""
+	issuerRevokeTXData := new(RpcCredentialTransactionData) //if haveIssuerRevokeTx is true issuerRevokeTXData is the tx
+	haveIssuerRevokeTx := false                             //if issuer param is one of the revoker set true
+	haveValidRevoke := false                                //if revoked by issuer or owner  set true32Byte
+	realIssuer := ""
 
 	//find if we have declare tx of credential and stored it into realIssuer
 	for _, txData := range txsData {
-		if  txData.Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation  {
+		if txData.Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation {
 			realIssuer = txData.Operation.CredentialDoc.Issuer
 		}
 	}
 
 	for _, txData := range txsData {
-		if txData.Operation.CredentialDoc == nil&& txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation{
+		if txData.Operation.CredentialDoc == nil && txData.Operation.Header.Operation == did.Revoke_Verifiable_Credential_Operation {
 			rpcPayloadDid.ID = txData.Operation.Payload
-		}else{
+		} else {
 			rpcPayloadDid.ID = txData.Operation.CredentialDoc.ID
 		}
 		err, timestamp := s.getTxTime(ctx, txData.TXID)
@@ -198,23 +204,23 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		}
 
 		// decalre always been added
-		if  txData.Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation  {
+		if txData.Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation {
 			tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 			rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
-		}else{
+		} else {
 			//for revoke tx
 			revoker, _ := did.GetController(txData.Operation.Proof.VerificationMethod)
 			//if it is credential owner or issuer
 			credeOwner, _ := did.GetController(rpcPayloadDid.ID)
 			//do we have valid revoker
-			ids := []string{credeOwner }
+			ids := []string{credeOwner}
 			if realIssuer != "" {
 				ids = append(ids, realIssuer)
 			}
 			if !haveValidRevoke {
 				//check if revoker is belong to  credowner or issuer
-				haveValidRevoke , err = s.isRevokerValid(revoker, ids)
-				if err != nil  {
+				haveValidRevoke, err = s.isRevokerValid(revoker, ids)
+				if err != nil {
 					return nil, http.NewError(int(service.InvalidParams), "isRevokerValid credentialid owner/issuer")
 				}
 				//if we haveValidRevoke add it into RpcTXDatas
@@ -226,11 +232,11 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 			if issuerID != "" {
 				//if we do not have validate revoke and issuerid parameter is not empty
 				//try if we have one revoke tx by issuerID
-				if !haveValidRevoke  && (!haveIssuerRevokeTx){
-					ids := []string{ issuerID}
-					haveIssuerRevokeTx , err = s.isRevokerValid(revoker, ids)
+				if !haveValidRevoke && (!haveIssuerRevokeTx) {
+					ids := []string{issuerID}
+					haveIssuerRevokeTx, err = s.isRevokerValid(revoker, ids)
 					if err != nil {
-						if err.Error() != vm.ErrLeveldbNotFound.Error() && err.Error() != vm.ErrNotFound.Error()  {
+						if err.Error() != vm.ErrLeveldbNotFound.Error() && err.Error() != vm.ErrNotFound.Error() {
 							return nil, http.NewError(int(service.InvalidParams), "isRevokerValid issuer parameter")
 						}
 					}
@@ -240,8 +246,8 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 						issuerRevokeTXData = tempTXData
 					}
 				}
-			}else{
-				if !haveValidRevoke{
+			} else {
+				if !haveValidRevoke {
 					tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 					rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *tempTXData)
 				}
@@ -249,7 +255,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		}
 	}
 	// if we did not have valid revoke and do have issuer revoke tx  add it to  RpcTXDatas
-	if !haveValidRevoke && haveIssuerRevokeTx{
+	if !haveValidRevoke && haveIssuerRevokeTx {
 		rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *issuerRevokeTXData)
 	}
 	//not declare and not revke situation 1
@@ -257,20 +263,20 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 		rpcPayloadDid.Status = didapi.CredentialNonExist
 		rpcPayloadDid.ID = idParam
 	} else if len(txsData) == 1 {
-		if txsData[0].Operation.Header.Operation ==did.Declare_Verifiable_Credential_Operation {
+		if txsData[0].Operation.Header.Operation == did.Declare_Verifiable_Credential_Operation {
 			rpcPayloadDid.Status = didapi.CredentialValid
-		}else{
+		} else {
 			rpcPayloadDid.Status = didapi.CredentialRevoked
 		}
 
 	} else if len(txsData) >= 2 {
 		if haveValidRevoke {
 			rpcPayloadDid.Status = didapi.CredentialRevoked
-		}else{
+		} else {
 			//declared
 			if realIssuer != "" {
 				rpcPayloadDid.Status = didapi.CredentialValid
-			}else{
+			} else {
 				rpcPayloadDid.Status = didapi.CredentialRevoked
 			}
 		}
@@ -278,6 +284,73 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	}
 
 	return rpcPayloadDid, nil
+}
+
+func (s *PublicTransactionPoolAPI) KycCredential(ctx context.Context, param map[string]interface{}) (interface{}, error) {
+	didParam, ok := param["did"].(string)
+	if !ok {
+		return nil, http.NewError(int(service.InvalidParams), "did is null")
+	}
+	idParam, ok := param["id"].(string)
+	if !ok {
+		return nil, http.NewError(int(service.InvalidParams), "id is null")
+	}
+
+	String, _ := abi.NewType("string", "string", nil)
+	Bytes, _ := abi.NewType("bytes", "bytes", nil)
+
+	bytesData := new(bytes.Buffer)
+	credentialIDWithPrefix := didParam
+	if !rawdb.IsURIHasPrefix(credentialIDWithPrefix) {
+		//add prefix
+		credentialIDWithPrefix = did.DID_ELASTOS_PREFIX + didParam
+	}
+
+	buf := new(bytes.Buffer)
+	buf.WriteString(credentialIDWithPrefix)
+	didTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	if err != nil {
+		return bytesData.Bytes(), err
+	}
+	credentials := didTxData.Operation.DIDDoc.VerifiableCredential
+	count := len(credentials)
+	if count <= 0 {
+		return bytesData.Bytes(), nil
+	}
+	var credential *did.VerifiableCredentialData
+	for _, vc := range credentials {
+		if !strings.HasSuffix(vc.ID, idParam) || !strings.HasPrefix(vc.ID, credentialIDWithPrefix) {
+			continue
+		}
+		credential = vc.VerifiableCredentialData
+		break
+	}
+	if err = did.MarshalVerifiableCredentialData(credential, bytesData); err != nil {
+		return nil, err
+	}
+
+	encodeData, err := did.EncodeVerifiableCredentialData(credential)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := make([]abi.Argument, 0)
+
+	jsonData := abi.Argument{Name: "json", Type: String}
+	arguments = append(arguments, jsonData)
+	byteEnodeData := abi.Argument{Name: "bytes", Type: Bytes}
+	arguments = append(arguments, byteEnodeData)
+
+	m := abi.Method{Inputs: arguments}
+	ret, err := m.Inputs.Pack(bytesData.String(), encodeData[:])
+	if err != nil {
+		log.Error("kyc pack error", "error", err)
+		return nil, err
+	}
+	var kyc CredentialKYC
+	kyc.VerifiableCredentialData = bytesData.String()
+	kyc.EncodeABI = ret
+	return kyc, err
 }
 
 func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param map[string]interface{}) (interface{}, error) {
@@ -296,7 +369,7 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 
-		idWithPrefix= strings.ToLower(idWithPrefix)
+		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
@@ -307,7 +380,6 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 		}
 	}
 
-
 	skip, ok := param["skip"].(float64)
 	limit, ok := param["limit"].(float64)
 	if int64(skip) < 0 {
@@ -317,7 +389,7 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 		return nil, http.NewError(int(service.InvalidParams), "limit is negative")
 	}
 
-	if limit == 0{
+	if limit == 0 {
 		limit = 128
 	}
 
@@ -328,7 +400,6 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 		int64(limit))
 	return txsData, nil
 }
-
 
 func (s *PublicTransactionPoolAPI) getDeactiveTx(ctx context.Context, idKey []byte) (*didapi.RpcTranasactionData, error) {
 	//get deactive tx date
@@ -355,7 +426,7 @@ func (s *PublicTransactionPoolAPI) getDeactiveTx(ctx context.Context, idKey []by
 	return rpcTXData, nil
 }
 
-//xxl modify to PublicTransactionPoolAPI
+// xxl modify to PublicTransactionPoolAPI
 func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[string]interface{}) (interface{}, error) {
 	var didDocState didapi.DidDocState = didapi.NonExist
 	idParam, ok := param["did"].(string)
@@ -370,7 +441,6 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 
 	var rpcPayloadDid didapi.RpcPayloadDIDInfo
 
-
 	idWithPrefix := idParam
 	if !rawdb.IsURIHasPrefix(idWithPrefix) {
 		//add prefix
@@ -381,7 +451,7 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 
-		idWithPrefix= strings.ToLower(idWithPrefix)
+		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
