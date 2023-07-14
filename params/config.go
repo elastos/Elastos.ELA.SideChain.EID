@@ -148,7 +148,7 @@ var (
 		IstanbulBlock:       big.NewInt(4),
 		BerlinBlock:         big.NewInt(10637000),
 		LondonBlock:         big.NewInt(10637000),
-		ShanghaiTime:        newUint64(math.MaxInt64),
+		ShanghaiTime:        newUint64(1689393614),
 		Clique: &CliqueConfig{
 			Period: 15,
 			Epoch:  30000,
