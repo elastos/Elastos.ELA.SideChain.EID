@@ -9,6 +9,7 @@ import (
 	"github.com/elastos/Elastos.ELA.SideChain.EID/core/vm/did"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/ethdb"
 	"github.com/elastos/Elastos.ELA.SideChain.EID/params"
+	"math/big"
 
 	"github.com/elastos/Elastos.ELA.SideChain/service"
 
@@ -23,10 +24,10 @@ func (self *StateDB) AddDIDLog(did string, operation string, doc []byte) {
 	pi := make([]byte, len(doc))
 	copy(pi, doc)
 	log := &types.DIDLog{
-		DID: did,
+		DID:       did,
 		Operation: operation,
-		Data: pi,
-		TxHash: self.thash,
+		Data:      pi,
+		TxHash:    self.thash,
 	}
 	self.didLogs[self.thash] = log
 }
@@ -56,15 +57,15 @@ func (self *StateDB) IsIDDeactivated(did string) bool {
 	return rawdb.IsDIDDeactivated(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), did)
 }
 
-func (self *StateDB) GetLastDIDTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+func (self *StateDB) GetLastDIDTxData(idKey []byte, blockNumber *big.Int, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	logs := self.DIDLogs()
 	did := string(idKey)
 	for _, log := range logs {
 		if log.DID == did {
-		   return nil, errors.New("allready create did: " + did)
+			return nil, errors.New("allready create did: " + did)
 		}
 	}
-	return rawdb.GetLastDIDTxData(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey, config)
+	return rawdb.GetLastDIDTxData(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), blockNumber, idKey, config)
 }
 
 func (self *StateDB) GetAllDIDTxData(idKey []byte, config *params.ChainConfig) ([]did.DIDTransactionData, error) {
@@ -148,12 +149,11 @@ func (self *StateDB) GetLastCustomizedDIDTxHash(idKey []byte) (elaCom.Uint256, e
 	return txHash, nil
 }
 
-
-func (self *StateDB) GetLastVerifiableCredentialTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
-	return rawdb.GetLastVerifiableCredentialTxData(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey, config)
+func (self *StateDB) GetLastVerifiableCredentialTxData(idKey []byte, blockNumber *big.Int, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+	return rawdb.GetLastVerifiableCredentialTxData(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), blockNumber, idKey, config)
 }
 
-func (self *StateDB) IsDID(did string)  (bool, error) {
+func (self *StateDB) IsDID(did string) (bool, error) {
 	return rawdb.IsDID(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), did)
 }
 
@@ -165,21 +165,18 @@ func (self *StateDB) ReadBlock(hash common.Hash, number uint64) *types.Block {
 	return rawdb.ReadBlock(self.db.TrieDB().DiskDB().(ethdb.Database), hash, number)
 }
 
-func (self *StateDB) GetDeactivatedTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)  {
-	return rawdb.GetDeactivatedTxData(self.db.TrieDB().DiskDB().(ethdb.Database), idKey, config)
+func (self *StateDB) GetDeactivatedTxData(idKey []byte, blockNumber *big.Int, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+	return rawdb.GetDeactivatedTxData(self.db.TrieDB().DiskDB().(ethdb.Database), blockNumber, idKey, config)
 }
 
-func (self *StateDB) GetDIDExpiresHeight(idKey []byte)  (uint32, error) {
+func (self *StateDB) GetDIDExpiresHeight(idKey []byte) (uint32, error) {
 	return rawdb.GetDIDExpiresHeight(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey)
 }
 
-func (self *StateDB) GetCredentialExpiresHeight(idKey []byte)  (uint32, error) {
+func (self *StateDB) GetCredentialExpiresHeight(idKey []byte) (uint32, error) {
 	return rawdb.GetCredentialExpiresHeight(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), idKey)
 }
 
-func (self *StateDB) GetRevokeCredentialCtrls(credentIDKey []byte)  ([]string, error){
+func (self *StateDB) GetRevokeCredentialCtrls(credentIDKey []byte) ([]string, error) {
 	return rawdb.GetRevokeCredentialCtrls(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), credentIDKey)
 }
-
-
-
