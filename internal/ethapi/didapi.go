@@ -76,14 +76,14 @@ func (s *PublicTransactionPoolAPI) isDID(idParam string) (bool, error) {
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(idWithPrefix)
-	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 
 		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
-		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 		if err != nil {
 			//if we can not find customized then it means non exist
 			return false, err
@@ -105,7 +105,7 @@ func (s *PublicTransactionPoolAPI) isRevokerValid(revoker string, IDS []string) 
 		if !isDID {
 			lowerID = strings.ToLower(id)
 		}
-		if idTxData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), []byte(lowerID), s.b.ChainConfig()); err != nil {
+		if idTxData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), []byte(lowerID), s.b.ChainConfig()); err != nil {
 			return false, err
 		}
 
@@ -156,7 +156,7 @@ func (s *PublicTransactionPoolAPI) ResolveCredential(ctx context.Context, param 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialID)
 	// credentialID can be customized
-	txsData, err := rawdb.GetAllVerifiableCredentialTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	txsData, err := rawdb.GetAllVerifiableCredentialTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 		rpcPayloadDid.Status = didapi.CredentialNonExist
 		rpcPayloadDid.ID = idParam
@@ -308,7 +308,7 @@ func (s *PublicTransactionPoolAPI) KycCredential(ctx context.Context, param map[
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialIDWithPrefix)
-	didTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	didTxData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 		return bytesData.Bytes(), err
 	}
@@ -366,14 +366,14 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(idWithPrefix)
-	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	_, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 
 		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
-		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+		_, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 		if err != nil {
 			//if we can not find customized then it means non exist
 			return nil, http.NewError(int(service.InvalidParams), "did is not exist")
@@ -403,8 +403,7 @@ func (s *PublicTransactionPoolAPI) ListCredentials(ctx context.Context, param ma
 
 func (s *PublicTransactionPoolAPI) getDeactiveTx(ctx context.Context, idKey []byte) (*didapi.RpcTranasactionData, error) {
 	//get deactive tx date
-	deactiveTxData, err := rawdb.GetDeactivatedTxData(s.b.ChainDb().(ethdb.KeyValueStore), idKey,
-		s.b.ChainConfig())
+	deactiveTxData, err := rawdb.GetDeactivatedTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), idKey, s.b.ChainConfig())
 	if err != nil {
 		return nil, http.NewError(int(service.InternalError),
 			"get did deactivate transaction failed")
@@ -448,14 +447,14 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(idWithPrefix)
-	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+	txData, err := rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 	if err != nil {
 
 		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
-		txData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), buf.Bytes(), s.b.ChainConfig())
+		txData, err = rawdb.GetLastDIDTxData(s.b.ChainDb().(ethdb.KeyValueStore), s.b.CurrentBlock().Number(), buf.Bytes(), s.b.ChainConfig())
 		if err != nil {
 			//if we can not find customized then it means non exist
 			rpcPayloadDid.DID = idParam
