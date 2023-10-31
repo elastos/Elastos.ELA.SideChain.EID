@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -248,7 +249,7 @@ func PersistRegisterDIDExpiresHeight(db ethdb.KeyValueStore, idKey []byte,
 }
 
 // key                                                    value
-//IX_VerifiableCredentialRevoked+ credentialID             controller
+// IX_VerifiableCredentialRevoked+ credentialID             controller
 func persistVerifyCredentialRevoked(db ethdb.KeyValueStore, credentialID []byte, revokerID string) error {
 	key := []byte{byte(IX_VerifiableCredentialRevoked)}
 	key = append(key, credentialID...)
@@ -348,7 +349,7 @@ func persistRegisterDIDTxHash(db ethdb.KeyValueStore, idKey []byte, txHash elaCo
 	return db.Put(key, buf.Bytes())
 }
 
-func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+func GetLastDIDTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_DIDTXHash)}
 	key = append(key, idKey...)
 
@@ -375,14 +376,16 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chain
 	thash := common.BytesToHash(txHash.Bytes())
 	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 	if recp == nil {
-		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-			if recps.Len() > 0 {
-				recp = recps[0]
+		if recps := ReadReceipts(db.(ethdb.Database), thash, blockNumber.Uint64(), config); recps != nil {
+			c := recps.Len()
+			if c > 0 {
+				recp = recps[c-1]
 			}
 		}
 	}
 
 	if recp == nil {
+		log.Error("not found receipt tx="+thash.String(), "blockNumber", blockNumber.Uint64())
 		return nil, ERR_READ_RECEIPT
 	}
 	if recp.DIDLog.DID == "" {
@@ -403,7 +406,7 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chain
 	return tempTxData, nil
 }
 
-func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+func GetDeactivatedTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_DIDDeactivate)}
 	key = append(key, idKey...)
 
@@ -421,9 +424,10 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.C
 	thash := common.BytesToHash(txHash.Bytes())
 	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 	if recp == nil {
-		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-			if recps.Len() > 0 {
-				recp = recps[0]
+		if recps := ReadReceipts(db.(ethdb.Database), thash, blockNumber.Uint64(), config); recps != nil {
+			c := recps.Len()
+			if c > 0 {
+				recp = recps[c-1]
 			}
 		}
 	}
@@ -511,8 +515,8 @@ func GetAllDIDTxTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chai
 	return transactionsData, nil
 }
 
-//get all controller who revoked this credential
-//IX_VerifiableCredentialRevoked
+// get all controller who revoked this credential
+// IX_VerifiableCredentialRevoked
 func GetRevokeCredentialCtrls(db ethdb.KeyValueStore, credentIDKey []byte) ([]string, error) {
 	key := []byte{byte(IX_VerifiableCredentialRevoked)}
 	key = append(key, credentIDKey...)
@@ -645,7 +649,7 @@ func PersistDeactivateDIDTx(db ethdb.KeyValueStore, log *types.DIDLog, thash com
 	return db.Put(key, buf.Bytes())
 }
 
-func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) ([]did.VerifiableCredentialTxData, error) {
+func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte, config *params.ChainConfig) ([]did.VerifiableCredentialTxData, error) {
 	key := []byte{byte(IX_VerifiableCredentialTXHash)}
 	key = append(key, idKey...)
 
@@ -670,9 +674,10 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 		thash := common.BytesToHash(txHash.Bytes())
 		recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 		if recp == nil {
-			if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-				if recps.Len() > 0 {
-					recp = recps[0]
+			if recps := ReadReceipts(db.(ethdb.Database), thash, blockNumber.Uint64(), config); recps != nil {
+				c := recps.Len()
+				if c > 0 {
+					recp = recps[c-1]
 				}
 			}
 		}
@@ -702,7 +707,7 @@ func GetAllVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, conf
 	return transactionsData, nil
 }
 
-func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_VerifiableCredentialTXHash)}
 	key = append(key, idKey...)
 
@@ -730,9 +735,10 @@ func GetLastVerifiableCredentialTxData(db ethdb.KeyValueStore, idKey []byte, con
 	thash := common.BytesToHash(txHash.Bytes())
 	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
 	if recp == nil {
-		if recps := ReadRawReceipts(db.(ethdb.Database), thash, 0); recps != nil {
-			if recps.Len() > 0 {
-				recp = recps[0]
+		if recps := ReadReceipts(db.(ethdb.Database), thash, blockNumber.Uint64(), config); recps != nil {
+			c := recps.Len()
+			if c > 0 {
+				recp = recps[c-1]
 			}
 		}
 	}
@@ -789,8 +795,8 @@ func DeleteDIDLog(db ethdb.KeyValueStore, didLog *types.DIDLog) error {
 	return nil
 }
 
-////roll back IX_VerifiableCredentialTXHash, IX_VerifiableCredentialRevoked
-////rollbackRevokeVerifiableCredentialTx
+// //roll back IX_VerifiableCredentialTXHash, IX_VerifiableCredentialRevoked
+// //rollbackRevokeVerifiableCredentialTx
 func rollbackRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, credentialIDKey []byte) error {
 
 	key := []byte{byte(IX_VerifiableCredentialRevoked)}
@@ -832,8 +838,8 @@ func rollbackRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, credentialIDKe
 	return db.Put(key, buf.Bytes())
 }
 
-//rollbackVerifiableCredentialTx
-//todo roll back IX_VerifiableCredentialTXHash and i credentials
+// rollbackVerifiableCredentialTx
+// todo roll back IX_VerifiableCredentialTXHash and i credentials
 func rollbackVerifiableCredentialTx(db ethdb.KeyValueStore, credentialIDKey []byte, thash common.Hash) error {
 	key := []byte{byte(IX_VerifiableCredentialTXHash)}
 	key = append(key, credentialIDKey...)
@@ -1084,7 +1090,7 @@ func getCredentialOwner(credentialSubject interface{}) string {
 	return owner
 }
 
-//persistVerifiableCredentialTx
+// persistVerifiableCredentialTx
 func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	blockHeight uint64, blockTimeStamp uint64, thash common.Hash) error {
 	var err error
@@ -1149,7 +1155,7 @@ func PersistVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	return nil
 }
 
-//persistVerifiableCredentialTx
+// persistVerifiableCredentialTx
 func PersistRevokeVerifiableCredentialTx(db ethdb.KeyValueStore, log *types.DIDLog,
 	blockHeight uint64, blockTimeStamp uint64, thash common.Hash) error {
 	var err error
@@ -1388,7 +1394,7 @@ func rollbackDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte) error {
 	return db.Put(key, buf.Bytes())
 }
 
-//IX_DIDVerifiableCredentials
+// IX_DIDVerifiableCredentials
 func GetAllDIDVerifCredentials(db ethdb.KeyValueStore, idKey []byte, skip, limit int64) (*did.ListDIDVerifCreentials, error) {
 	key := []byte{byte(IX_DIDVerifiableCredentials)}
 	key = append(key, idKey...)
