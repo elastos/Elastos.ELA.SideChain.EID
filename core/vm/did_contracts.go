@@ -1115,7 +1115,7 @@ func (j *resolveDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	var rpcPayloadDid didapi.ResolvePayloadDIDInfo
 	buf := new(bytes.Buffer)
 	buf.WriteString(idParam)
-	txData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+	txData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 	if err != nil {
 		return false32Byte, errors.New("did is not exist")
 	}
@@ -1202,7 +1202,7 @@ func getTxTime(evm *EVM, txid string) (error, uint64) {
 }
 
 func getDeactiveTx(evm *EVM, idKey []byte) (*didapi.RpcTranasactionData, error) {
-	deactiveTxData, err := evm.StateDB.GetDeactivatedTxData(idKey, evm.BlockNumber, evm.chainConfig)
+	deactiveTxData, err := evm.StateDB.GetDeactivatedTxData(idKey, evm.chainConfig)
 	if err != nil {
 		return nil, errors.New("get did deactivate transaction failed")
 	}
@@ -1258,7 +1258,7 @@ func (v *kyc) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	buf.WriteString(credentialIDWithPrefix)
 
-	didTxData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.ChainConfig())
+	didTxData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
 	if err != nil {
 		log.Warn("GetLastDIDTxData err ", "error", err)
 		return bytesData.Bytes(), err
@@ -1308,13 +1308,13 @@ func (v *kyc) isDID(evm *EVM, idParam string) (bool, error) {
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(idWithPrefix)
-	_, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.ChainConfig())
+	_, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
 	if err != nil {
 		idWithPrefix = strings.ToLower(idWithPrefix)
 		buf.Reset()
 		buf.WriteString(idWithPrefix)
 		//try customized id
-		_, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.ChainConfig())
+		_, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.ChainConfig())
 		if err != nil {
 			//if we can not find customized then it means non exist
 			return false, err

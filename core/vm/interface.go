@@ -83,7 +83,7 @@ type StateDB interface {
 
 	IsIDDeactivated(id string) bool
 
-	GetLastDIDTxData(idKey []byte, blockNumber *big.Int, config *params.ChainConfig) (*did.DIDTransactionData, error)
+	GetLastDIDTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
 
 	GetAllDIDTxData(idKey []byte, config *params.ChainConfig) ([]did.DIDTransactionData, error)
 
@@ -105,7 +105,7 @@ type StateDB interface {
 
 	ReadBlock(hash common.Hash, number uint64) *types.Block
 
-	GetDeactivatedTxData(idKey []byte, blockNumber *big.Int, config *params.ChainConfig) (*did.DIDTransactionData, error)
+	GetDeactivatedTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
 
 	GetDIDExpiresHeight(idKey []byte) (uint32, error)
 }
