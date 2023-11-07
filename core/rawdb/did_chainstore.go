@@ -349,7 +349,24 @@ func persistRegisterDIDTxHash(db ethdb.KeyValueStore, idKey []byte, txHash elaCo
 	return db.Put(key, buf.Bytes())
 }
 
-func GetLastDIDTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+func getReceiptByReader(db ethdb.Reader, count uint64, r *bytes.Reader, config *params.ChainConfig) (recp *types.Receipt, thash common.Hash, err error) {
+	var i = uint64(0)
+	var txHash elaCom.Uint256
+	for i = 0; i < count; i++ {
+		if err := txHash.Deserialize(r); err != nil {
+			return nil, thash, err
+		}
+
+		thash = common.BytesToHash(txHash.Bytes())
+		recp, _, _, _ = ReadReceipt(db, thash, config)
+		if recp != nil {
+			return recp, thash, nil
+		}
+	}
+	return nil, thash, ERR_READ_RECEIPT
+}
+
+func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_DIDTXHash)}
 	key = append(key, idKey...)
 
@@ -368,25 +385,14 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte
 	if count == 0 {
 		return nil, errors.New("not exist")
 	}
-	var txHash elaCom.Uint256
-	if err := txHash.Deserialize(r); err != nil {
+	recp, thash, err := getReceiptByReader(db.(ethdb.Reader), count, r, config)
+	if err != nil {
+		log.Error("not found receipt tx="+thash.String(), "count", count)
+
 		return nil, err
 	}
-
-	thash := common.BytesToHash(txHash.Bytes())
-	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-	if recp == nil {
-		if recps := ReadReceipts(db.(ethdb.Database), thash, blockNumber.Uint64(), config); recps != nil {
-			c := recps.Len()
-			if c > 0 {
-				recp = recps[c-1]
-			}
-		}
-	}
-
-	if recp == nil {
-		log.Error("not found receipt tx="+thash.String(), "blockNumber", blockNumber.Uint64(), "count", count)
-		return nil, ERR_READ_RECEIPT
+	if err == ERR_READ_RECEIPT && count == 1 {
+		return nil, ERR_LEVELDB_NOT_FOUND
 	}
 	if recp.DIDLog.DID == "" {
 		return nil, ERR_NOT_DIDRECEIPT
@@ -399,14 +405,14 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte
 			"tempOperation Deserialize failed")
 	}
 	tempTxData := new(did.DIDTransactionData)
-	tempTxData.TXID = txHash.String()
+	tempTxData.TXID = thash.String()
 	tempTxData.Operation = *tempOperation
 	tempTxData.Timestamp = tempOperation.DIDDoc.Expires
 
 	return tempTxData, nil
 }
 
-func GetDeactivatedTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
+func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
 	key := []byte{byte(IX_DIDDeactivate)}
 	key = append(key, idKey...)
 
@@ -423,15 +429,6 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, blockNumber *big.Int, idKey []
 
 	thash := common.BytesToHash(txHash.Bytes())
 	recp, _, _, _ := ReadReceipt(db.(ethdb.Database), thash, config)
-	if recp == nil {
-		if recps := ReadReceipts(db.(ethdb.Database), thash, blockNumber.Uint64(), config); recps != nil {
-			c := recps.Len()
-			if c > 0 {
-				recp = recps[c-1]
-			}
-		}
-	}
-
 	if recp == nil {
 		return nil, ERR_READ_RECEIPT
 	}

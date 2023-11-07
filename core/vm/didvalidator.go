@@ -289,7 +289,7 @@ func checkDIDOperation(evm *EVM, header *did.Header,
 		return errors.New("DID is deactivated")
 	}
 
-	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 
 	dbExist := true
 	if err != nil {
@@ -689,7 +689,7 @@ func GetIDLastDoc(evm *EVM, id string) (*did.DIDDoc, error) {
 func GetLastDIDTxData(evm *EVM, issuerDID string) (*did.DIDTransactionData, error) {
 	buf := new(bytes.Buffer)
 	buf.WriteString(issuerDID)
-	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 
 	if err != nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error() {
@@ -965,7 +965,7 @@ func checkCustomizedDID(evm *EVM, customizedDIDPayload *did.DIDPayload, gas uint
 		buf := new(bytes.Buffer)
 		lowerID := strings.ToLower(doc.ID)
 		buf.WriteString(lowerID)
-		lastTx, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+		lastTx, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 		if err != nil {
 			return err
 		}
@@ -1169,8 +1169,15 @@ func checkTicketAvailable(evm *EVM, cPayload *did.DIDPayload,
 	}
 
 	// check transactionID
-	if cPayload.Ticket.TransactionID != lastTxHash {
-		return errors.New("invalid TransactionID of ticket")
+	if lastTxHash[:2] == "0x" {
+		lastTxHash = lastTxHash[2:]
+	}
+	ticketTXID := cPayload.Ticket.TransactionID
+	if ticketTXID[:2] == "0x" {
+		ticketTXID = ticketTXID[2:]
+	}
+	if ticketTXID != lastTxHash {
+		return errors.New(fmt.Sprintf("invalid TransactionID of ticket ticket.txid:%s, lastTxHash:%s", cPayload.Ticket.TransactionID, lastTxHash))
 	}
 
 	// check proof
@@ -1305,7 +1312,7 @@ func getVerifyDocMultisign(evm *EVM, customizedID string) (*did.DIDDoc, error) {
 	buf := new(bytes.Buffer)
 	customizedID = strings.ToLower(customizedID)
 	buf.WriteString(customizedID)
-	transactionData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+	transactionData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -1441,7 +1448,7 @@ func checkCustomizedDIDOperation(evm *EVM, header *did.Header,
 	buf := new(bytes.Buffer)
 	lowCustomDID := strings.ToLower(customizedDID)
 	buf.WriteString(lowCustomDID)
-	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 
 	dbExist := true
 	if err != nil {
@@ -1859,7 +1866,7 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 
 	buf := new(bytes.Buffer)
 	buf.WriteString(ID)
-	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.BlockNumber, evm.chainConfig)
+	lastTXData, err := evm.StateDB.GetLastDIDTxData(buf.Bytes(), evm.chainConfig)
 	if err != nil {
 		return err
 	}
