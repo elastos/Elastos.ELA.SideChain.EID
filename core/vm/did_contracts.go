@@ -1033,7 +1033,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		}
 		p.CredentialDoc = credentialDoc
 		if err := checkCredentialTX(evm, p); err != nil {
-			log.Error("checkCredentialTX error", "error", err)
+			log.Error("Declare_Verifiable_Credential_Operation checkCredentialTX error", "error", err)
 			return false32Byte, err
 		}
 		buf := new(bytes.Buffer)
@@ -1041,7 +1041,7 @@ func (j *operationDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		evm.StateDB.AddDIDLog(p.CredentialDoc.ID, p.Header.Operation, buf.Bytes())
 	case did.Revoke_Verifiable_Credential_Operation:
 		if err := checkCredentialTX(evm, p); err != nil {
-			log.Error("checkCredentialTX error", "error", err)
+			log.Error("Revoke_Verifiable_Credential_Operation checkCredentialTX error", "error", err)
 			return false32Byte, err
 		}
 		buf := new(bytes.Buffer)
