@@ -53,8 +53,8 @@ func (self *StateDB) RemoveDIDLog(txHash common.Hash) {
 	}
 }
 
-func (self *StateDB) IsIDDeactivated(did string) bool {
-	return rawdb.IsDIDDeactivated(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), did)
+func (self *StateDB) IsIDDeactivated(did string, blockNumber *big.Int) bool {
+	return rawdb.IsDIDDeactivated(self.db.TrieDB().DiskDB().(ethdb.KeyValueStore), did, blockNumber)
 }
 
 func (self *StateDB) GetLastDIDTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error) {
