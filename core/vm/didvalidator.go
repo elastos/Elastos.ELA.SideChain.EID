@@ -1479,11 +1479,18 @@ func checkCustomizedDIDOperation(evm *EVM, header *did.Header,
 				return err
 			}
 			preTXID := hash.String()
+			if preTXID[:2] == "0x" {
+				preTXID = preTXID[2:]
+			}
+			lastTXID := lastTXData.TXID
+			if lastTXID[:2] == "0x" {
+				lastTXID = lastTXID[2:]
+			}
 
 			configHeight := evm.chainConfig.OldDIDMigrateHeight
 			if evm.Context.BlockNumber.Cmp(configHeight) > 0 {
-				if lastTXData.TXID != preTXID && !evm.Config.Debug {
-					return errors.New("Customized DID PreviousTxid IS NOT CORRECT")
+				if lastTXID != preTXID && !evm.Config.Debug {
+					return errors.New(fmt.Sprintf("Customized DID PreviousTxid IS NOT CORRECT, lastTxID:%s, preTxID:%s", lastTXID, preTXID))
 				}
 			}
 		}
