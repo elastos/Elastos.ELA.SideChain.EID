@@ -2016,7 +2016,7 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteString(CredentialID)
-	_, err = evm.StateDB.GetCredentialExpiresHeight(buf.Bytes())
+	expireHeight, err := evm.StateDB.GetCredentialExpiresHeight(buf.Bytes())
 	dbExist := true
 	if err != nil {
 		if err.Error() == ErrLeveldbNotFound.Error() || err.Error() == ErrNotFound.Error() {
@@ -2025,9 +2025,12 @@ func checkVerifiableCredentialOperation(evm *EVM, header *did.Header,
 			return err
 		}
 	}
+	if uint64(expireHeight) >= evm.BlockNumber.Uint64() {
+		dbExist = false
+	}
 
 	if dbExist {
-		return errors.New("VerifiableCredential WRONG OPERATION")
+		return errors.New(fmt.Sprintf("VerifiableCredential WRONG OPERATION, expireHeight %d, currentHeight:%d", expireHeight, evm.BlockNumber.Uint64()))
 	} else {
 
 		issuerIsDID, err := isDID(evm, issuer)

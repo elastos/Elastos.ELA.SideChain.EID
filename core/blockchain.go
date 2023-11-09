@@ -482,6 +482,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 	delFn := func(db ethdb.KeyValueWriter, hash common.Hash, num uint64) {
 		// Ignore the error here since light client won't hit this path
 		frozen, _ := bc.db.Ancients()
+		rawdb.DeleteDIDReceipts(bc.db.(ethdb.Reader), hash, num, bc.chainConfig)
 		if num+1 <= frozen {
 			// Truncate all relative data(header, total difficulty, body, receipt
 			// and canonical hash) from ancient store.
@@ -496,7 +497,6 @@ func (bc *BlockChain) SetHead(head uint64) error {
 			// The header, total difficulty and canonical hash will be
 			// removed in the hc.SetHead function.
 			rawdb.DeleteBody(db, hash, num)
-			rawdb.DeleteReceipts(bc.db, hash, num, bc.chainConfig, false)
 		}
 		// Todo(rjl493456442) txlookup, bloombits, etc
 	}
@@ -2427,12 +2427,12 @@ func (bc *BlockChain) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscript
 	return bc.scope.Track(bc.logsFeed.Subscribe(ch))
 }
 
-//SubscribeDangerousChainEvent registers a subscription of DangerousChainSideEvent
+// SubscribeDangerousChainEvent registers a subscription of DangerousChainSideEvent
 func (bc *BlockChain) SubscribeDangerousChainEvent(ch chan<- DangerousChainSideEvent) event.Subscription {
 	return bc.scope.Track(bc.dangerousFeed.Subscribe(ch))
 }
 
-//SubscribeDangerousChainEvent registers a subscription of DangerousChainSideEvent
+// SubscribeDangerousChainEvent registers a subscription of DangerousChainSideEvent
 func (bc *BlockChain) SubscribeChangeEnginesEvent(ch chan<- EngineChangeEvent) event.Subscription {
 	return bc.scope.Track(bc.engineChange.Subscribe(ch))
 }
