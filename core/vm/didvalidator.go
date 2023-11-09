@@ -285,7 +285,7 @@ func checkDIDOperation(evm *EVM, header *did.Header,
 	buf := new(bytes.Buffer)
 	buf.WriteString(idUri)
 
-	if evm.StateDB.IsIDDeactivated(idUri) {
+	if evm.StateDB.IsIDDeactivated(idUri, evm.BlockNumber) {
 		return errors.New("DID is deactivated")
 	}
 
@@ -1021,7 +1021,7 @@ func isControllerExpired(evm *EVM, id string) (bool, error) {
 
 // expired or deactived
 func isIDDeactive(evm *EVM, id string) bool {
-	return evm.StateDB.IsIDDeactivated(id)
+	return evm.StateDB.IsIDDeactivated(id, evm.BlockNumber)
 }
 
 // expired or deactived
@@ -1881,7 +1881,7 @@ func checkDeactivateDID(evm *EVM, deactivateDIDOpt *did.DIDPayload) error {
 
 	//todo verify everycontroller must valid
 	//do not deactivage a did who was already deactivate
-	if evm.StateDB.IsIDDeactivated(ID) {
+	if evm.StateDB.IsIDDeactivated(ID, evm.BlockNumber) {
 		return errors.New("DID WAS AREADY DEACTIVE")
 	}
 

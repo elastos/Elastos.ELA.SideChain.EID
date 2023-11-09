@@ -81,7 +81,7 @@ type StateDB interface {
 
 	ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error
 
-	IsIDDeactivated(id string) bool
+	IsIDDeactivated(id string, blockNumber *big.Int) bool
 
 	GetLastDIDTxData(idKey []byte, config *params.ChainConfig) (*did.DIDTransactionData, error)
 

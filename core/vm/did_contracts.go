@@ -1146,7 +1146,7 @@ func (j *resolveDID) Run(evm *EVM, input []byte, gas uint64) ([]byte, error) {
 		tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 		if index == 0 {
 			//todo IsIDDeactivated should be IsIDDeactivated
-			if evm.StateDB.IsIDDeactivated(idParam) {
+			if evm.StateDB.IsIDDeactivated(idParam, evm.BlockNumber) {
 				didDocState = didapi.Deactivated
 				deactiveTXData, err := getDeactiveTx(evm, buf.Bytes())
 				if err != nil {
