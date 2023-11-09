@@ -490,7 +490,7 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 
 		tempTXData.Timestamp = time.Unix(int64(timestamp), 0).UTC().Format(time.RFC3339)
 		if index == 0 {
-			if rawdb.IsDIDDeactivated(s.b.ChainDb().(ethdb.KeyValueStore), idWithPrefix) {
+			if rawdb.IsDIDDeactivated(s.b.ChainDb().(ethdb.KeyValueStore), idWithPrefix, s.b.CurrentBlock().Number()) {
 				didDocState = didapi.Deactivated
 				//fill in
 				deactiveTXData, err := s.getDeactiveTx(ctx, buf.Bytes())

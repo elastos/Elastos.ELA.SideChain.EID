@@ -388,11 +388,10 @@ func GetLastDIDTxData(db ethdb.KeyValueStore, idKey []byte, config *params.Chain
 	recp, thash, err := getReceiptByReader(db.(ethdb.Reader), count, r, config)
 	if err != nil {
 		log.Error("not found receipt tx="+thash.String(), "count", count)
-
+		if err == ERR_READ_RECEIPT {
+			return nil, ERR_LEVELDB_NOT_FOUND
+		}
 		return nil, err
-	}
-	if err == ERR_READ_RECEIPT && count == 1 {
-		return nil, ERR_LEVELDB_NOT_FOUND
 	}
 	if recp.DIDLog.DID == "" {
 		return nil, ERR_NOT_DIDRECEIPT
@@ -448,18 +447,32 @@ func GetDeactivatedTxData(db ethdb.KeyValueStore, idKey []byte, config *params.C
 	return tempTxData, nil
 }
 
-func IsDIDDeactivated(db ethdb.KeyValueStore, did string) bool {
+func IsDIDDeactivated(db ethdb.KeyValueStore, did string, blockNumber *big.Int) bool {
 	idKey := new(bytes.Buffer)
 	idKey.WriteString(did)
 
 	key := []byte{byte(IX_DIDDeactivate)}
 	key = append(key, idKey.Bytes()...)
 
-	_, err := db.Get(key)
+	data, err := db.Get(key)
 	if err != nil {
 		return false
 	}
-	return true
+	r := bytes.NewReader(data)
+	var txHash elaCom.Uint256
+	if err := txHash.Deserialize(r); err != nil {
+		log.Error("[IsDIDDeactivated] tx hash is error", "msg", err)
+		return true
+	}
+	thash := common.BytesToHash(txHash.Bytes())
+	blockHeight := ReadTxLookupEntry(db.(ethdb.Reader), thash)
+	if blockHeight == nil {
+		*blockHeight = 0
+	}
+	if *blockHeight < blockNumber.Uint64() {
+		return true
+	}
+	return false
 }
 
 func GetAllDIDTxTxData(db ethdb.KeyValueStore, idKey []byte, config *params.ChainConfig) ([]did.DIDTransactionData, error) {
