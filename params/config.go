@@ -277,64 +277,66 @@ var (
 		Threshold: 2,
 	}
 	// GoerliChainConfig contains the chain parameters to run a node on the Görli test network.
-	GoerliChainConfig = &ChainConfig{
-		OldChainID:          big.NewInt(25),
-		ChainID:             big.NewInt(25),
-		HomesteadBlock:      big.NewInt(1),
-		DAOForkBlock:        nil,
-		DAOForkSupport:      true,
-		EIP150Block:         big.NewInt(2),
-		EIP150Hash:          common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
-		EIP155Block:         big.NewInt(3),
-		EIP158Block:         big.NewInt(3),
-		ByzantiumBlock:      big.NewInt(4),
-		ConstantinopleBlock: big.NewInt(4),
-		PetersburgBlock:     big.NewInt(4),
-		IstanbulBlock:       big.NewInt(4),
-		ChainIDBlock:        big.NewInt(4),
-		BerlinBlock:         big.NewInt(math.MaxInt64),
-		LondonBlock:         big.NewInt(math.MaxInt64),
-		Clique: &CliqueConfig{
-			Period: 15,
-			Epoch:  30000,
-		},
-		PBFTBlock:          big.NewInt(0),
-		CustomizeDIDHeight: big.NewInt(6307200), //todo set it before online
-		MaxExpiredHeight:   big.NewInt(6307200),
-		NodeVersionHeight:  big.NewInt(math.MaxInt64),
-		PreConnectOffset:   20,
-		Pbft: &PbftConfig{
-			Producers: []string{
-				"0342eeb0d664e2507d732382c66d0eedbd0a0f989179fd33d71679aa607d5d3b57",
-				"03b0a37c11d1dfa8622e3d64b9dfefee781c6eb8279fa28f0c723efbc7c67adcd8",
-				"023288ae99c212b42e3ba9fa088f4578eb2c958a0c2293b900d4fdefd5e6c571ee",
-				"02bd6d05a6d3d97ce3a1137f0d0c56c0d7f23c06fe04d7c85430780d440b64d88b",
-				"031c0c22f6712324babd9443475c9120a51ac8813c446a84161b6b950e2c1bb0f5",
-				"02d27b0048b8371106f32f6a35b312f5229e9e3ccab082010080be5c8b5b4232af",
-				"0295d91be003c7cbaa04bd5adc6977711c405670fa6361d3d21c64ff0a0c236aa8",
-				"02128f60f9eb4aa7cc5a638fe546f0ad289325138c03c43aaf585af7d521f1a004",
-				"03adf04d56c0f1a59ad590d21962152388c6d2281237f67f458911c25eb10722e5",
-				"030d76e2c9b6f83139a2d31544c52a20d5e28aeb2593859b99e13da487982564ee",
-				"02c011c38486eab9195f39beea18003584d65b3f28e7ec9c9d1d7e9b9ceef4c665",
-				"0312d2d9a26d52abba81c3475ebf7df74a111d454e7dcccfb5526cd69b49803fba",
-			},
-			PrintLevel:     0,
-			MaxLogsSize:    0,
-			MaxPerLogSize:  0,
-			Magic:          202001,
-			IPAddress:      "",
-			DPoSPort:       0,
-			MaxNodePerHost: 100,
-		},
-	}
+	GoerliChainConfig = TestnetChainConfig
+	//GoerliChainConfig = &ChainConfig{
+	//	OldChainID:          big.NewInt(25),
+	//	ChainID:             big.NewInt(25),
+	//	HomesteadBlock:      big.NewInt(1),
+	//	DAOForkBlock:        nil,
+	//	DAOForkSupport:      true,
+	//	EIP150Block:         big.NewInt(2),
+	//	EIP150Hash:          common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+	//	EIP155Block:         big.NewInt(3),
+	//	EIP158Block:         big.NewInt(3),
+	//	ByzantiumBlock:      big.NewInt(4),
+	//	ConstantinopleBlock: big.NewInt(4),
+	//	PetersburgBlock:     big.NewInt(4),
+	//	IstanbulBlock:       big.NewInt(4),
+	//	ChainIDBlock:        big.NewInt(4),
+	//	BerlinBlock:         big.NewInt(math.MaxInt64),
+	//	LondonBlock:         big.NewInt(math.MaxInt64),
+	//	Clique: &CliqueConfig{
+	//		Period: 15,
+	//		Epoch:  30000,
+	//	},
+	//	PBFTBlock:          big.NewInt(0),
+	//	CustomizeDIDHeight: big.NewInt(6307200), //todo set it before online
+	//	MaxExpiredHeight:   big.NewInt(6307200),
+	//	NodeVersionHeight:  big.NewInt(math.MaxInt64),
+	//	PreConnectOffset:   20,
+	//	Pbft: &PbftConfig{
+	//		Producers: []string{
+	//			"0342eeb0d664e2507d732382c66d0eedbd0a0f989179fd33d71679aa607d5d3b57",
+	//			"03b0a37c11d1dfa8622e3d64b9dfefee781c6eb8279fa28f0c723efbc7c67adcd8",
+	//			"023288ae99c212b42e3ba9fa088f4578eb2c958a0c2293b900d4fdefd5e6c571ee",
+	//			"02bd6d05a6d3d97ce3a1137f0d0c56c0d7f23c06fe04d7c85430780d440b64d88b",
+	//			"031c0c22f6712324babd9443475c9120a51ac8813c446a84161b6b950e2c1bb0f5",
+	//			"02d27b0048b8371106f32f6a35b312f5229e9e3ccab082010080be5c8b5b4232af",
+	//			"0295d91be003c7cbaa04bd5adc6977711c405670fa6361d3d21c64ff0a0c236aa8",
+	//			"02128f60f9eb4aa7cc5a638fe546f0ad289325138c03c43aaf585af7d521f1a004",
+	//			"03adf04d56c0f1a59ad590d21962152388c6d2281237f67f458911c25eb10722e5",
+	//			"030d76e2c9b6f83139a2d31544c52a20d5e28aeb2593859b99e13da487982564ee",
+	//			"02c011c38486eab9195f39beea18003584d65b3f28e7ec9c9d1d7e9b9ceef4c665",
+	//			"0312d2d9a26d52abba81c3475ebf7df74a111d454e7dcccfb5526cd69b49803fba",
+	//		},
+	//		PrintLevel:     0,
+	//		MaxLogsSize:    0,
+	//		MaxPerLogSize:  0,
+	//		Magic:          202001,
+	//		IPAddress:      "",
+	//		DPoSPort:       0,
+	//		MaxNodePerHost: 100,
+	//	},
+	//}
 
 	// GoerliTrustedCheckpoint contains the light client trusted checkpoint for the Görli test network.
-	GoerliTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 47,
-		SectionHead:  common.HexToHash("0x00c5b54c6c9a73660501fd9273ccdb4c5bbdbe5d7b8b650e28f881ec9d2337f6"),
-		CHTRoot:      common.HexToHash("0xef35caa155fd659f57167e7d507de2f8132cbb31f771526481211d8a977d704c"),
-		BloomRoot:    common.HexToHash("0xbda330402f66008d52e7adc748da28535b1212a7912a21244acd2ba77ff0ff06"),
-	}
+	GoerliTrustedCheckpoint = TestnetTrustedCheckpoint
+	//GoerliTrustedCheckpoint = &TrustedCheckpoint{
+	//	SectionIndex: 47,
+	//	SectionHead:  common.HexToHash("0x00c5b54c6c9a73660501fd9273ccdb4c5bbdbe5d7b8b650e28f881ec9d2337f6"),
+	//	CHTRoot:      common.HexToHash("0xef35caa155fd659f57167e7d507de2f8132cbb31f771526481211d8a977d704c"),
+	//	BloomRoot:    common.HexToHash("0xbda330402f66008d52e7adc748da28535b1212a7912a21244acd2ba77ff0ff06"),
+	//}
 
 	// GoerliCheckpointOracle contains a set of configs for the Goerli test network oracle.
 	GoerliCheckpointOracle = &CheckpointOracleConfig{
@@ -680,6 +682,9 @@ func (c *ChainConfig) GetChainIDByHeight(num *big.Int) *big.Int {
 	}
 	if isForked(c.ChainIDBlock, num) {
 		chainID = c.ChainID
+	}
+	if num.Uint64() > 16822762 {
+		chainID = big.NewInt(234)
 	}
 	return chainID
 }
