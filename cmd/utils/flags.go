@@ -1698,6 +1698,9 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
 		}
+		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
+			cfg.DocArraySortHeight = new(big.Int).SetUint64(2854640)
+		}
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
