@@ -1691,16 +1691,22 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
 			cfg.EvilSignersJournalDir = filepath.Join(node.DefaultDataDir(), "goerli", "geth")
 		}
-		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
-			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(0)
-		}
-
-		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
-			cfg.DocArraySortHeight = new(big.Int).SetUint64(0)
+		if !ctx.GlobalIsSet(DynamicArbiter.Name) {
+			cfg.DynamicArbiterHeight = 1
 		}
 		if !ctx.GlobalIsSet(DocArraySortHeightFlag.Name) {
 			cfg.DocArraySortHeight = new(big.Int).SetUint64(2854640)
 		}
+		if !ctx.GlobalIsSet(OldDIDMigrateHeightFlag.Name) {
+			cfg.OldDIDMigrateHeight = new(big.Int).SetUint64(1)
+		}
+		if !ctx.GlobalIsSet(CheckCustomizeDIDBeginHeightFlag.Name) {
+			cfg.CheckCustomizeDIDBeginHeight = new(big.Int).SetUint64(3649000)
+		}
+		if !ctx.GlobalIsSet(FrozenAccount.Name) {
+			ctx.GlobalSet(FrozenAccount.Name, "0x6527946c8b26cc203f9674a5e1d8178beeed70c1")
+		}
+		cfg.ArbiterListContract = ""
 	case ctx.GlobalBool(DeveloperFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			cfg.NetworkId = 1337
