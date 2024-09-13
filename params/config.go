@@ -73,7 +73,7 @@ var (
 		IstanbulBlock:       big.NewInt(4),
 		BerlinBlock:         big.NewInt(11079540),
 		LondonBlock:         big.NewInt(11079540),
-		ShanghaiTime:        newUint64(math.MaxInt64),
+		ShanghaiTime:        newUint64(1728360000),
 		Clique: &CliqueConfig{
 			Period: 15,
 			Epoch:  30000,
@@ -81,7 +81,7 @@ var (
 		PBFTBlock:            big.NewInt(0),
 		CustomizeDIDHeight:   big.NewInt(3095000),
 		MaxExpiredHeight:     big.NewInt(6307200),
-		NodeVersionHeight:    big.NewInt(math.MaxInt64),
+		NodeVersionHeight:    big.NewInt(18115190),
 		PreConnectOffset:     20,
 		DynamicArbiterHeight: 0,
 		Pbft: &PbftConfig{
