@@ -480,11 +480,13 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 		rpcPayloadDid.DID = txData.Operation.DIDDoc.ID
 		err, timestamp := s.getTxTime(ctx, txData.TXID)
 		if err != nil {
+			log.Error("getTxTime failed ", "error", err)
 			continue
 		}
 		tempTXData := new(didapi.RpcTranasactionData)
 		succe := tempTXData.FromTranasactionData(txData)
-		if succe == false {
+		if !succe {
+			log.Error("FromTranasactionData error >>>> ")
 			continue
 		}
 
@@ -495,6 +497,7 @@ func (s *PublicTransactionPoolAPI) ResolveDID(ctx context.Context, param map[str
 				//fill in
 				deactiveTXData, err := s.getDeactiveTx(ctx, buf.Bytes())
 				if err != nil {
+					log.Error("getDeactiveTx failed >>>> ", " error ", err)
 					return nil, err
 				}
 				rpcPayloadDid.RpcTXDatas = append(rpcPayloadDid.RpcTXDatas, *deactiveTXData)

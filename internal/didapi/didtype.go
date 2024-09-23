@@ -60,7 +60,11 @@ type RpcTranasactionData struct {
 }
 
 func (rpcTxData *RpcTranasactionData) FromTranasactionData(txData did.DIDTransactionData) bool {
-	hash, err := elacom.Uint256FromHexString(txData.TXID)
+	txid := txData.TXID
+	if txid[0:2] == "0x" {
+		txid = txid[2:]
+	}
+	hash, err := elacom.Uint256FromHexString(txid)
 	if err != nil {
 		return false
 	}
@@ -91,14 +95,14 @@ func (rpcTxData *RpcTranasactionData) ToResolveTxData() ResolveTranasactionData 
 
 // resolve payload of DID transaction
 type ResolvePayloadDIDInfo struct {
-	DID        string                	 `json:"did"`
-	Status     int                   	 `json:"status"`
+	DID        string                    `json:"did"`
+	Status     int                       `json:"status"`
 	RpcTXDatas []ResolveTranasactionData `json:"transaction,omitempty"`
 }
 
 type ResolveTranasactionData struct {
-	TXID      string       	   `json:"txid"`
-	Timestamp string       	   `json:"timestamp"`
+	TXID      string           `json:"txid"`
+	Timestamp string           `json:"timestamp"`
 	Operation ResolveOperation `json:"operation"`
 }
 
